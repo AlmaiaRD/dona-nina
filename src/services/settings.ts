@@ -10,7 +10,7 @@ export async function getSettings() {
   const { data: created, error: createError } = await supabase
     .from("settings")
     .insert({
-      business_name: "Almaia RD",
+      business_name: "Doña Nina",
       default_margin: 30,
       invoice_prefix: "FAC-",
       receipt_prefix: "REC-",

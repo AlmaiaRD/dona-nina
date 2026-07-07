@@ -22,7 +22,7 @@ const greatVibes = Great_Vibes({
 });
 
 export const metadata: Metadata = {
-  title: "Almaia RD - Gestión Comercial",
+  title: "Doña Nina - Gestión Comercial",
   description: "Sistema de gestión comercial para submarcas Amway",
   icons: {
     apple: "/icons/icon-192x192.png",

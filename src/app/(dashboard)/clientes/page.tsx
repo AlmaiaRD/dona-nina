@@ -305,7 +305,7 @@ export default function ClientesPage() {
         </div>
 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8] h-fit">
-          <h3 className="text-sm font-semibold text-[#5C3E35] mb-4">Estado de Cuenta Almaia RD</h3>
+          <h3 className="text-sm font-semibold text-[#5C3E35] mb-4">Estado de Cuenta Doña Nina</h3>
           <div className="space-y-3 mb-6">
             <div className="flex justify-between text-sm py-2 border-b border-[#E8E0D8]/50">
               <span className="text-[#9C8A82]">Cartera total (pendiente)</span>

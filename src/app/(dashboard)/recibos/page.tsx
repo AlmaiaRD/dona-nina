@@ -126,10 +126,10 @@ export default function RecibosPage() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
         <div style="display:flex;align-items:flex-start;gap:8px;">
           <div style="width:56px;height:56px;border-radius:50%;background:rgba(184,131,126,0.1);display:flex;align-items:center;justify-content:center;margin-top:4px;">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B8837E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"/><circle cx="12" cy="8" r="2"/><path d="M12 10v12"/><path d="M12 22c4.2 0 7-1.667 7-5-4.2 0-7 1.667-7 5Z"/><path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z"/></svg>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B8837E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18" /><rect x="4" y="13" width="16" height="8" rx="1.5" /><rect x="6" y="8" width="12" height="6" rx="1.5" /><circle cx="12" cy="7" r="2" fill="#B8837E" /><path d="M12 5v-1" /></svg>
           </div>
           <div>
-            <h2 style="font-size:24px;font-weight:700;color:#5C3E35;margin:0;">${settings?.business_name || "ALMAIA"}</h2>
+            <h2 style="font-size:24px;font-weight:700;color:#5C3E35;margin:0;">${settings?.business_name || "Doña Nina"}</h2>
             <p style="font-size:12px;letter-spacing:0.1em;color:#B8837E;text-transform:uppercase;margin:2px 0 0;">Bienestar & Salud</p>
             <p style="font-size:12px;color:#9C8A82;margin:4px 0 0;">Distribuidor Independiente Amway &middot; Rep\u00fablica Dominicana</p>
           </div>
@@ -188,7 +188,7 @@ export default function RecibosPage() {
       <div style="border-top:1px solid #E8E0D8;padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end;">
         <p style="font-size:11px;font-style:italic;color:#B8837E;margin:0;">\u00a1Gracias por tu pago!</p>
         <div style="text-align:right;">
-          ${settings?.signature_url ? `<img src="${settings.signature_url}" alt="Firma" style="height:96px;margin-left:auto;" />` : `<p style="font-size:14px;font-style:italic;color:#5C3E35;font-weight:300;margin:0;font-family:Georgia,serif;">${settings?.business_name || "ALMAIA"}</p>`}
+          ${settings?.signature_url ? `<img src="${settings.signature_url}" alt="Firma" style="height:96px;margin-left:auto;" />` : `<p style="font-size:14px;font-style:italic;color:#5C3E35;font-weight:300;margin:0;font-family:Georgia,serif;">${settings?.business_name || "Doña Nina"}</p>`}
           <p style="font-size:9px;color:#9C8A82;margin:2px 0 0;">FIRMA AUTORIZADA</p>
         </div>
       </div>
@@ -533,7 +533,7 @@ export default function RecibosPage() {
           documentNumber={selectedReceipt.receipt_number}
           documentId={selectedReceipt.id}
           total={formatCurrency(selectedReceipt.amount)}
-          businessName={settings?.business_name || "Almaia RD"}
+          businessName={settings?.business_name || "Doña Nina"}
           senderEmail={settings?.email || undefined}
           senderName={settings?.sender_name || undefined}
           emailTemplate={(settings as any)?.email_template || undefined}

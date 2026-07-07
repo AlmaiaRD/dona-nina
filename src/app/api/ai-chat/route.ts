@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       )
       .join("\n");
 
-    const prompt = `Eres un asesor de ventas experto de Almaia RD, distribuidora autorizada Amway en República Dominicana.
+    const prompt = `Eres un asesor de ventas experto de Doña Nina, distribuidora autorizada Amway en República Dominicana.
 
 Catálogo de productos disponible (con descripción y beneficios):
 ${catalogList}

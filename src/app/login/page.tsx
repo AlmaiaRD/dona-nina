@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Flower2, LogIn, Mail, Lock, Eye, EyeOff, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
+import { LogIn, Mail, Lock, Eye, EyeOff, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
+import CakeIcon from "@/components/ui/CakeIcon";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -48,10 +49,10 @@ export default function LoginPage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 rounded-full bg-[#B8837E]/10 flex items-center justify-center">
-              <Flower2 size={22} className="text-[#B8837E]" />
+              <CakeIcon size={22} className="text-[#B8837E]" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-[#5C3E35] leading-tight">ALMAIA</h1>
+              <h1 className="text-lg font-semibold text-[#5C3E35] leading-tight">Doña Nina</h1>
               <p className="text-[10px] text-[#9C8A82] tracking-widest uppercase leading-tight">Bienestar & Salud</p>
             </div>
           </Link>
@@ -144,7 +145,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-center text-xs text-[#BFB0A8] mt-6">
-            &copy; {new Date().getFullYear()} ALMAIA RD — Distribuidora Autorizada Amway
+            &copy; {new Date().getFullYear()} Doña Nina — Distribuidora Autorizada Amway
           </p>
         </div>
       </main>

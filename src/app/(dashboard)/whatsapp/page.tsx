@@ -131,7 +131,7 @@ const DEFAULT_QUICK_ACTIONS: QuickAction[] = [
     iconName: "MessageCircle",
     color: "text-green-600",
     bgColor: "bg-green-50",
-    message: "¡Bienvenido/a a Almaia RD! {cliente}, somos distribuidores autorizados Amway. Estamos aquí para ofrecerte productos de calidad para tu bienestar y salud. ¿En qué podemos ayudarte?",
+    message: "¡Bienvenido/a a Doña Nina! {cliente}, somos distribuidores autorizados Amway. Estamos aquí para ofrecerte productos de calidad para tu bienestar y salud. ¿En qué podemos ayudarte?",
     type: "text",
     isDefault: true,
   },

@@ -220,10 +220,10 @@ function InventarioContent() {
     setTextColor("#9C8A82");
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text(`Documento generado por ${settings?.business_name || "Almaia RD"}`, margin, y);
+    doc.text(`Documento generado por ${settings?.business_name || "Doña Nina"}`, margin, y);
     doc.setFontSize(8);
     setTextColor("#B8837E");
-    doc.text(`${settings?.business_name || "Almaia RD"} - ${formatDate(new Date().toISOString())}`, pageW - margin, y, { align: "right" });
+    doc.text(`${settings?.business_name || "Doña Nina"} - ${formatDate(new Date().toISOString())}`, pageW - margin, y, { align: "right" });
 
     doc.save(`COMPRA-${purchase.purchase_number}.pdf`);
   }
@@ -1780,13 +1780,13 @@ function InventarioContent() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="text-sm font-medium text-[#5C3E35]">Productos</label>
-              <button
-                onClick={() => setShowProductSearch(!showProductSearch)}
-                className="text-xs text-[#B8837E] hover:underline flex items-center gap-1"
-              >
-                <Plus size={14} />
-                Agregar producto
-              </button>
+                <button
+                  onClick={() => setShowProductSearch(!showProductSearch)}
+                  className="text-xs text-[#B8837E] hover:underline flex items-center gap-1"
+                >
+                  <Plus size={14} />
+                  Seleccionar productos comprados
+                </button>
             </div>
 
             {showProductSearch && (

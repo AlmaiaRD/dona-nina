@@ -160,7 +160,7 @@ export async function generateInvoicePdf(invoice: InvoiceData): Promise<void> {
   const PW = doc.internal.pageSize.getWidth();
   let y = M;
   const lineH = 4.5;
-  const bizName = invoice.business_name || "Almaia RD";
+  const bizName = invoice.business_name || "Doña Nina";
   const bizEmail = invoice.email || "";
   const bizPhone = invoice.phone || "";
 
@@ -544,7 +544,7 @@ export async function generateReceiptPdf(receipt: ReceiptData): Promise<void> {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
   let y = margin;
-  const bizName = receipt.business_name || "Almaia RD";
+  const bizName = receipt.business_name || "Doña Nina";
   const bizEmail = receipt.email || "";
   const bizPhone = receipt.phone || "";
 
@@ -689,7 +689,7 @@ export async function generateExpensePdf(expense: ExpenseData): Promise<void> {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
   let y = margin;
-  const bizName = expense.business_name || "Almaia RD";
+  const bizName = expense.business_name || "Doña Nina";
   const bizEmail = expense.email || "";
   const bizPhone = expense.phone || "";
 

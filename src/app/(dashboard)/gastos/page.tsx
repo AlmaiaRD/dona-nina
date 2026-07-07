@@ -9,9 +9,10 @@ import { generateExpensePdf } from "@/lib/pdf";
 import { getExpenses, createExpense, updateExpense, deleteExpense } from "@/services/expenses";
 import { getSettings } from "@/services/settings";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Search, TrendingDown, Edit3, Trash2, Save, Eye, FileText, Download, Flower2 } from "lucide-react";
+import { Plus, Search, TrendingDown, Edit3, Trash2, Save, Eye, FileText, Download } from "lucide-react";
 import toast from "react-hot-toast";
 import type { Expense, Settings } from "@/types/database";
+import CakeIcon from "@/components/ui/CakeIcon";
 
 const DEFAULT_CATEGORIES = ["Alquiler", "Servicios", "Transporte", "Oficina", "Marketing", "Salarios", "Suministros", "Otros"];
 
@@ -726,9 +727,9 @@ export default function GastosPage() {
         {jpgData && (
           <div id="expense-preview" className="bg-white p-8" style={{ fontFamily: "system-ui, sans-serif" }}>
             <div className="flex items-center justify-center gap-2 border-b border-[#E8E0D8] pb-4 mb-6">
-              <Flower2 size={22} className="text-[#B8837E]" />
+              <CakeIcon size={22} className="text-[#B8837E]" />
               <div>
-                <h1 style={{ fontSize: "22px", fontWeight: "bold", color: "#5C3E35", margin: 0 }}>{settings?.business_name || "Almaia RD"}</h1>
+                <h1 style={{ fontSize: "22px", fontWeight: "bold", color: "#5C3E35", margin: 0 }}>{settings?.business_name || "Doña Nina"}</h1>
                 <p style={{ fontSize: "12px", color: "#9C8A82", margin: "2px 0 0" }}>Comprobante de Gasto</p>
               </div>
             </div>
@@ -759,7 +760,7 @@ export default function GastosPage() {
               <p style={{ fontSize: "10px", color: "#9C8A82", margin: "4px 0 0" }}>{numberToWords(Number(jpgData.amount))}</p>
             </div>
             <div style={{ marginTop: "24px", textAlign: "center", fontSize: "9px", color: "#9C8A82" }}>
-              <p style={{ margin: 0 }}>{settings?.business_name || "Almaia RD"} — Distribuidora Autorizada Amway</p>
+              <p style={{ margin: 0 }}>{settings?.business_name || "Doña Nina"} — Distribuidora Autorizada Amway</p>
               {(settings?.phone || settings?.email) && (
                 <p style={{ margin: "2px 0 0" }}>Tel: {settings?.phone || "N/D"} | Email: {settings?.email || "N/D"}</p>
               )}

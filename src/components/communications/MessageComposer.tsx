@@ -53,8 +53,8 @@ Saludos,
 {{nombre_vendedor}}`,
     fields: [
       { key: "nombre_cliente", label: "Cliente", type: "client", autoFillKey: "full_name" },
-      { key: "nombre_vendedor", label: "Tu Nombre", type: "text", placeholder: "Ej: Yrahisa Mateo, Almaia RD" },
-      { key: "empresa", label: "Empresa", type: "text", placeholder: "Ej: Almaia RD" },
+      { key: "nombre_vendedor", label: "Tu Nombre", type: "text", placeholder: "Ej: Yrahisa Mateo, Doña Nina" },
+      { key: "empresa", label: "Empresa", type: "text", placeholder: "Ej: Doña Nina" },
     ],
   },
   {
@@ -83,7 +83,7 @@ Saludos,
       { key: "numero_factura", label: "Factura", type: "invoice", autoFillKey: "invoice_number" },
       { key: "monto_total", label: "Monto Total", type: "text", autoFillKey: "total" },
       { key: "lista_productos", label: "Productos", type: "product", autoFillKey: "products" },
-      { key: "nombre_vendedor", label: "Tu Nombre", type: "text", placeholder: "Ej: Yrahisa Mateo, Almaia RD" },
+      { key: "nombre_vendedor", label: "Tu Nombre", type: "text", placeholder: "Ej: Yrahisa Mateo, Doña Nina" },
     ],
   },
   {
@@ -111,8 +111,8 @@ Saludos,
 {{nombre_vendedor}}`,
     fields: [
       { key: "nombre_prospecto", label: "Nombre del Prospecto", type: "text", placeholder: "Ej: Carlos López" },
-      { key: "nombre_vendedor", label: "Tu Nombre", type: "text", placeholder: "Ej: Yrahisa Mateo, Almaia RD" },
-      { key: "empresa", label: "Empresa", type: "text", placeholder: "Ej: Almaia RD" },
+      { key: "nombre_vendedor", label: "Tu Nombre", type: "text", placeholder: "Ej: Yrahisa Mateo, Doña Nina" },
+      { key: "empresa", label: "Empresa", type: "text", placeholder: "Ej: Doña Nina" },
       { key: "interes", label: "Interés Principal", type: "text", placeholder: "Ej: Ingresos adicionales, Productos de salud" },
     ],
   },
@@ -136,8 +136,8 @@ Con cariño,
 {{empresa}}`,
     fields: [
       { key: "nombre_cliente", label: "Cliente", type: "client", autoFillKey: "full_name" },
-      { key: "nombre_vendedor", label: "Tu Nombre", type: "text", placeholder: "Ej: Yrahisa Mateo, Almaia RD" },
-      { key: "empresa", label: "Empresa", type: "text", placeholder: "Ej: Almaia RD" },
+      { key: "nombre_vendedor", label: "Tu Nombre", type: "text", placeholder: "Ej: Yrahisa Mateo, Doña Nina" },
+      { key: "empresa", label: "Empresa", type: "text", placeholder: "Ej: Doña Nina" },
       { key: "oferta_especial", label: "Oferta Especial", type: "text", placeholder: "Ej: 15% de descuento en tu próxima compra" },
     ],
   },
@@ -149,7 +149,7 @@ Con cariño,
     subject: "",
     body: "",
     fields: [
-      { key: "nombre_vendedor", label: "Tu Nombre", type: "text", placeholder: "Ej: Yrahisa Mateo, Almaia RD" },
+      { key: "nombre_vendedor", label: "Tu Nombre", type: "text", placeholder: "Ej: Yrahisa Mateo, Doña Nina" },
     ],
   },
 ];
@@ -162,7 +162,7 @@ interface Props {
   defaultClient?: { id: string; full_name: string; email?: string; phone?: string };
 }
 
-const DEFAULT_SENDER = "Yrahisa Mateo, Almaia RD";
+const DEFAULT_SENDER = "Yrahisa Mateo, Doña Nina";
 
 export default function MessageComposer({ isOpen, onClose, onSaved, defaultType, defaultClient }: Props) {
   const router = useRouter();

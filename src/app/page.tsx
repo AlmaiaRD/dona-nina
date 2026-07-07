@@ -1,6 +1,7 @@
 "use client";
 
-import { Flower2, ArrowRight, BarChart3, FileText, Package, Users, Shield, Receipt } from "lucide-react";
+import { ArrowRight, BarChart3, FileText, Package, Users, Shield, Receipt } from "lucide-react";
+import CakeIcon from "@/components/ui/CakeIcon";
 import Link from "next/link";
 
 const features = [
@@ -19,10 +20,10 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#B8837E]/10 flex items-center justify-center">
-              <Flower2 size={22} className="text-[#B8837E]" />
+              <CakeIcon size={22} className="text-[#B8837E]" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-[#5C3E35] leading-tight">ALMAIA</h1>
+              <h1 className="text-lg font-semibold text-[#5C3E35] leading-tight">Doña Nina</h1>
               <p className="text-[10px] text-[#9C8A82] tracking-widest uppercase leading-tight">Bienestar & Salud</p>
             </div>
           </div>
@@ -88,7 +89,7 @@ export default function LandingPage() {
 
       <footer className="px-6 py-4 border-t border-[#E8E0D8] bg-white">
         <div className="max-w-6xl mx-auto flex items-center justify-between text-xs text-[#9C8A82]">
-          <span>&copy; {new Date().getFullYear()} ALMAIA RD — Distribuidora Autorizada Amway</span>
+          <span>&copy; {new Date().getFullYear()} Doña Nina — Distribuidora Autorizada Amway</span>
           <span>Versión 1.0.0</span>
         </div>
       </footer>

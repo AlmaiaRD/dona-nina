@@ -13,7 +13,8 @@ import { getProducts } from "@/services/products";
 import { getSettings } from "@/services/settings";
 import type { Client, BankAccount, Settings } from "@/types/database";
 import { formatCurrency, formatDate, getLocalDateString } from "@/lib/utils";
-import { FileText, Plus, Search, Eye, Printer, Edit2, Trash2, X, Save, DollarSign, Download, ChevronDown, Flower2, Mail, MessageCircle } from "lucide-react";
+import { FileText, Plus, Search, Eye, Printer, Edit2, Trash2, X, Save, DollarSign, Download, ChevronDown, Mail, MessageCircle } from "lucide-react";
+import CakeIcon from "@/components/ui/CakeIcon";
 import toast from "react-hot-toast";
 
 const statusMap: Record<string, { label: string; variant: "success" | "warning" | "danger" | "neutral" | "info" }> = {
@@ -196,10 +197,10 @@ export default function FacturacionPage() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
         <div style="display:flex;align-items:flex-start;gap:8px;">
           <div style="width:56px;height:56px;border-radius:50%;background:rgba(184,131,126,0.1);display:flex;align-items:center;justify-content:center;margin-top:4px;">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B8837E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"/><circle cx="12" cy="8" r="2"/><path d="M12 10v12"/><path d="M12 22c4.2 0 7-1.667 7-5-4.2 0-7 1.667-7 5Z"/><path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z"/></svg>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B8837E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18" /><rect x="4" y="13" width="16" height="8" rx="1.5" /><rect x="6" y="8" width="12" height="6" rx="1.5" /><circle cx="12" cy="7" r="2" fill="#B8837E" /><path d="M12 5v-1" /></svg>
           </div>
           <div>
-            <h2 style="font-size:24px;font-weight:700;color:#5C3E35;margin:0;">${settings?.business_name || "ALMAIA"}</h2>
+            <h2 style="font-size:24px;font-weight:700;color:#5C3E35;margin:0;">${settings?.business_name || "Doña Nina"}</h2>
             <p style="font-size:12px;letter-spacing:0.1em;color:#B8837E;text-transform:uppercase;margin:2px 0 0;">Bienestar & Salud</p>
             <p style="font-size:14px;font-weight:700;color:#5C3E35;margin:8px 0 0;">Distribuidor Independiente Amway</p>
             <p style="font-size:12px;color:#9C8A82;margin:2px 0 0;">Suplementos, cosmética y bienestar para toda la familia</p>
@@ -292,11 +293,11 @@ export default function FacturacionPage() {
       </div>
       <div style="border-top:1px solid #E8E0D8;padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end;">
         <div>
-          <p style="font-size:11px;font-style:italic;color:#B8837E;margin:0;">\u00a1Gracias por tu compra y por apoyar a ${settings?.business_name || "Almaia RD"}, aliados a tu bienestar!</p>
+          <p style="font-size:11px;font-style:italic;color:#B8837E;margin:0;">\u00a1Gracias por tu compra y por apoyar a ${settings?.business_name || "Doña Nina"}, aliados a tu bienestar!</p>
           <p style="font-size:11px;color:#9C8A82;margin:6px 0 0;">Nutrilite \u00b7 Artistry \u00b7 Glister \u00b7 G&H \u00b7 Satinique \u00b7 Amway Home</p>
         </div>
         <div style="text-align:right;">
-          ${settings?.signature_url ? `<img src="${settings.signature_url}" alt="Firma" style="height:96px;margin-left:auto;" />` : `<p style="font-size:16px;font-style:italic;color:#5C3E35;font-weight:300;margin:0;font-family:Georgia,serif;">${settings?.business_name || "ALMAIA"}</p>`}
+          ${settings?.signature_url ? `<img src="${settings.signature_url}" alt="Firma" style="height:96px;margin-left:auto;" />` : `<p style="font-size:16px;font-style:italic;color:#5C3E35;font-weight:300;margin:0;font-family:Georgia,serif;">${settings?.business_name || "Doña Nina"}</p>`}
           <p style="font-size:9px;color:#9C8A82;margin:2px 0 0;">FIRMA AUTORIZADA</p>
         </div>
       </div>
@@ -585,10 +586,10 @@ export default function FacturacionPage() {
               <div className="flex justify-between items-start mb-6">
               <div className="flex items-start gap-2">
                 <div className="w-14 h-14 rounded-full bg-[#B8837E]/10 flex items-center justify-center mt-1">
-                  <Flower2 size={28} className="text-[#B8837E]" />
+                  <CakeIcon size={28} className="text-[#B8837E]" />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-bold text-[#5C3E35]">{settings?.business_name || "ALMAIA"}</h2>
+                    <h2 className="text-2xl font-bold text-[#5C3E35]">{settings?.business_name || "Doña Nina"}</h2>
                     <p className="text-xs tracking-widest text-[#B8837E] uppercase mt-0.5">Bienestar & Salud</p>
                     <p className="text-sm font-bold text-[#5C3E35] mt-2">Distribuidor Independiente Amway</p>
                     <p className="text-xs text-[#9C8A82] mt-0.5">Suplementos, cosmética y bienestar para toda la familia</p>
@@ -710,14 +711,14 @@ export default function FacturacionPage() {
               {/* F. FOOTER */}
               <div className="border-t border-[#E8E0D8] pt-4 flex justify-between items-end">
                 <div>
-                  <p className="text-xs italic text-[#B8837E]">¡Gracias por tu compra y por apoyar a {settings?.business_name || "Almaia RD"}, aliados a tu bienestar!</p>
+                  <p className="text-xs italic text-[#B8837E]">¡Gracias por tu compra y por apoyar a {settings?.business_name || "Doña Nina"}, aliados a tu bienestar!</p>
                   <p className="text-xs text-[#9C8A82] mt-1.5">Nutrilite · Artistry · Glister · G&H · Satinique · Amway Home</p>
                 </div>
                 <div className="text-right">
                   {settings?.signature_url ? (
                     <img src={settings.signature_url} alt="Firma" className="h-24 ml-auto" />
                   ) : (
-                    <p className="text-base italic text-[#5C3E35] font-light" style={{ fontFamily: "Georgia, serif" }}>{settings?.business_name || "ALMAIA"}</p>
+                    <p className="text-base italic text-[#5C3E35] font-light" style={{ fontFamily: "Georgia, serif" }}>{settings?.business_name || "Doña Nina"}</p>
                   )}
                   <p className="text-[9px] text-[#9C8A82] mt-0.5">FIRMA AUTORIZADA</p>
                 </div>
@@ -771,7 +772,7 @@ export default function FacturacionPage() {
           documentNumber={selectedInvoice.invoice_number}
           documentId={selectedInvoice.id}
           total={formatCurrency(selectedInvoice.total)}
-          businessName={settings?.business_name || "Almaia RD"}
+          businessName={settings?.business_name || "Doña Nina"}
           senderEmail={settings?.email || undefined}
           senderName={settings?.sender_name || undefined}
           emailTemplate={(settings as any)?.email_template || undefined}
@@ -1132,10 +1133,10 @@ export default function FacturacionPage() {
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-start gap-2">
                 <div className="w-14 h-14 rounded-full bg-[#B8837E]/10 flex items-center justify-center mt-1">
-                  <Flower2 size={28} className="text-[#B8837E]" />
+                  <CakeIcon size={28} className="text-[#B8837E]" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-[#5C3E35]">{settings?.business_name || "ALMAIA"}</h2>
+                  <h2 className="text-2xl font-bold text-[#5C3E35]">{settings?.business_name || "Doña Nina"}</h2>
                   <p className="text-xs tracking-widest text-[#B8837E] uppercase mt-0.5">Bienestar & Salud</p>
                   <p className="text-sm font-bold text-[#5C3E35] mt-2">Distribuidor Independiente Amway</p>
                   <p className="text-xs text-[#9C8A82] mt-0.5">Suplementos, cosmética y bienestar para toda la familia</p>
@@ -1228,14 +1229,14 @@ export default function FacturacionPage() {
             </div>
             <div className="border-t border-[#E8E0D8] pt-4 flex justify-between items-end">
               <div>
-                <p className="text-xs italic text-[#B8837E]">¡Gracias por tu compra y por apoyar a {settings?.business_name || "Almaia RD"}, aliados a tu bienestar!</p>
+                <p className="text-xs italic text-[#B8837E]">¡Gracias por tu compra y por apoyar a {settings?.business_name || "Doña Nina"}, aliados a tu bienestar!</p>
                 <p className="text-xs text-[#9C8A82] mt-1.5">Nutrilite · Artistry · Glister · G&H · Satinique · Amway Home</p>
               </div>
               <div className="text-right">
                 {settings?.signature_url ? (
                   <img src={settings.signature_url} alt="Firma" className="h-24 ml-auto" />
                 ) : (
-                  <p className="text-base italic text-[#5C3E35] font-light" style={{ fontFamily: "Georgia, serif" }}>{settings?.business_name || "ALMAIA"}</p>
+                  <p className="text-base italic text-[#5C3E35] font-light" style={{ fontFamily: "Georgia, serif" }}>{settings?.business_name || "Doña Nina"}</p>
                 )}
                 <p className="text-[9px] text-[#9C8A82] mt-0.5">FIRMA AUTORIZADA</p>
               </div>

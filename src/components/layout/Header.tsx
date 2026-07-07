@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Flower2, Plus, LogOut, UserPlus, FileText, Receipt, ShoppingCart, ChevronDown } from "lucide-react";
+import { Plus, LogOut, UserPlus, FileText, Receipt, ShoppingCart, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import CakeIcon from "@/components/ui/CakeIcon";
 
 export default function Header() {
   const { signOut } = useAuth();
@@ -21,10 +22,10 @@ export default function Header() {
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
         <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#B8837E]/10 flex items-center justify-center flex-shrink-0">
-            <Flower2 size={22} className="sm:w-7 sm:h-7 text-[#B8837E]" />
+            <CakeIcon size={28} className="text-[#B8837E]" />
           </div>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold text-[#5C3E35] leading-tight tracking-wide">ALMAIA</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-[#5C3E35] leading-tight tracking-wide">Doña Nina</h1>
             <p className="text-[10px] sm:text-[11px] text-[#9C8A82] tracking-widest uppercase leading-tight font-medium">
               Bienestar & Salud
             </p>

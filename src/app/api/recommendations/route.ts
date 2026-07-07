@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       category: (p.categories as any)?.name || "Sin categoría",
     }));
 
-    let systemPrompt = `Eres un asistente de ventas de Almaia RD, distribuidora autorizada Amway en República Dominicana. 
+    let systemPrompt = `Eres un asistente de ventas de Doña Nina, distribuidora autorizada Amway en República Dominicana. 
 Tu tarea es recomendar productos del catálogo basándote en las necesidades del cliente.
 
 IMPORTANTE: Responde SOLO con un JSON válido, sin texto adicional.

@@ -19,7 +19,7 @@ export default function ConfiguracionPage() {
   const [activeTab, setActiveTab] = useState<Tab>("general");
 
   const [form, setForm] = useState({
-    business_name: "Almaia RD",
+    business_name: "Doña Nina",
     logo_url: "",
     signature_url: "",
     email: "",
@@ -96,7 +96,7 @@ Responde en español en máximo 3 oraciones:`,
       if (settingsData) {
         setSettings(settingsData);
         setForm({
-          business_name: settingsData.business_name || "Almaia RD",
+          business_name: settingsData.business_name || "Doña Nina",
           logo_url: settingsData.logo_url || "",
           signature_url: settingsData.signature_url || "",
           email: (settingsData as any).email || "",

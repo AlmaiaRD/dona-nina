@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
       context = labels[season] || "";
     }
 
-    const prompt = `Eres un asesor de ventas experto de Almaia RD, distribuidora Amway.
+    const prompt = `Eres un asesor de ventas experto de Doña Nina, distribuidora Amway.
 
 Catálogo (cada producto incluye nombre, descripción y beneficios):
 ${JSON.stringify(catalog)}
