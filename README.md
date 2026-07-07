@@ -1,4 +1,16 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Doña Nina - Sistema de Facturación y Recibos
+
+Sistema de gestión comercial para distribuidores autorizados Amway. Rebrand de Almaia RD adaptado para Doña Nina.
+
+## Configuración
+
+1. Copia `.env.example` a `.env.local` y completa las credenciales de Supabase
+2. Instala dependencias: `npm install`
+3. Ejecuta en desarrollo: `npm run dev`
+
+## Base de Datos
+
+Proyecto Supabase independiente: `hfiuuotpdvggzzixsjbf` (Donde Doña Nina)
 
 ## Getting Started
 
