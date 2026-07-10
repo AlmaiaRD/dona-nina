@@ -1,29 +1,16 @@
-'use client'
+"use client";
 
-import { type ReactNode } from 'react'
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils";
 
 interface PageContainerProps {
-  children: ReactNode
-  title?: string
-  subtitle?: string
-  action?: ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
 }
 
-export function PageContainer({ children, title, subtitle, action, className }: PageContainerProps) {
+export default function PageContainer({ children, className }: PageContainerProps) {
   return (
-    <div className={cn('p-4 md:p-6 space-y-6', className)}>
-      {(title || action) && (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            {title && <h1 className="text-xl font-bold text-gray-900">{title}</h1>}
-            {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
-          </div>
-          {action && <div>{action}</div>}
-        </div>
-      )}
+    <main className={cn("flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 sm:py-6", className)}>
       {children}
-    </div>
-  )
+    </main>
+  );
 }

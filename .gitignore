@@ -36,17 +36,11 @@ yarn-error.log*
 # vercel
 .vercel
 
-# development artifacts
-backups/
-docs/
-Sistema de Facturacion/
-*.command
-init.sh
-crear-usuario.sql
-fix-rls-policies.sql
-migracion-*.sql
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-Sistema de Facturacion/
+
+# project noise
+.amway-profile/
+debug-*
+docs/CREDENCIALES.md

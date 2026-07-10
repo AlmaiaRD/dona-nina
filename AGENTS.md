@@ -1,14 +1,5 @@
-# Donde Doña Nina - Sistema de Gestión
+<!-- BEGIN:nextjs-agent-rules -->
+# This is NOT the Next.js you know
 
-## Comandos
-- `npm run dev` - Iniciar servidor de desarrollo
-- `npm run build` - Compilar para producción
-- `npm run start` - Iniciar servidor de producción
-- `npm run lint` - Ejecutar linter
-
-## Entorno
-- NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY necesarios en .env.local
-
-## Base de Datos
-- Ejecutar `migracion-columnas-faltantes.sql` en el SQL Editor de Supabase para agregar tablas/columnas faltantes (bank_accounts, RPC functions, columnas itbis/pv/bank_account_id).
-- Schema completo en `supabase-schema.sql`.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+<!-- END:nextjs-agent-rules -->

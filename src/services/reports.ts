@@ -1,47 +1,113 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from "@/lib/supabase";
 
-export interface SalesReport {
-  total_sales: number
-  total_invoices: number
-  average_ticket: number
-  by_payment_method: { method: string; total: number }[]
-  by_day: { date: string; total: number; count: number }[]
+export async function getVentasReport(from?: string, to?: string) {
+  let query = supabase
+    .from("invoices")
+    .select("invoice_number, invoice_date, total, status, clients(full_name)")
+    .not("status", "eq", "CANCELLED")
+    .order("invoice_date", { ascending: false });
+  if (from) query = query.gte("invoice_date", from);
+  if (to) query = query.lte("invoice_date", to);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map((inv: any) => ({
+    factura: inv.invoice_number,
+    fecha: inv.invoice_date,
+    cliente: inv.clients?.full_name || "Sin cliente",
+    total: Number(inv.total),
+    estado: inv.status === "PAID" ? "Pagada" : inv.status === "PENDING" ? "Pendiente" : inv.status === "PARTIAL" ? "Parcial" : inv.status,
+  }));
 }
 
-export async function getSalesReport(from: string, to: string): Promise<SalesReport> {
-  const { data: invoices } = await supabase
-    .from('invoices')
-    .select('total, created_at')
-    .gte('created_at', from)
-    .lte('created_at', to + 'T23:59:59')
-    .neq('status', 'CANCELLED')
+export async function getCobrosReport(from?: string, to?: string) {
+  let query = supabase
+    .from("receipts")
+    .select("receipt_number, created_at, amount, payment_method, clients(full_name), invoices!inner(invoice_number, clients(full_name))")
+    .order("created_at", { ascending: false });
+  if (from) query = query.gte("created_at", from);
+  if (to) query = query.lte("created_at", to + "T23:59:59");
+  const { data, error } = await query;
+  if (error) throw error;
+  const methodLabels: Record<string, string> = { CASH: "Efectivo", TRANSFER: "Transferencia", CARD: "Tarjeta" };
+  return (data || []).map((rec: any) => ({
+    recibo: rec.receipt_number,
+    fecha: rec.created_at?.split("T")[0] || "",
+    factura: rec.invoices?.invoice_number || "—",
+    cliente: rec.clients?.full_name || rec.invoices?.clients?.full_name || "Sin cliente",
+    monto: Number(rec.amount),
+    metodo: methodLabels[rec.payment_method] || rec.payment_method,
+  }));
+}
 
-  const total_sales = (invoices || []).reduce((s, i: any) => s + Number(i.total), 0)
-  const total_invoices = invoices?.length || 0
-  const average_ticket = total_invoices > 0 ? total_sales / total_invoices : 0
+export async function getInventarioReport() {
+  const { data, error } = await supabase
+    .from("vw_inventory_value")
+    .select("product_name, subbrand_name, stock, minimum_stock, stock_status")
+    .order("product_name");
+  if (error) throw error;
+  return (data || []).map((item: any) => ({
+    producto: item.product_name,
+    submarca: item.subbrand_name || "Sin submarca",
+    stock: Number(item.stock),
+    minimo: Number(item.minimum_stock),
+    estado: item.stock_status === "AGOTADO" ? "Agotado" : item.stock_status === "BAJO" ? "Bajo" : "Óptimo",
+  }));
+}
 
-  const { data: receipts } = await supabase
-    .from('receipts')
-    .select('payment_method, amount')
-    .gte('created_at', from)
-    .lte('created_at', to + 'T23:59:59')
+export async function getClientesReport() {
+  const { data, error } = await supabase
+    .from("vw_top_clients")
+    .select("client_name, total_invoiced, total_paid, balance_due")
+    .order("total_invoiced", { ascending: false });
+  if (error) throw error;
+  return (data || []).map((c: any) => ({
+    cliente: c.client_name,
+    total_comprado: Number(c.total_invoiced),
+    total_pagado: Number(c.total_paid),
+    saldo_pendiente: Number(c.balance_due),
+    estado: Number(c.balance_due) > 0 ? "Pendiente" : "Pagado",
+  }));
+}
 
-  const by_payment_method = (receipts || []).reduce((acc: any[], r: any) => {
-    const existing = acc.find(a => a.method === r.payment_method)
-    if (existing) existing.total += Number(r.amount)
-    else acc.push({ method: r.payment_method, total: Number(r.amount) })
-    return acc
-  }, [])
+export async function getPvReport(from?: string, to?: string) {
+  let query = supabase
+    .from("invoices")
+    .select("pv_total, invoice_date, clients(full_name)")
+    .not("status", "eq", "CANCELLED")
+    .order("invoice_date", { ascending: false });
+  if (from) query = query.gte("invoice_date", from);
+  if (to) query = query.lte("invoice_date", to);
+  const { data, error } = await query;
+  if (error) throw error;
 
-  const by_day = (invoices || []).reduce((acc: any[], i: any) => {
-    const date = new Date(i.created_at).toLocaleDateString('es-DO')
-    const existing = acc.find(a => a.date === date)
-    if (existing) {
-      existing.total += Number(i.total)
-      existing.count++
-    } else acc.push({ date, total: Number(i.total), count: 1 })
-    return acc
-  }, [] as { date: string; total: number; count: number }[])
+  const byClient: Record<string, { name: string; pv: number }> = {};
+  (data || []).forEach((inv: any) => {
+    const id = inv.clients?.full_name || "Sin cliente";
+    if (!byClient[id]) byClient[id] = { name: id, pv: 0 };
+    byClient[id].pv += Number(inv.pv_total || 0);
+  });
 
-  return { total_sales, total_invoices, average_ticket, by_payment_method, by_day }
+  return Object.values(byClient).map((c) => ({
+    cliente: c.name,
+    pv_generado: c.pv,
+    comision: c.pv * 20,
+  }));
+}
+
+export async function getGastosReport(from?: string, to?: string) {
+  let query = supabase
+    .from("expenses")
+    .select("expense_date, concept, category, amount, subcategory")
+    .order("expense_date", { ascending: false });
+  if (from) query = query.gte("expense_date", from);
+  if (to) query = query.lte("expense_date", to);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map((g: any) => ({
+    fecha: g.expense_date,
+    descripcion: g.concept,
+    categoria: g.category,
+    subcategoria: g.subcategory || "—",
+    monto: Number(g.amount),
+  }));
 }

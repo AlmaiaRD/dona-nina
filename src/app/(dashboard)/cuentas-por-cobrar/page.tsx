@@ -1,205 +1,101 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { PageContainer } from '@/components/layout/PageContainer'
-import { Badge } from '@/components/ui/Badge'
-import { normalizeText } from '@/lib/search'
-import { getInvoices } from '@/services/invoices'
-import { formatCurrency, formatDateShort } from '@/lib/utils'
-import { Modal } from '@/components/ui/Modal'
-import { PrintActions } from '@/components/ui/PrintActions'
-import { DollarSign, Search, Phone, Wallet, ArrowUpRight } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from "react";
+import PageContainer from "@/components/layout/PageContainer";
+import Badge from "@/components/ui/Badge";
+import { normalize } from "@/lib/search";
+import { getInvoices } from "@/services/invoices";
+import { formatCurrency } from "@/lib/utils";
+import { DollarSign, Search, Phone, Wallet, ArrowUpRight } from "lucide-react";
 
 export default function CuentasPorCobrarPage() {
-  const router = useRouter()
-  const [invoices, setInvoices] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [detailInvoice, setDetailInvoice] = useState<any | null>(null)
-  const [detailOpen, setDetailOpen] = useState(false)
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        const data = await getInvoices()
-        if (!cancelled) setInvoices(data)
-      } catch (err) { console.error('[CuentasPorCobrarPage] Error:', err); if (!cancelled) setInvoices([]) }
-      finally { if (!cancelled) setLoading(false) }
-    })()
-    return () => { cancelled = true }
-  }, [])
+  const load = useCallback(async () => {
+    try { setInvoices(await getInvoices()); }
+    catch {}
+    finally { setLoading(false); }
+  }, []);
 
-  const pending = invoices.filter(
-    (inv) => inv.status !== 'PAID' && inv.status !== 'CANCELLED'
-  )
+  useEffect(() => { load(); }, [load]);
 
-  const totalPending = pending.reduce((sum, inv) => sum + inv.balance_due, 0)
-
-  const handleViewDetail = (inv: any) => {
-    setDetailInvoice(inv)
-    setDetailOpen(true)
-  }
-
-  const filtered = pending.filter((inv) => {
-    if (!searchQuery) return true
-    const q = normalizeText(searchQuery)
-    return (
-      normalizeText(inv.invoice_number).includes(q) ||
-      normalizeText(inv.client?.full_name ?? '').includes(q)
-    )
-  })
+  const pending = invoices.filter(i => i.status !== "PAID" && i.status !== "CANCELLED");
+  const filtered = pending.filter(i =>
+    normalize(i.clients?.full_name || "").includes(normalize(searchQuery)) ||
+    normalize(i.invoice_number || "").includes(normalize(searchQuery))
+  );
+  const totalPending = filtered.reduce((s, i) => s + Number(i.total) - Number(i.paid_amount || 0), 0);
 
   return (
-    <PageContainer
-      title="Cuentas por Cobrar"
-      subtitle="Saldos pendientes de clientes"
-    >
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-red-50">
-              <DollarSign className="h-5 w-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Total Pendiente</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {formatCurrency(totalPending)}
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {pending.length} factura{pending.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => router.push('/creditos')}
-          className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 text-left hover:border-green-200 transition-colors group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-green-50">
-              <Wallet className="h-5 w-5 text-green-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-gray-500 font-medium">Saldos a Favor</p>
-              <p className="text-lg font-semibold text-green-600">
-                Ver créditos disponibles
-              </p>
-            </div>
-            <ArrowUpRight className="h-5 w-5 text-gray-300 group-hover:text-green-500 transition-colors" />
-          </div>
-        </button>
+    <PageContainer>
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-[#5C3E35]">Cuentas por Cobrar</h1>
+        <p className="text-sm text-[#9C8A82] mt-1">Saldos pendientes de clientes</p>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <div className="flex items-start gap-4 mb-6">
+        <div className="flex-1 bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8]">
+          <p className="text-xs text-[#9C8A82] mb-1">Total Pendiente</p>
+          <p className="text-2xl font-bold text-[#5C3E35]">{formatCurrency(totalPending)}</p>
+          <p className="text-xs text-[#9C8A82] mt-1">{filtered.length} factura(s) pendientes</p>
+        </div>
+        <a href="/creditos" className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8] hover:shadow-md transition-all min-w-[180px] block">
+          <div className="flex items-center gap-2 mb-1">
+            <Wallet size={16} className="text-[#86C7A3]" />
+            <p className="text-xs text-[#9C8A82]">Saldos a Favor</p>
+          </div>
+          <p className="text-lg font-bold text-[#86C7A3]">RD$ 0.00</p>
+          <p className="text-xs text-[#86C7A3] mt-1 flex items-center gap-1">Ver créditos <ArrowUpRight size={12} /></p>
+        </a>
+      </div>
+
+      <div className="relative mb-6">
+        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
         <input
-          type="text"
-          placeholder="Buscar por factura o cliente..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Buscar por cliente o factura..."
+          className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all"
         />
       </div>
 
-      {/* Loading */}
-      {loading && (
-        <div className="flex items-center justify-center min-h-[40vh]">
-          <div className="h-8 w-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+      {loading ? (
+        <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#B8837E] border-t-transparent rounded-full animate-spin" /></div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 text-[#9C8A82]">
+          <DollarSign size={40} className="mx-auto mb-3 opacity-40" />
+          <p className="text-sm">No hay cuentas por cobrar pendientes</p>
         </div>
-      )}
-
-      {/* Empty */}
-      {!loading && filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3 text-gray-400">
-          <DollarSign className="h-12 w-12" />
-          <p className="text-sm">No hay cuentas pendientes por cobrar</p>
-        </div>
-      )}
-
-      {/* Invoice Cards */}
-      {!loading && filtered.length > 0 && (
+      ) : (
         <div className="space-y-3">
-          {filtered.map((inv) => (
-            <div
-              key={inv.id}
-              className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      onClick={() => handleViewDetail(inv)}
-                      className="font-mono text-sm font-semibold text-gray-900 hover:text-red-600 transition-colors"
-                    >
-                      #{inv.invoice_number}
-                    </button>
-                    <Badge status={inv.status} />
+          {filtered.map((inv: any) => {
+            const due = Number(inv.total) - Number(inv.paid_amount || 0);
+            const statusLabel = inv.status === "PENDING" ? "Pendiente" : inv.status === "PARTIAL" ? "Pago Parcial" : inv.status;
+            return (
+              <div key={inv.id} className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8] hover:shadow-md transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <span className="text-sm font-semibold text-[#5C3E35]">{inv.invoice_number}</span>
+                    <span className="text-xs text-[#9C8A82] ml-2">{inv.clients?.full_name}</span>
                   </div>
-                  <p className="text-sm text-gray-700 font-medium mt-1 truncate">
-                    {inv.client?.full_name ?? 'Cliente'}
-                  </p>
-                  {inv.client?.phone && (
-                    <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
-                      <Phone className="h-3 w-3" />
-                      {inv.client.phone}
-                    </div>
-                  )}
+                  <Badge variant={inv.status === "PENDING" ? "warning" : "info"}>{statusLabel}</Badge>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-xs text-gray-400">Total</p>
-                  <p className="text-sm text-gray-600">
-                    {formatCurrency(inv.total)}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">Balance</p>
-                  <p className="text-base font-bold text-gray-900">
-                    {formatCurrency(inv.balance_due)}
-                  </p>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#9C8A82]">Total: {formatCurrency(inv.total)}</span>
+                  <span className="text-[#5C3E35] font-bold">{formatCurrency(due)}</span>
                 </div>
+                {inv.clients?.phone && (
+                  <div className="flex items-center gap-1.5 mt-2 text-xs text-[#9C8A82]">
+                    <Phone size={12} />
+                    <span>{inv.clients.phone}</span>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
-      <Modal isOpen={detailOpen} onClose={() => setDetailOpen(false)} title="Detalle de Factura" subtitle="Información completa de la factura" size="xl">
-        <div id="cxc-detail" className="space-y-4">
-          <PrintActions elementId="cxc-detail" filename={`factura-${detailInvoice?.invoice_number || 'detalle'}`} />
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Factura</p>
-              <p className="text-sm font-semibold text-gray-900">#{detailInvoice?.invoice_number || '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Cliente</p>
-              <p className="text-sm font-semibold text-gray-900">{detailInvoice?.client?.full_name || '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Teléfono</p>
-              <p className="text-sm font-semibold text-gray-900">{detailInvoice?.client?.phone || '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Estado</p>
-              <span className="inline-flex items-center mt-1"><Badge status={detailInvoice?.status} /></span>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Total</p>
-              <p className="text-sm font-semibold text-gray-900">{detailInvoice ? formatCurrency(detailInvoice.total) : '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Balance Pendiente</p>
-              <p className="text-sm font-semibold text-gray-900">{detailInvoice ? formatCurrency(detailInvoice.balance_due) : '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Fecha de Factura</p>
-              <p className="text-sm font-semibold text-gray-900">{detailInvoice?.invoice_date ? formatDateShort(detailInvoice.invoice_date) : '-'}</p>
-            </div>
-          </div>
-        </div>
-      </Modal>
     </PageContainer>
-  )
+  );
 }

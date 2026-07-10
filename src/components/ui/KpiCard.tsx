@@ -1,40 +1,30 @@
-'use client'
+export default function KpiCard({
+  title,
+  value,
+  icon: Icon,
+  color = "primary",
+}: {
+  title: string;
+  value: string;
+  icon: React.ElementType;
+  color?: "primary" | "green" | "amber" | "rose";
+}) {
+  const colorMap = {
+    primary: "bg-[#B8837E]/10 text-[#B8837E]",
+    green: "bg-[#86C7A3]/10 text-[#86C7A3]",
+    amber: "bg-[#E8C87A]/10 text-[#E8C87A]",
+    rose: "bg-[#D4A0A0]/10 text-[#D4A0A0]",
+  };
 
-import { cn } from '@/lib/utils'
-import { type LucideIcon } from 'lucide-react'
-
-interface KpiCardProps {
-  title: string
-  value: string
-  icon: LucideIcon
-  subtitle?: string
-  className?: string
-  trend?: { value: number; positive: boolean }
-}
-
-export function KpiCard({ title, value, icon: Icon, subtitle, className, trend }: KpiCardProps) {
   return (
-    <div className={cn('rounded-xl bg-white p-6 shadow-sm border border-gray-100', className)}>
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-500">{title}</span>
-        <div className="rounded-lg bg-red-50 p-2">
-          <Icon className="h-5 w-5 text-red-600" />
+    <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8] hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-[#9C8A82]">{title}</span>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colorMap[color]}`}>
+          <Icon size={20} />
         </div>
       </div>
-      <div className="mt-3">
-        <span className="text-2xl font-bold text-gray-900">{value}</span>
-        {trend && (
-          <span className={cn(
-            'ml-2 text-sm font-medium',
-            trend.positive ? 'text-green-600' : 'text-red-600'
-          )}>
-            {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
-          </span>
-        )}
-      </div>
-      {subtitle && (
-        <p className="mt-1 text-xs text-gray-500">{subtitle}</p>
-      )}
+      <p className="text-2xl font-bold text-[#5C3E35]">{value}</p>
     </div>
-  )
+  );
 }

@@ -1,105 +1,98 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from "@/lib/supabase";
+import { getLocalDateString } from "@/lib/utils";
 
-export interface DashboardData {
-  todaySales: number
-  monthlySales: number
-  monthlyPurchases: number
-  totalClients: number
-  pendingDeliveries: number
-  lowStock: number
-  accountsReceivable: number
-  grossProfit: number
-  pendingInvoices: any[]
-  dailySales: { date: string; total: number }[]
-  monthlySalesByMonth: { month: string; total: number }[]
-  topItems: { name: string; total: number }[]
-}
+export async function getDashboardStats() {
+  const { data: sales, error: salesError } = await supabase
+    .from("vw_sales_summary")
+    .select("*")
+    .single();
+  if (salesError) throw salesError;
 
-export async function getDashboardData(): Promise<DashboardData> {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-  const fifteenDaysAgo = new Date(today)
-  fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 14)
-  const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1)
+  const { data: ar, error: arError } = await supabase
+    .from("vw_accounts_receivable")
+    .select("*");
+  if (arError) throw arError;
 
-  const [
-    { data: todayInvoices },
-    { data: monthInvoices },
-    { data: monthPurchases },
-    { count: totalClients },
-    { count: pendingDeliveries },
-    { data: inventory },
-    { data: receivable },
-    { data: pendingInvoices },
-    { data: dailyData },
-    { data: monthlyData },
-    { data: items },
-  ] = await Promise.all([
-    supabase.from('invoices').select('total').gte('created_at', today.toISOString()).neq('status', 'CANCELLED'),
-    supabase.from('invoices').select('total').gte('created_at', monthStart.toISOString()).neq('status', 'CANCELLED'),
-    supabase.from('purchases').select('total').gte('created_at', monthStart.toISOString()).neq('status', 'CANCELLED'),
-    supabase.from('clients').select('*', { count: 'exact', head: true }),
-    supabase.from('deliveries').select('*', { count: 'exact', head: true }).in('status', ['PENDING', 'IN_PROGRESS']),
-    supabase.from('inventory').select('*'),
-    supabase.from('invoices').select('balance_due').in('status', ['PENDING', 'PARTIAL']),
-    supabase.from('invoices').select('*, client:clients(full_name)').in('status', ['PENDING', 'PARTIAL']).order('created_at', { ascending: false }).limit(5),
-    supabase.from('invoices').select('total, created_at').gte('created_at', fifteenDaysAgo.toISOString()).neq('status', 'CANCELLED'),
-    supabase.from('invoices').select('total, created_at').gte('created_at', sixMonthsAgo.toISOString()).neq('status', 'CANCELLED'),
-    supabase.from('invoice_items').select('menu_item:menu_items(name), quantity').not('menu_item_id', 'is', null).limit(100),
-  ])
+  // Cobros Recibidos: sum of receipts for current month
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const { data: receipts } = await supabase
+    .from("receipts")
+    .select("amount")
+    .gte("created_at", monthStart.toISOString());
+  const totalPaidReceipts = (receipts || []).reduce((s: number, r: any) => s + Number(r.amount), 0);
 
-  const lowStock = (inventory || []).filter(
-    (i: any) => Number(i.stock) <= Number(i.minimum_stock)
-  ).length
+  // Ventas del Mes: sum invoice totals for current month using local date
+  const localMonthStart = getLocalDateString(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const { data: monthInvoices } = await supabase
+    .from("invoices")
+    .select("total")
+    .gte("invoice_date", localMonthStart)
+    .neq("status", "CANCELLED");
+  const salesMonthLocal = (monthInvoices || []).reduce((s: number, inv: any) => s + Number(inv.total), 0);
 
-  const accountsReceivable = (receivable || []).reduce(
-    (sum, inv: any) => sum + Number(inv.balance_due), 0
-  )
+  // Valor de inventario: stock × cost × (apply_itbis ? 1.35 : 1.0)
+  const { data: invFull } = await supabase
+    .from("inventory")
+    .select("stock, products(cost, apply_itbis)");
+  const inventoryValue = (invFull || []).reduce((sum: number, i: any) => {
+    const stock = Number(i.stock || 0);
+    const cost = Number(i.products?.cost || 0);
+    const applyItbis = i.products?.apply_itbis !== false;
+    const markup = applyItbis ? 1.35 : 1.0;
+    return sum + stock * cost * markup;
+  }, 0);
 
-  const dailySales = (dailyData || []).reduce((acc: any[], inv: any) => {
-    const date = new Date(inv.created_at).toLocaleDateString('es-DO')
-    const existing = acc.find(d => d.date === date)
-    if (existing) existing.total += Number(inv.total)
-    else acc.push({ date, total: Number(inv.total) })
-    return acc
-  }, [] as { date: string; total: number }[])
+  const totalStock = (invFull || []).reduce((sum: number, i: any) => sum + Number(i.stock || 0), 0);
 
-  const monthlySalesByMonth = (monthlyData || []).reduce((acc: any[], inv: any) => {
-    const month = new Date(inv.created_at).toLocaleDateString('es-DO', { month: 'short', year: '2-digit' })
-    const existing = acc.find(d => d.month === month)
-    if (existing) existing.total += Number(inv.total)
-    else acc.push({ month, total: Number(inv.total) })
-    return acc
-  }, [] as { month: string; total: number }[])
+  // Low stock / out of stock
+  const { data: lowStockData } = await supabase
+    .from("vw_inventory_value")
+    .select("*");
+  const lowStock = (lowStockData || []).filter((i: any) => i.stock_status === "BAJO").length;
+  const outOfStock = (lowStockData || []).filter((i: any) => i.stock_status === "AGOTADO").length;
 
-  const topItems = (items || []).reduce((acc: any[], item: any) => {
-    const name = item.menu_item?.name || 'Producto'
-    const existing = acc.find(d => d.name === name)
-    if (existing) existing.total += item.quantity
-    else acc.push({ name, total: item.quantity })
-    return acc
-  }, [] as { name: string; total: number }[])
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 10)
+  const { data: profitability, error: profError } = await supabase
+    .from("vw_profitability")
+    .select("*")
+    .single();
+  if (profError) throw profError;
 
-  const todaySales = (todayInvoices || []).reduce((s, i: any) => s + Number(i.total), 0)
-  const monthSales = (monthInvoices || []).reduce((s, i: any) => s + Number(i.total), 0)
-  const monthPurchasesTotal = (monthPurchases || []).reduce((s, i: any) => s + Number(i.total), 0)
-  const grossProfit = monthSales - monthPurchasesTotal
+  // PV del Mes: sum pv from invoice_items for current month (non-cancelled invoices)
+  const { data: pvData } = await supabase
+    .from("invoice_items")
+    .select("pv, invoices!inner(status, invoice_date)")
+    .gte("invoices.invoice_date", localMonthStart)
+    .neq("invoices.status", "CANCELLED");
+  const pvMonth = (pvData || []).reduce((s: number, ii: any) => s + Number(ii.pv || 0), 0);
+
+  const totalPending = ar.reduce((sum: number, r: any) => sum + Number(r.total_pending), 0);
 
   return {
-    todaySales,
-    monthlySales: monthSales,
-    monthlyPurchases: monthPurchasesTotal,
-    totalClients: totalClients || 0,
-    pendingDeliveries: pendingDeliveries || 0,
+    salesToday: sales?.sales_today ?? 0,
+    salesMonth: salesMonthLocal,
+    salesYear: sales?.sales_year ?? 0,
+    totalSales: sales?.total_sales ?? 0,
+    totalPending,
+    totalPaid: totalPaidReceipts,
+    inventoryValue,
+    totalStock,
     lowStock,
-    accountsReceivable,
-    grossProfit,
-    pendingInvoices: pendingInvoices || [],
-    dailySales,
-    monthlySalesByMonth,
-    topItems,
-  }
+    outOfStock,
+    grossProfit: profitability?.gross_profit ?? 0,
+    realProfit: profitability?.real_profit ?? 0,
+    pvMonth,
+    pvYear: 0,
+  };
+}
+
+export async function getRecentActivity() {
+  const { data, error } = await supabase
+    .from("audit_logs")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (error) throw error;
+  return data;
 }

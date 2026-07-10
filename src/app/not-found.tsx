@@ -1,19 +1,23 @@
-import Link from 'next/link'
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import CakeIcon from "@/components/ui/CakeIcon";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#fff8f0]">
-      <div className="text-center space-y-4">
-        <div className="text-8xl font-bold text-red-600">404</div>
-        <h1 className="text-2xl font-bold text-gray-900">Página no encontrada</h1>
-        <p className="text-gray-500">La página que buscas no existe.</p>
-        <Link
-          href="/dashboard"
-          className="inline-block px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-        >
-          Ir al Dashboard
-        </Link>
+    <div className="min-h-screen bg-[#FCFAF7] flex flex-col items-center justify-center px-4">
+      <div className="w-16 h-16 rounded-full bg-[#B8837E]/10 flex items-center justify-center mb-6">
+        <CakeIcon size={32} className="text-[#B8837E]" />
       </div>
+      <h1 className="text-4xl font-bold text-[#5C3E35] mb-2">404</h1>
+      <p className="text-lg text-[#9C8A82] mb-8 text-center max-w-sm">
+        La página que buscas no existe o fue movida.
+      </p>
+      <Link
+        href="/login"
+        className="inline-flex items-center gap-2 h-12 px-6 bg-[#B8837E] text-white rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm"
+      >
+        <ArrowLeft size={18} /> Ir al inicio
+      </Link>
     </div>
-  )
+  );
 }
