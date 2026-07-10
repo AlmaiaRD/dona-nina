@@ -1,7 +1,7 @@
 'use client'
 
 import { FileText, Eye, Edit2, Trash2, Download } from 'lucide-react'
-import { Badge } from '@/components/ui/Badge'
+import Badge from '@/components/ui/Badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 interface InvoiceTableProps {

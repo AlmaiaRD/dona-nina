@@ -5,8 +5,9 @@ import { cn } from "@/lib/utils";
 type BadgeVariant = "success" | "warning" | "danger" | "neutral" | "info";
 
 interface BadgeProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   variant?: BadgeVariant;
+  status?: string;
   className?: string;
 }
 
@@ -18,16 +19,37 @@ const variantMap: Record<BadgeVariant, string> = {
   info: "bg-[#B8837E]/10 text-[#B8837E]",
 };
 
-export default function Badge({ children, variant = "neutral", className }: BadgeProps) {
+const statusMap: Record<string, BadgeVariant> = {
+  PENDING: "warning",
+  IN_PROGRESS: "info",
+  DELIVERED: "success",
+  CANCELLED: "danger",
+};
+
+const statusLabel: Record<string, string> = {
+  PENDING: "Pendiente",
+  IN_PROGRESS: "En progreso",
+  DELIVERED: "Entregado",
+  CANCELLED: "Cancelado",
+};
+
+function getVariant(status?: string): BadgeVariant {
+  if (!status) return "neutral";
+  return statusMap[status] || "neutral";
+}
+
+export default function Badge({ children, variant, status, className }: BadgeProps) {
+  const resolvedVariant = variant || (status ? getVariant(status) : "neutral");
+  const label = status ? (statusLabel[status] || status) : children;
   return (
     <span
       className={cn(
         "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-        variantMap[variant],
+        variantMap[resolvedVariant],
         className
       )}
     >
-      {children}
+      {label}
     </span>
   );
 }

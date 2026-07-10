@@ -6,6 +6,13 @@ export interface User {
   created_at: string;
 }
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 export type ClientType = "comprador" | "negocio";
 
 export interface Client {
@@ -351,6 +358,67 @@ export interface Communication {
   status: CommunicationStatus;
   created_at: string;
   sent_at: string | null;
+}
+
+export interface Delivery {
+  id: string;
+  client_id: string;
+  client_name: string;
+  client_phone: string;
+  address: string;
+  delivery_address: string;
+  delivery_person: string;
+  estimated_time: string;
+  items: string;
+  total: number;
+  status: "PENDING" | "IN_PROGRESS" | "DELIVERED" | "CANCELLED";
+  delivery_date: string;
+  delivered_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  client?: Client;
+  invoice?: Invoice;
+}
+
+export interface MenuItem {
+  id: string;
+  category_id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  price: number;
+  cost?: number | null;
+  points_value: number;
+  active: boolean;
+  available: boolean;
+  itbis_enabled: boolean;
+  itbis_rate: number;
+  image_url: string | null;
+  ingredients: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  category?: Category;
+}
+
+export interface MenuCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  items?: MenuItem[];
+}
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  active: boolean;
+  created_at: string;
 }
 
 export interface LearningNote {

@@ -46,7 +46,15 @@ export function validateOrigin(request: Request): boolean {
     'http://localhost:3001',
     'http://localhost:3002',
   ].filter(Boolean).map(u => u?.replace(/\/+$/, ''))
-  if (origin && allowedOrigins.some(a => origin.startsWith(a || ''))) return true
-  if (referer && allowedOrigins.some(a => referer.startsWith(a || ''))) return true
+  try {
+    const checkUrl = (url: string) => {
+      const parsed = new URL(url)
+      return allowedOrigins.some(a => {
+        try { return new URL(a!).origin === parsed.origin } catch { return false }
+      })
+    }
+    if (origin && checkUrl(origin)) return true
+    if (referer && checkUrl(referer)) return true
+  } catch { return false }
   return false
 }

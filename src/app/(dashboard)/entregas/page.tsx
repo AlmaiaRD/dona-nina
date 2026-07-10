@@ -15,11 +15,11 @@ import {
 } from '@/services/deliveries'
 import { getClients } from '@/services/clients'
 import type { Delivery, Client } from '@/types/database'
-import { PageContainer } from '@/components/layout/PageContainer'
-import { DataTable } from '@/components/ui/DataTable'
-import { Modal } from '@/components/ui/Modal'
-import { Badge } from '@/components/ui/Badge'
-import { PrintActions } from '@/components/ui/PrintActions'
+import PageContainer from '@/components/layout/PageContainer'
+import DataTable from '@/components/ui/DataTable'
+import Modal from '@/components/ui/Modal'
+import Badge from '@/components/ui/Badge'
+import PrintActions from '@/components/ui/PrintActions'
 import { formatDateShort } from '@/lib/utils'
 
 interface DeliveryForm {

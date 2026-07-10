@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, X, Save, Search } from 'lucide-react'
-import { Modal } from '@/components/ui/Modal'
+import Modal from '@/components/ui/Modal'
 import { normalize } from '@/lib/search'
 import { formatCurrency } from '@/lib/utils'
 import type { Client, BankAccount } from '@/types/database'

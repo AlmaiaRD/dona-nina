@@ -9,11 +9,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import type { ColumnDef } from '@tanstack/react-table'
-import { PageContainer } from '@/components/layout/PageContainer'
-import { DataTable } from '@/components/ui/DataTable'
-import { Modal } from '@/components/ui/Modal'
-import { Badge } from '@/components/ui/Badge'
-import { PrintActions } from '@/components/ui/PrintActions'
+import PageContainer from '@/components/layout/PageContainer'
+import DataTable from '@/components/ui/DataTable'
+import Modal from '@/components/ui/Modal'
+import Badge from '@/components/ui/Badge'
+import PrintActions from '@/components/ui/PrintActions'
 import { formatCurrency } from '@/lib/utils'
 import { getMenuItems, getMenuCategories, createMenuItem, updateMenuItem, deleteMenuItem, createCategory, updateCategory, deleteCategory } from '@/services/menu'
 import type { MenuItem, MenuCategory } from '@/types/database'
@@ -179,7 +179,7 @@ export default function MenuPage() {
       ingredients: item.ingredients ?? '',
       category_id: item.category_id,
       price: item.price,
-      cost: item.cost,
+      cost: item.cost ?? undefined,
       active: item.active,
       available: item.available,
       itbis_enabled: item.itbis_enabled ?? false,

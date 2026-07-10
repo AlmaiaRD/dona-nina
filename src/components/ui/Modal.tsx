@@ -11,9 +11,11 @@ interface ModalProps {
   subtitle?: string;
   children: React.ReactNode;
   wide?: boolean;
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
-export default function Modal({ isOpen, onClose, title, subtitle, children, wide }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, subtitle, children, wide, size }: ModalProps) {
+  const isWide = wide || size === "lg" || size === "xl";
   return (
     <AnimatePresence>
       {isOpen && (
@@ -33,7 +35,7 @@ export default function Modal({ isOpen, onClose, title, subtitle, children, wide
             transition={{ duration: 0.2 }}
             className={cn(
               "relative bg-white rounded-2xl sm:rounded-3xl shadow-xl w-full mx-0 sm:mx-auto max-h-[90vh] sm:max-h-none overflow-hidden",
-              wide ? "max-w-3xl" : "max-w-lg"
+              wide ? "max-w-3xl" : size === "xl" ? "max-w-5xl" : size === "lg" ? "max-w-2xl" : "max-w-lg"
             )}
           >
             <div className="bg-[#5C3E35] px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
