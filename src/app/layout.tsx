@@ -23,7 +23,7 @@ const greatVibes = Great_Vibes({
 
 export const metadata: Metadata = {
   title: "Doña Nina - Gestión Comercial",
-  description: "Sistema de gestión comercial para submarcas Amway",
+  description: "Sistema de gestión de comidas, pedidos y entregas a domicilio",
   icons: {
     apple: "/icons/icon-192x192.png",
   },
