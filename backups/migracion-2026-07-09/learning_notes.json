@@ -1,0 +1,16 @@
+[
+  {
+    "id": "5c7f3fc2-86db-47b2-a350-fddeb1cd426d",
+    "title": "Receta Base de Arepas",
+    "content": "Harina PAN, agua, sal. Proporción 2:1 agua:harina. Dejar reposar 5 min.",
+    "created_at": "2026-07-08T01:06:48.403018+00:00",
+    "updated_at": "2026-07-08T01:06:48.403018+00:00"
+  },
+  {
+    "id": "c1a29441-8bc0-404c-82e8-4627e54df256",
+    "title": "Horario de Delivery",
+    "content": "Delivery disponible de 8am a 8pm. Zona de cobertura: Zona Colonial, Gazcue, Piantini, Naco.",
+    "created_at": "2026-07-08T01:06:48.403018+00:00",
+    "updated_at": "2026-07-08T01:06:48.403018+00:00"
+  }
+]

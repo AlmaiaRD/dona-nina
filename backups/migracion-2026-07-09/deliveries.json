@@ -1,0 +1,28 @@
+[
+  {
+    "id": "a0de46a5-1830-472d-9a63-0dacf22ffcac",
+    "invoice_id": "2b49075b-c9f5-4cda-8e43-fe8b453ad53b",
+    "client_id": "80b09416-6965-4439-aebf-65cab835f149",
+    "delivery_address": "Calle Principal #123, Santo Domingo",
+    "delivery_person": "Pedro Repartidor",
+    "estimated_time": "2026-06-20T16:30:00+00:00",
+    "delivered_at": "2026-06-20T16:20:00+00:00",
+    "status": "DELIVERED",
+    "notes": "Entregado en puerta principal",
+    "created_at": "2026-07-08T01:06:48.403018+00:00",
+    "updated_at": "2026-07-08T01:06:48.403018+00:00"
+  },
+  {
+    "id": "0b8a6a25-1014-4f42-bbbf-5bc4f96672bd",
+    "invoice_id": "a8800145-6e4f-41f3-a966-0917d255d475",
+    "client_id": "a58e88f2-23b4-4318-ac90-84263b203ef7",
+    "delivery_address": "Av. Independencia #456, Santo Domingo",
+    "delivery_person": "Pedro Repartidor",
+    "estimated_time": "2026-06-22T15:00:00+00:00",
+    "delivered_at": null,
+    "status": "IN_PROGRESS",
+    "notes": "Cliente solicitó llamar al llegar",
+    "created_at": "2026-07-08T01:06:48.403018+00:00",
+    "updated_at": "2026-07-08T01:06:48.403018+00:00"
+  }
+]

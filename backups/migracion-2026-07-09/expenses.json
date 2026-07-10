@@ -1,0 +1,41 @@
+[
+  {
+    "id": "365e8855-4c6e-4ac1-bab5-8fcf641e2bee",
+    "expense_date": "2026-06-18",
+    "category": "Insumos",
+    "concept": "Compra de harina de maíz PAN (50kg)",
+    "amount": 2500,
+    "payment_method": "CASH",
+    "beneficiary": "Distribuidora Alimenticia",
+    "receipt_number": "REC-001",
+    "notes": "Compra semanal de insumos básicos",
+    "created_at": "2026-07-08T01:06:48.403018+00:00",
+    "updated_at": "2026-07-08T01:06:48.403018+00:00"
+  },
+  {
+    "id": "8ba2a2a1-f78d-4697-9319-0638b600e64f",
+    "expense_date": "2026-06-19",
+    "category": "Insumos",
+    "concept": "Compra de quesos y jamón",
+    "amount": 3800,
+    "payment_method": "TRANSFER",
+    "beneficiary": "Quesería La Pradera",
+    "receipt_number": "REC-002",
+    "notes": "Queso mozzarella y jamón",
+    "created_at": "2026-07-08T01:06:48.403018+00:00",
+    "updated_at": "2026-07-08T01:06:48.403018+00:00"
+  },
+  {
+    "id": "26944005-5255-4965-9d36-66966ade86aa",
+    "expense_date": "2026-06-21",
+    "category": "Servicios",
+    "concept": "Pago factura de electricidad",
+    "amount": 4500,
+    "payment_method": "TRANSFER",
+    "beneficiary": "EDE Este",
+    "receipt_number": "FAC-ELEC-06",
+    "notes": "Pago correspondiente a junio",
+    "created_at": "2026-07-08T01:06:48.403018+00:00",
+    "updated_at": "2026-07-08T01:06:48.403018+00:00"
+  }
+]

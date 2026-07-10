@@ -1,0 +1,14 @@
+[
+  {
+    "id": "e8f10a94-48a0-4dc0-a54c-b6a80a7ab27e",
+    "bank_name": "Banco de Reservas",
+    "account_type": "Corriente",
+    "account_number": "123-456-789-0",
+    "holder_name": "Donde Doña Nina",
+    "id_number": "000-0000000-0",
+    "email": "info@donadenina.com",
+    "is_default": true,
+    "created_at": "2026-07-08T01:06:57.236048+00:00",
+    "updated_at": "2026-07-08T01:06:57.236048+00:00"
+  }
+]
