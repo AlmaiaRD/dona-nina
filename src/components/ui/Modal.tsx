@@ -38,7 +38,7 @@ export default function Modal({ isOpen, onClose, title, subtitle, children, wide
               wide ? "max-w-3xl" : size === "xl" ? "max-w-5xl" : size === "lg" ? "max-w-2xl" : "max-w-lg"
             )}
           >
-            <div className="bg-[#5C3E35] px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+            <div className="bg-[#3D2B1F] px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
               <div>
                 <h2 className="text-white text-base sm:text-lg font-semibold">{title}</h2>
                 {subtitle && (

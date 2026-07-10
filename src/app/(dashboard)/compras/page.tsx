@@ -17,7 +17,7 @@ import jsPDF from "jspdf";
 
 export default function ComprasPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FCFAF7]"><div className="w-8 h-8 border-2 border-[#B8837E] border-t-transparent rounded-full animate-spin" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FCFAF7]"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>}>
       <ComprasContent />
     </Suspense>
   );
@@ -257,7 +257,7 @@ function ComprasContent() {
       doc.line(x1, y1, x2, y2);
     }
 
-    setTextColor("#5C3E35");
+    setTextColor("#3D2B1F");
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
     doc.text("COMPRA", margin, y);
@@ -271,7 +271,7 @@ function ComprasContent() {
     y += 8;
 
     doc.setFontSize(10);
-    setTextColor("#5C3E35");
+    setTextColor("#3D2B1F");
     doc.setFont("helvetica", "bold");
     doc.text("Fecha:", margin, y);
     doc.setFont("helvetica", "normal");
@@ -310,7 +310,7 @@ function ComprasContent() {
     y += 4;
 
     doc.setFont("helvetica", "normal");
-    setTextColor("#5C3E35");
+    setTextColor("#3D2B1F");
     doc.setFontSize(9);
 
     (purchase.purchase_items || []).forEach((item: any) => {
@@ -333,19 +333,19 @@ function ComprasContent() {
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    setTextColor("#5C3E35");
+    setTextColor("#3D2B1F");
     doc.text("Subtotal:", pageW - margin - 60, y, { align: "right" });
     doc.setFont("helvetica", "normal");
     doc.text(formatCurrency(purchase.subtotal), pageW - margin, y, { align: "right" });
     y += 7;
     doc.setFont("helvetica", "bold");
-    setTextColor("#5C3E35");
+    setTextColor("#3D2B1F");
     doc.text("Impuesto Recogida:", pageW - margin - 60, y, { align: "right" });
     doc.setFont("helvetica", "normal");
     doc.text(formatCurrency(purchase.impuesto_recogida || 0), pageW - margin, y, { align: "right" });
     y += 7;
     doc.setFont("helvetica", "bold");
-    setTextColor("#5C3E35");
+    setTextColor("#3D2B1F");
     doc.text("Cargo Admin.:", pageW - margin - 60, y, { align: "right" });
     doc.setFont("helvetica", "normal");
     doc.text(formatCurrency(purchase.cargo_administracion || 0), pageW - margin, y, { align: "right" });
@@ -357,7 +357,7 @@ function ComprasContent() {
     y += 7;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    setTextColor("#B8837E");
+    setTextColor("#7C1D2E");
     doc.text("TOTAL:", pageW - margin - 60, y, { align: "right" });
     doc.text(formatCurrency(purchase.total), pageW - margin, y, { align: "right" });
 
@@ -369,7 +369,7 @@ function ComprasContent() {
     doc.setFont("helvetica", "normal");
     doc.text(`Documento generado por ${settings?.business_name || "Doña Nina"}`, margin, y);
     doc.setFontSize(8);
-    setTextColor("#B8837E");
+    setTextColor("#7C1D2E");
     doc.text(`${settings?.business_name || "Doña Nina"} - ${formatDate(new Date().toISOString())}`, pageW - margin, y, { align: "right" });
 
     doc.save(`COMPRA-${purchase.purchase_number}.pdf`);
@@ -381,7 +381,7 @@ function ComprasContent() {
       const tmpDiv = document.createElement("div");
       tmpDiv.style.cssText = "position:fixed;left:-9999px;top:0;background:white;padding:32px;font-family:system-ui;width:600px;";
       tmpDiv.innerHTML = `
-        <div style="color:#5C3E35;">
+        <div style="color:#3D2B1F;">
           <h2 style="font-size:22px;font-weight:bold;margin:0;">COMPRA</h2>
           <p style="font-size:10px;color:#9C8A82;margin:2px 0 16px;">No. ${purchase.purchase_number}</p>
           <hr style="border-color:#E8E0D8;margin-bottom:8px;"/>
@@ -402,7 +402,7 @@ function ComprasContent() {
             <p>Impuesto Recogida: ${formatCurrency(purchase.impuesto_recogida || 0)}</p>
             <p>Cargo Admin.: ${formatCurrency(purchase.cargo_administracion || 0)}</p>
             <p>ITBIS (18%): ${formatCurrency(purchase.itbis || 0)}</p>
-            <p style="font-size:12px;font-weight:bold;color:#B8837E;">TOTAL: ${formatCurrency(purchase.total)}</p>
+            <p style="font-size:12px;font-weight:bold;color:#7C1D2E;">TOTAL: ${formatCurrency(purchase.total)}</p>
           </div>
         </div>`;
       document.body.appendChild(tmpDiv);
@@ -439,7 +439,7 @@ function ComprasContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FCFAF7]">
-        <div className="w-8 h-8 border-2 border-[#B8837E] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -448,12 +448,12 @@ function ComprasContent() {
     <PageContainer>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#5C3E35]">Compras</h1>
+          <h1 className="text-xl font-bold text-[#3D2B1F]">Compras</h1>
           <p className="text-sm text-[#9C8A82] mt-1">{purchases.length} compra{purchases.length !== 1 ? "s" : ""} registrada{purchases.length !== 1 ? "s" : ""}</p>
         </div>
         <button
           onClick={() => { resetPurchaseForm(); setShowPurchase(true); }}
-          className="flex items-center gap-2 bg-[#B8837E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all duration-200 shadow-sm"
+          className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all duration-200 shadow-sm"
         >
           <Plus size={18} />
           Registrar Compra
@@ -468,13 +468,13 @@ function ComprasContent() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por número, proveedor o producto..."
-              className="w-full h-12 pl-10 pr-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm placeholder:text-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all"
+              className="w-full h-12 pl-10 pr-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm placeholder:text-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
             />
           </div>
           <select
             value={filterMonth}
             onChange={(e) => setFilterMonth(e.target.value)}
-            className="h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all"
+            className="h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
           >
             <option value="">Todos los meses</option>
             {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -482,7 +482,7 @@ function ComprasContent() {
           <select
             value={filterYear}
             onChange={(e) => setFilterYear(e.target.value)}
-            className="h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all"
+            className="h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
           >
             <option value="">Todos los años</option>
             {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -500,20 +500,20 @@ function ComprasContent() {
               <div key={pur.id} className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#FAF6F0] flex items-center justify-center text-[#B8837E] shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-[#FDF8F3] flex items-center justify-center text-[#7C1D2E] shrink-0">
                       <span className="text-xs font-bold">{pur.purchase_number?.replace(settings?.purchase_prefix || "COM-", "")}</span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-[#5C3E35]">{pur.purchase_number}</p>
+                      <p className="text-sm font-medium text-[#3D2B1F]">{pur.purchase_number}</p>
                       <p className="text-xs text-[#9C8A82]">{formatDate(pur.purchase_date)} {pur.supplier_name ? `· ${pur.supplier_name}` : ""}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <p className="text-sm font-bold text-[#5C3E35]">{formatCurrency(pur.total)}</p>
+                    <p className="text-sm font-bold text-[#3D2B1F]">{formatCurrency(pur.total)}</p>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => openEditPurchase(pur)}
-                        className="p-2 text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0] rounded-lg transition-all"
+                        className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-all"
                         title="Editar"
                       >
                         <Edit2 size={14} />
@@ -523,7 +523,7 @@ function ComprasContent() {
                           generatePurchasePdfLocal(pur);
                           setOpenDownloadId(null);
                         }}
-                        className="p-2 text-[#B8837E] hover:bg-[#B8837E]/10 rounded-lg transition-all"
+                        className="p-2 text-[#7C1D2E] hover:bg-[#7C1D2E]/10 rounded-lg transition-all"
                         title="Descargar PDF"
                       >
                         <FileText size={14} />
@@ -531,7 +531,7 @@ function ComprasContent() {
                       <div className="relative">
                         <button
                           onClick={() => setOpenDownloadId(openDownloadId === pur.id ? null : pur.id)}
-                          className="p-2 text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0] rounded-lg transition-all"
+                          className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-all"
                           title="Más opciones"
                         >
                           <Download size={14} />
@@ -539,15 +539,15 @@ function ComprasContent() {
                         {openDownloadId === pur.id && (
                           <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-xl shadow-lg border border-[#E8E0D8] py-1 z-50">
                             <button onClick={() => { handleViewPurchase(pur.id); setOpenDownloadId(null); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#5C3E35] hover:bg-[#FAF6F0]">
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3]">
                               <Eye size={14} /> Ver detalle
                             </button>
                             <button onClick={() => { generatePurchasePdfLocal(pur); setOpenDownloadId(null); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#5C3E35] hover:bg-[#FAF6F0]">
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3]">
                               <Download size={14} /> Descargar PDF
                             </button>
                             <button onClick={() => handleDownloadJpg(pur)}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#5C3E35] hover:bg-[#FAF6F0]">
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3]">
                               <Download size={14} /> Descargar JPG
                             </button>
                           </div>
@@ -555,7 +555,7 @@ function ComprasContent() {
                       </div>
                       <button
                         onClick={() => setShowConfirmDelete(pur.id)}
-                        className="p-2 text-[#D4A0A0] hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-2 text-[#E07A3A] hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         title="Eliminar"
                       >
                         <Trash2 size={14} />
@@ -566,7 +566,7 @@ function ComprasContent() {
                 <div className="space-y-1.5">
                   {pur.purchase_items?.map((pi: any) => (
                     <div key={pi.id} className="flex items-center justify-between text-sm">
-                      <span className="text-[#5C3E35]">{pi.products?.name || "Producto"}</span>
+                      <span className="text-[#3D2B1F]">{pi.products?.name || "Producto"}</span>
                       <span className="text-[#9C8A82]">{pi.quantity} x {formatCurrency(pi.unit_cost)}</span>
                     </div>
                   ))}
@@ -588,22 +588,22 @@ function ComprasContent() {
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Fecha de la compra</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Fecha de la compra</label>
               <input
                 type="date" value={purchaseForm.purchase_date}
                 onChange={(e) => setPurchaseForm({ ...purchaseForm, purchase_date: e.target.value })}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
               />
             </div>
             <div className="relative">
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Proveedor</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Proveedor</label>
               <div className="relative">
                 <input
                   type="text" value={purchaseForm.supplier_name}
                   onChange={(e) => { setPurchaseForm({ ...purchaseForm, supplier_name: e.target.value }); setSupplierSearch(e.target.value); setShowSupplierDropdown(true); }}
                   onFocus={() => setShowSupplierDropdown(true)}
                   placeholder="Buscar o escribir proveedor..."
-                  className="w-full h-12 pl-4 pr-10 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all"
+                  className="w-full h-12 pl-4 pr-10 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
                 />
                 <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9C8A82] pointer-events-none" />
               </div>
@@ -616,7 +616,7 @@ function ComprasContent() {
                         key={s.id}
                         type="button"
                         onClick={() => { setPurchaseForm({ ...purchaseForm, supplier_name: s.name }); setShowSupplierDropdown(false); setSupplierSearch(""); }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-[#5C3E35] hover:bg-[#FAF6F0] transition-colors flex justify-between"
+                        className="w-full text-left px-4 py-2.5 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3] transition-colors flex justify-between"
                       >
                         <span>{s.name}</span>
                         {s.city && <span className="text-[#9C8A82] text-xs">{s.city}</span>}
@@ -632,32 +632,32 @@ function ComprasContent() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Notas (opcional)</label>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Notas (opcional)</label>
             <textarea
               value={purchaseForm.notes}
               onChange={(e) => setPurchaseForm({ ...purchaseForm, notes: e.target.value })}
               placeholder="Notas adicionales..."
               rows={2}
-              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Descuento (RD$)</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Descuento (RD$)</label>
               <input
                 type="number" step="0.01" min={0} value={purchaseForm.discount_amount}
                 onChange={(e) => setPurchaseForm({ ...purchaseForm, discount_amount: Number(e.target.value) })}
                 placeholder="0"
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Forma de Pago</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Forma de Pago</label>
               <select
                 value={purchaseForm.payment_method}
                 onChange={(e) => setPurchaseForm({ ...purchaseForm, payment_method: e.target.value })}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
               >
                 <option>Efectivo</option>
                 <option>Transferencia</option>
@@ -670,11 +670,11 @@ function ComprasContent() {
 
           {purchaseForm.payment_method === "Transferencia" && (
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Cuenta Bancaria</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Cuenta Bancaria</label>
               <select
                 value={purchaseForm.bank_account_id}
                 onChange={(e) => setPurchaseForm({ ...purchaseForm, bank_account_id: e.target.value })}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
               >
                 <option value="">Seleccionar banco...</option>
                 {bankAccounts.map((b) => (
@@ -686,10 +686,10 @@ function ComprasContent() {
 
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-[#5C3E35]">Productos de la compra</label>
+              <label className="text-sm font-medium text-[#3D2B1F]">Productos de la compra</label>
               <button
                 onClick={() => setShowProductSearch(!showProductSearch)}
-                className="text-xs text-[#B8837E] hover:underline flex items-center gap-1"
+                className="text-xs text-[#7C1D2E] hover:underline flex items-center gap-1"
               >
                 <Plus size={14} />
                 Seleccionar productos comprados
@@ -697,7 +697,7 @@ function ComprasContent() {
             </div>
 
             {showProductSearch && (
-              <div className="mb-4 bg-[#FAF6F0] rounded-xl overflow-hidden">
+              <div className="mb-4 bg-[#FDF8F3] rounded-xl overflow-hidden">
                 <div className="p-2">
                   <div className="relative">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
@@ -705,7 +705,7 @@ function ComprasContent() {
                       type="text" value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
                       placeholder="Buscar producto por nombre o código..."
-                      className="w-full h-10 pl-9 pr-3 rounded-lg border border-[#E8E0D8] bg-white text-sm text-[#5C3E35] placeholder:text-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all"
+                      className="w-full h-10 pl-9 pr-3 rounded-lg border border-[#E8E0D8] bg-white text-sm text-[#3D2B1F] placeholder:text-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
                     />
                   </div>
                 </div>
@@ -716,7 +716,7 @@ function ComprasContent() {
                     <button
                       key={p.id}
                       onClick={() => addProductToPurchase(p)}
-                      className="w-full text-left px-3 py-2 text-sm text-[#5C3E35] hover:bg-white rounded-lg transition-colors flex justify-between"
+                      className="w-full text-left px-3 py-2 text-sm text-[#3D2B1F] hover:bg-white rounded-lg transition-colors flex justify-between"
                     >
                       <span className="truncate">{p.name}</span>
                       <span className="text-[#9C8A82] shrink-0 ml-2">{formatCurrency(p.cost || 0)}</span>
@@ -736,12 +736,12 @@ function ComprasContent() {
                   const lineItbis = Math.round((hasItbis ? 1 : 0) * lineSubtotal * 0.18 * 100) / 100;
                   const lineTotal = lineSubtotal + lineItbis;
                   return (
-                    <div key={i} className="flex items-center gap-3 bg-[#FAF6F0] rounded-xl p-3">
-                      <div className="flex-1 text-sm text-[#5C3E35] truncate">{item.name}</div>
+                    <div key={i} className="flex items-center gap-3 bg-[#FDF8F3] rounded-xl p-3">
+                      <div className="flex-1 text-sm text-[#3D2B1F] truncate">{item.name}</div>
                       <button
                         type="button"
                         onClick={() => updatePurchaseItem(i, "itbis", !hasItbis)}
-                        className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${hasItbis ? "bg-[#B8837E]" : "bg-gray-300"}`}
+                        className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${hasItbis ? "bg-[#7C1D2E]" : "bg-gray-300"}`}
                       >
                         <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${hasItbis ? "translate-x-5" : "translate-x-0.5"}`} />
                       </button>
@@ -756,8 +756,8 @@ function ComprasContent() {
                         className="w-24 h-9 px-2 rounded-lg border border-[#E8E0D8] text-center text-sm"
                       />
                       <span className="text-xs text-[#9C8A82] w-20 text-center">{formatCurrency(lineItbis)}</span>
-                      <span className="text-sm font-medium text-[#5C3E35] w-24 text-right">{formatCurrency(lineTotal)}</span>
-                      <button onClick={() => removePurchaseItem(i)} className="p-1 text-[#D4A0A0] hover:bg-white rounded-lg">
+                      <span className="text-sm font-medium text-[#3D2B1F] w-24 text-right">{formatCurrency(lineTotal)}</span>
+                      <button onClick={() => removePurchaseItem(i)} className="p-1 text-[#E07A3A] hover:bg-white rounded-lg">
                         <X size={16} />
                       </button>
                     </div>
@@ -767,42 +767,42 @@ function ComprasContent() {
             )}
           </div>
 
-          <div className="bg-[#FAF6F0] rounded-xl p-4 space-y-1.5">
+          <div className="bg-[#FDF8F3] rounded-xl p-4 space-y-1.5">
             <div className="flex justify-between text-sm">
               <span className="text-[#9C8A82]">Subtotal</span>
-              <span className="text-[#5C3E35]">{formatCurrency(purchaseSubtotal)}</span>
+              <span className="text-[#3D2B1F]">{formatCurrency(purchaseSubtotal)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-[#9C8A82]">Impuesto de Recogida</span>
               <input type="number" step="0.01" value={purchaseForm.impuesto_recogida}
                 onChange={(e) => setPurchaseForm({ ...purchaseForm, impuesto_recogida: Number(e.target.value) })}
-                className="w-24 h-7 px-2 text-right rounded-lg border border-[#E8E0D8] bg-white text-sm text-[#5C3E35] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                className="w-24 h-7 px-2 text-right rounded-lg border border-[#E8E0D8] bg-white text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-[#9C8A82]">Cargo de Administración (Detalle)</span>
               <input type="number" step="0.01" value={purchaseForm.cargo_administracion}
                 onChange={(e) => setPurchaseForm({ ...purchaseForm, cargo_administracion: Number(e.target.value) })}
-                className="w-24 h-7 px-2 text-right rounded-lg border border-[#E8E0D8] bg-white text-sm text-[#5C3E35] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                className="w-24 h-7 px-2 text-right rounded-lg border border-[#E8E0D8] bg-white text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-[#9C8A82]">ITBIS (18%)</span>
-              <span className="text-[#5C3E35]">{formatCurrency(purchaseItbis)}</span>
+              <span className="text-[#3D2B1F]">{formatCurrency(purchaseItbis)}</span>
             </div>
             {purchaseForm.discount_amount > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-[#D4A0A0]">Descuento</span>
-                <span className="text-[#D4A0A0]">-{formatCurrency(purchaseForm.discount_amount)}</span>
+                <span className="text-[#E07A3A]">Descuento</span>
+                <span className="text-[#E07A3A]">-{formatCurrency(purchaseForm.discount_amount)}</span>
               </div>
             )}
             <div className="flex justify-between text-sm font-bold border-t border-[#E8E0D8] pt-1.5 mt-1.5">
               <span>Total</span>
-              <span className="text-[#B8837E]">{formatCurrency(purchaseTotal)}</span>
+              <span className="text-[#7C1D2E]">{formatCurrency(purchaseTotal)}</span>
             </div>
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button onClick={() => { setShowPurchase(false); resetPurchaseForm(); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">Cancelar</button>
-            <button onClick={handlePurchase} disabled={saving} className="flex-1 h-12 bg-[#B8837E] text-white rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
+            <button onClick={() => { setShowPurchase(false); resetPurchaseForm(); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
+            <button onClick={handlePurchase} disabled={saving} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
               <Save size={18} /> {saving ? "Guardando..." : editingId ? "Actualizar Compra" : "Registrar Compra"}
             </button>
           </div>
@@ -814,36 +814,36 @@ function ComprasContent() {
         {detailPurchase && (
           <div className="space-y-5">
             <div className="grid grid-cols-5 gap-3">
-              <div className="bg-[#FAF6F0] rounded-xl p-3 text-center">
+              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
                 <p className="text-xs text-[#9C8A82]">Subtotal</p>
-                <p className="text-lg font-bold text-[#5C3E35]">{formatCurrency(detailPurchase.subtotal)}</p>
+                <p className="text-lg font-bold text-[#3D2B1F]">{formatCurrency(detailPurchase.subtotal)}</p>
               </div>
-              <div className="bg-[#FAF6F0] rounded-xl p-3 text-center">
+              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
                 <p className="text-xs text-[#9C8A82]">Recogida</p>
-                <p className="text-lg font-bold text-[#5C3E35]">{formatCurrency(detailPurchase.impuesto_recogida || 0)}</p>
+                <p className="text-lg font-bold text-[#3D2B1F]">{formatCurrency(detailPurchase.impuesto_recogida || 0)}</p>
               </div>
-              <div className="bg-[#FAF6F0] rounded-xl p-3 text-center">
+              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
                 <p className="text-xs text-[#9C8A82]">Cargo Admin.</p>
-                <p className="text-lg font-bold text-[#5C3E35]">{formatCurrency(detailPurchase.cargo_administracion || 0)}</p>
+                <p className="text-lg font-bold text-[#3D2B1F]">{formatCurrency(detailPurchase.cargo_administracion || 0)}</p>
               </div>
-              <div className="bg-[#FAF6F0] rounded-xl p-3 text-center">
+              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
                 <p className="text-xs text-[#9C8A82]">ITBIS (18%)</p>
-                <p className="text-lg font-bold text-[#5C3E35]">{formatCurrency(detailPurchase.itbis || 0)}</p>
+                <p className="text-lg font-bold text-[#3D2B1F]">{formatCurrency(detailPurchase.itbis || 0)}</p>
               </div>
-              <div className="bg-[#B8837E]/10 rounded-xl p-3 text-center">
+              <div className="bg-[#7C1D2E]/10 rounded-xl p-3 text-center">
                 <p className="text-xs text-[#9C8A82]">Total</p>
-                <p className="text-lg font-bold text-[#B8837E]">{formatCurrency(detailPurchase.total)}</p>
+                <p className="text-lg font-bold text-[#7C1D2E]">{formatCurrency(detailPurchase.total)}</p>
               </div>
             </div>
 
-            <div className="bg-[#FAF6F0] rounded-xl p-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-[#9C8A82]">Fecha:</span><span className="text-[#5C3E35]">{formatDate(detailPurchase.purchase_date)}</span></div>
-              <div className="flex justify-between"><span className="text-[#9C8A82]">Proveedor:</span><span className="text-[#5C3E35]">{detailPurchase.supplier_name || "—"}</span></div>
-              <div className="flex justify-between"><span className="text-[#9C8A82]">Estado:</span><span className="text-[#5C3E35]">{detailPurchase.status}</span></div>
-              {detailPurchase.discount_amount > 0 && <div className="flex justify-between"><span className="text-[#D4A0A0]">Descuento:</span><span className="text-[#D4A0A0]">-{formatCurrency(detailPurchase.discount_amount)}</span></div>}
-              {(detailPurchase.impuesto_recogida || 0) > 0 && <div className="flex justify-between"><span className="text-[#9C8A82]">Impuesto Recogida:</span><span className="text-[#5C3E35]">{formatCurrency(detailPurchase.impuesto_recogida)}</span></div>}
-              {(detailPurchase.cargo_administracion || 0) > 0 && <div className="flex justify-between"><span className="text-[#9C8A82]">Cargo Admin.:</span><span className="text-[#5C3E35]">{formatCurrency(detailPurchase.cargo_administracion)}</span></div>}
-              {detailPurchase.notes && <div className="flex justify-between"><span className="text-[#9C8A82]">Notas:</span><span className="text-[#5C3E35]">{detailPurchase.notes}</span></div>}
+            <div className="bg-[#FDF8F3] rounded-xl p-4 space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-[#9C8A82]">Fecha:</span><span className="text-[#3D2B1F]">{formatDate(detailPurchase.purchase_date)}</span></div>
+              <div className="flex justify-between"><span className="text-[#9C8A82]">Proveedor:</span><span className="text-[#3D2B1F]">{detailPurchase.supplier_name || "—"}</span></div>
+              <div className="flex justify-between"><span className="text-[#9C8A82]">Estado:</span><span className="text-[#3D2B1F]">{detailPurchase.status}</span></div>
+              {detailPurchase.discount_amount > 0 && <div className="flex justify-between"><span className="text-[#E07A3A]">Descuento:</span><span className="text-[#E07A3A]">-{formatCurrency(detailPurchase.discount_amount)}</span></div>}
+              {(detailPurchase.impuesto_recogida || 0) > 0 && <div className="flex justify-between"><span className="text-[#9C8A82]">Impuesto Recogida:</span><span className="text-[#3D2B1F]">{formatCurrency(detailPurchase.impuesto_recogida)}</span></div>}
+              {(detailPurchase.cargo_administracion || 0) > 0 && <div className="flex justify-between"><span className="text-[#9C8A82]">Cargo Admin.:</span><span className="text-[#3D2B1F]">{formatCurrency(detailPurchase.cargo_administracion)}</span></div>}
+              {detailPurchase.notes && <div className="flex justify-between"><span className="text-[#9C8A82]">Notas:</span><span className="text-[#3D2B1F]">{detailPurchase.notes}</span></div>}
             </div>
 
             <div>
@@ -856,10 +856,10 @@ function ComprasContent() {
                   return (
                     <div key={pi.id} className="bg-white rounded-xl p-3 border border-[#E8E0D8] flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-[#5C3E35]">{pi.products?.name || "—"}</p>
+                        <p className="text-sm font-medium text-[#3D2B1F]">{pi.products?.name || "—"}</p>
                         <p className="text-xs text-[#9C8A82]">{pi.quantity} x {formatCurrency(pi.unit_cost)}{hasItbis ? ` + ITBIS ${formatCurrency(lineItbis)}` : " (sin ITBIS)"}</p>
                       </div>
-                      <p className="text-sm font-bold text-[#5C3E35]">{formatCurrency(lineTotal)}</p>
+                      <p className="text-sm font-bold text-[#3D2B1F]">{formatCurrency(lineTotal)}</p>
                     </div>
                   );
                 })}
@@ -868,15 +868,15 @@ function ComprasContent() {
 
             <div className="flex gap-3 pt-2">
               <button onClick={() => { setShowDetailPurchase(false); openEditPurchase(detailPurchase); }}
-                className="flex-1 h-11 bg-[#B8837E] text-white rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm flex items-center justify-center gap-2">
+                className="flex-1 h-11 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm flex items-center justify-center gap-2">
                 <Edit2 size={16} /> Editar Compra
               </button>
               <button onClick={() => generatePurchasePdfLocal(detailPurchase)}
-                className="flex-1 h-11 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all flex items-center justify-center gap-2">
+                className="flex-1 h-11 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all flex items-center justify-center gap-2">
                 <FileText size={16} /> Descargar PDF
               </button>
               <button onClick={() => handleDownloadJpg(detailPurchase)}
-                className="flex-1 h-11 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all flex items-center justify-center gap-2">
+                className="flex-1 h-11 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all flex items-center justify-center gap-2">
                 <Download size={16} /> Descargar JPG
               </button>
             </div>
@@ -887,9 +887,9 @@ function ComprasContent() {
       {/* Delete confirmation */}
       <Modal isOpen={!!showConfirmDelete} onClose={() => setShowConfirmDelete(null)} title="Eliminar Compra">
         <div className="space-y-4">
-          <p className="text-sm text-[#5C3E35]">¿Estás seguro de eliminar esta compra? El inventario se ajustará automáticamente.</p>
+          <p className="text-sm text-[#3D2B1F]">¿Estás seguro de eliminar esta compra? El inventario se ajustará automáticamente.</p>
           <div className="flex gap-3">
-            <button onClick={() => setShowConfirmDelete(null)} className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">Cancelar</button>
+            <button onClick={() => setShowConfirmDelete(null)} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
             <button
               onClick={() => showConfirmDelete && handleDeletePurchase(showConfirmDelete)}
               className="flex-1 h-12 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-all shadow-sm"

@@ -100,12 +100,12 @@ export default function AprendizajePage() {
     <PageContainer>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#5C3E35]">Notas de Aprendizaje</h1>
+          <h1 className="text-xl font-bold text-[#3D2B1F]">Notas de Aprendizaje</h1>
           <p className="text-sm text-[#9C8A82] mt-1">Lecciones aprendidas, errores que no repetir, ideas</p>
         </div>
         <button
           onClick={() => { resetForm(); setShowModal(true); }}
-          className="flex items-center gap-2 bg-[#B8837E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm"
+          className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm"
         >
           <Plus size={18} /> Nueva Nota
         </button>
@@ -119,14 +119,14 @@ export default function AprendizajePage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar en notas..."
-            className="w-full h-10 pl-9 pr-3 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+            className="w-full h-10 pl-9 pr-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
           />
         </div>
         {allTags.length > 0 && (
           <select
             value={filterTag}
             onChange={(e) => setFilterTag(e.target.value)}
-            className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+            className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
           >
             <option value="">Todas las etiquetas</option>
             {allTags.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -144,19 +144,19 @@ export default function AprendizajePage() {
           {filtered.map((note) => (
             <div key={note.id} className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8] hover:shadow-md transition-all">
               <div className="flex items-start justify-between gap-2 mb-2">
-                <h3 className="text-sm font-semibold text-[#5C3E35] line-clamp-2">{note.title}</h3>
+                <h3 className="text-sm font-semibold text-[#3D2B1F] line-clamp-2">{note.title}</h3>
                 <div className="flex gap-1 flex-shrink-0">
-                  <button onClick={() => openEdit(note)} className="p-1.5 text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0] rounded-lg transition-all"><Edit3 size={14} /></button>
-                  <button onClick={() => handleDelete(note.id)} className="p-1.5 text-[#D4A0A0] hover:bg-[#D4A0A0]/10 rounded-lg transition-all"><Trash2 size={14} /></button>
+                  <button onClick={() => openEdit(note)} className="p-1.5 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-all"><Edit3 size={14} /></button>
+                  <button onClick={() => handleDelete(note.id)} className="p-1.5 text-[#E07A3A] hover:bg-[#E07A3A]/10 rounded-lg transition-all"><Trash2 size={14} /></button>
                 </div>
               </div>
-              <p className="text-xs text-[#5C3E35] leading-relaxed whitespace-pre-wrap line-clamp-4 mb-3">{note.content}</p>
+              <p className="text-xs text-[#3D2B1F] leading-relaxed whitespace-pre-wrap line-clamp-4 mb-3">{note.content}</p>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {note.tags ? note.tags.split(",").map((t, i) => (
                     <span key={i}
                       onClick={() => setFilterTag(t.trim())}
-                      className="text-[10px] px-2 py-0.5 rounded-full bg-[#B8837E]/10 text-[#B8837E] cursor-pointer hover:bg-[#B8837E]/20 transition-all"
+                      className="text-[10px] px-2 py-0.5 rounded-full bg-[#7C1D2E]/10 text-[#7C1D2E] cursor-pointer hover:bg-[#7C1D2E]/20 transition-all"
                     >
                       {t.trim()}
                     </span>
@@ -175,13 +175,13 @@ export default function AprendizajePage() {
             <label className="block text-xs font-medium text-[#9C8A82] mb-1">Título *</label>
             <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="Ej: No olvidar verificar ITBIS en facturas"
-              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#9C8A82] mb-1">Nota / Lección</label>
             <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows={6}
               placeholder="Describe lo que aprendiste, el error que cometiste, o la idea que quieres recordar..."
-              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 resize-none" />
+              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 resize-none" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#9C8A82] mb-1">Etiquetas (separadas por coma)</label>
@@ -189,12 +189,12 @@ export default function AprendizajePage() {
               <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
               <input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })}
                 placeholder="facturas, ITBIS, clientes"
-                className="w-full h-11 pl-9 pr-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                className="w-full h-11 pl-9 pr-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <button onClick={() => { setShowModal(false); resetForm(); }} className="px-5 h-11 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] hover:bg-[#FAF6F0] transition-all">Cancelar</button>
-            <button onClick={handleSave} disabled={saving} className="px-5 h-11 rounded-xl bg-[#B8837E] text-white text-sm font-medium hover:bg-[#9A6B66] transition-all disabled:opacity-50">
+            <button onClick={() => { setShowModal(false); resetForm(); }} className="px-5 h-11 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] hover:bg-[#FDF8F3] transition-all">Cancelar</button>
+            <button onClick={handleSave} disabled={saving} className="px-5 h-11 rounded-xl bg-[#7C1D2E] text-white text-sm font-medium hover:bg-[#5C1420] transition-all disabled:opacity-50">
               {saving ? "Guardando..." : "Guardar Nota"}
             </button>
           </div>

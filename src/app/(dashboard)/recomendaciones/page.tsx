@@ -244,7 +244,7 @@ export default function RecommendationsPage() {
   return (
     <PageContainer>
       <div className="mb-6">
-        <button onClick={() => router.push("/catalogo")} className="flex items-center gap-2 text-sm text-[#9C8A82] hover:text-[#5C3E35] mb-3 transition-colors">
+        <button onClick={() => router.push("/catalogo")} className="flex items-center gap-2 text-sm text-[#9C8A82] hover:text-[#3D2B1F] mb-3 transition-colors">
           <ArrowLeft size={16} /> Volver al Catálogo
         </button>
         <div className="flex items-center gap-3">
@@ -252,7 +252,7 @@ export default function RecommendationsPage() {
             <Brain size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-[#5C3E35]">Recomendaciones IA</h1>
+            <h1 className="text-2xl font-bold text-[#3D2B1F]">Recomendaciones IA</h1>
             <p className="text-sm text-[#9C8A82]">Sugerencias inteligentes para tu negocio</p>
           </div>
         </div>
@@ -266,14 +266,14 @@ export default function RecommendationsPage() {
             { key: "seasonal", label: "Temporada", icon: Sun },
           ].map((tab) => (
           <button key={tab.key} onClick={() => { setActiveTab(tab.key as any); setSearchFilter(""); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === tab.key ? "bg-[#B8837E]/10 text-[#B8837E]" : "text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0]"}`}>
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === tab.key ? "bg-[#7C1D2E]/10 text-[#7C1D2E]" : "text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3]"}`}>
             <tab.icon size={16} /> {tab.label}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#B8837E] border-t-transparent rounded-full animate-spin" /></div>
+        <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>
       ) : (
         <>
           {/* ===================== PRODUCTS TAB ===================== */}
@@ -283,11 +283,11 @@ export default function RecommendationsPage() {
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
                 <input type="text" value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)}
                   placeholder="Buscar productos recomendados..."
-                  className="w-full h-12 pl-12 pr-10 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
-                {searchFilter && <button onClick={() => setSearchFilter("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9C8A82] hover:text-[#5C3E35]"><X size={16} /></button>}
+                  className="w-full h-12 pl-12 pr-10 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
+                {searchFilter && <button onClick={() => setSearchFilter("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9C8A82] hover:text-[#3D2B1F]"><X size={16} /></button>}
               </div>
               {productRecsLoading ? (
-                <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#B8837E] border-t-transparent rounded-full animate-spin" /></div>
+                <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>
               ) : filteredProducts.length === 0 ? (
                 <div className="text-center py-16 text-[#9C8A82]"><Sparkles size={40} className="mx-auto mb-3 opacity-40" /><p className="text-sm">{searchFilter ? "No se encontraron resultados" : "No hay recomendaciones"}</p></div>
               ) : (
@@ -295,12 +295,12 @@ export default function RecommendationsPage() {
                   {filteredProducts.map((rec) => (
                     <div key={rec.product_id} className={`bg-white rounded-2xl p-5 shadow-sm border transition-all hover:shadow-md ${getPriorityColor(rec.priority)}`}>
                       <div className="flex items-start justify-between mb-3">
-                        <div><p className="font-medium text-[#5C3E35]">{rec.product_name}</p><p className="text-xs text-[#9C8A82]">{rec.code} · {rec.subbrand}</p></div>
+                        <div><p className="font-medium text-[#3D2B1F]">{rec.product_name}</p><p className="text-xs text-[#9C8A82]">{rec.code} · {rec.subbrand}</p></div>
                         <span className={`text-xs px-2 py-1 rounded-full ${rec.priority === "high" ? "bg-red-100 text-red-700" : rec.priority === "medium" ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>
                           {rec.priority === "high" ? "Alta" : rec.priority === "medium" ? "Media" : "Baja"}
                         </span>
                       </div>
-                      <p className="text-sm text-[#5C3E35]">{rec.reason}</p>
+                      <p className="text-sm text-[#3D2B1F]">{rec.reason}</p>
                     </div>
                   ))}
                 </div>
@@ -321,13 +321,13 @@ export default function RecommendationsPage() {
                       onClick={() => { setSelectedSeason(season.key); loadSeasonal(season.key); }}
                       className={`p-4 rounded-2xl border-2 transition-all text-left ${
                         selectedSeason === season.key
-                          ? `border-[#B8837E] ${season.bgColor} shadow-sm`
-                          : "border-[#E8E0D8] bg-white hover:border-[#B8837E]/30"
+                          ? `border-[#7C1D2E] ${season.bgColor} shadow-sm`
+                          : "border-[#E8E0D8] bg-white hover:border-[#7C1D2E]/30"
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <SeasonIcon size={18} className={selectedSeason === season.key ? season.color : "text-[#9C8A82]"} />
-                        <span className={`text-sm font-semibold ${selectedSeason === season.key ? "text-[#5C3E35]" : "text-[#9C8A82]"}`}>
+                        <span className={`text-sm font-semibold ${selectedSeason === season.key ? "text-[#3D2B1F]" : "text-[#9C8A82]"}`}>
                           {season.label}
                         </span>
                       </div>
@@ -342,11 +342,11 @@ export default function RecommendationsPage() {
                 <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
                 <input type="text" value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)}
                   placeholder="Filtrar productos..."
-                  className="w-full h-11 px-4 pr-10 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                  className="w-full h-11 px-4 pr-10 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
               </div>
 
               {seasonalRecsLoading ? (
-                <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#B8837E] border-t-transparent rounded-full animate-spin" /></div>
+                <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>
               ) : filteredSeasonal.length === 0 ? (
                 <div className="text-center py-16 text-[#9C8A82]">
                   <Sparkles size={40} className="mx-auto mb-3 opacity-40" />
@@ -358,9 +358,9 @@ export default function RecommendationsPage() {
                   {filteredSeasonal.map((rec) => (
                     <div key={rec.product_id} className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8] hover:shadow-md transition-all">
                       <div className="flex items-start justify-between mb-3">
-                        <div><p className="font-medium text-[#5C3E35]">{rec.product_name}</p><p className="text-xs text-[#9C8A82]">{rec.code} · {rec.subbrand}</p></div>
+                        <div><p className="font-medium text-[#3D2B1F]">{rec.product_name}</p><p className="text-xs text-[#9C8A82]">{rec.code} · {rec.subbrand}</p></div>
                       </div>
-                      <p className="text-sm text-[#5C3E35]">{rec.reason}</p>
+                      <p className="text-sm text-[#3D2B1F]">{rec.reason}</p>
                     </div>
                   ))}
                 </div>
@@ -373,12 +373,12 @@ export default function RecommendationsPage() {
             <div className="flex flex-col h-[calc(100vh-280px)] min-h-[500px]">
               <div className="bg-white rounded-2xl shadow-sm border border-[#E8E0D8] flex flex-col flex-1 overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center gap-3 px-5 py-4 border-b border-[#E8E0D8] bg-[#FAF6F0]">
+                <div className="flex items-center gap-3 px-5 py-4 border-b border-[#E8E0D8] bg-[#FDF8F3]">
                   <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
                     <Bot size={18} className="text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-[#5C3E35]">Asistente IA</p>
+                    <p className="text-sm font-semibold text-[#3D2B1F]">Asistente IA</p>
                     <p className="text-xs text-[#9C8A82]">Describe tu situación y recibe recomendaciones</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -417,8 +417,8 @@ export default function RecommendationsPage() {
                       <div className={`max-w-[85%] ${msg.role === "user" ? "order-1" : "order-1"}`}>
                         <div className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                           msg.role === "user"
-                            ? "bg-[#B8837E] text-white rounded-br-md"
-                            : "bg-[#FAF6F0] text-[#5C3E35] rounded-bl-md border border-[#E8E0D8]"
+                            ? "bg-[#7C1D2E] text-white rounded-br-md"
+                            : "bg-[#FDF8F3] text-[#3D2B1F] rounded-bl-md border border-[#E8E0D8]"
                         }`}>
                           {msg.content}
                         </div>
@@ -430,11 +430,11 @@ export default function RecommendationsPage() {
                               <div key={rec.product_id} className="bg-white rounded-xl p-3 border border-[#E8E0D8] shadow-sm">
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex items-center gap-2 min-w-0">
-                                    <div className="w-8 h-8 rounded-lg bg-[#B8837E]/10 flex items-center justify-center flex-shrink-0">
-                                      <Package size={14} className="text-[#B8837E]" />
+                                    <div className="w-8 h-8 rounded-lg bg-[#7C1D2E]/10 flex items-center justify-center flex-shrink-0">
+                                      <Package size={14} className="text-[#7C1D2E]" />
                                     </div>
                                     <div className="min-w-0">
-                                      <p className="text-sm font-medium text-[#5C3E35] truncate">{rec.product_name}</p>
+                                      <p className="text-sm font-medium text-[#3D2B1F] truncate">{rec.product_name}</p>
                                       <p className="text-[10px] text-[#9C8A82] truncate">{rec.code} · {rec.subbrand}</p>
                                     </div>
                                   </div>
@@ -452,8 +452,8 @@ export default function RecommendationsPage() {
                         )}
                       </div>
                       {msg.role === "user" && (
-                        <div className="w-8 h-8 rounded-full bg-[#B8837E]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <User size={14} className="text-[#B8837E]" />
+                        <div className="w-8 h-8 rounded-full bg-[#7C1D2E]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <User size={14} className="text-[#7C1D2E]" />
                         </div>
                       )}
                     </div>
@@ -464,11 +464,11 @@ export default function RecommendationsPage() {
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">
                         <Bot size={14} className="text-white" />
                       </div>
-                      <div className="bg-[#FAF6F0] rounded-2xl rounded-bl-md px-4 py-3 border border-[#E8E0D8]">
+                      <div className="bg-[#FDF8F3] rounded-2xl rounded-bl-md px-4 py-3 border border-[#E8E0D8]">
                         <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full bg-[#B8837E]/40 animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <div className="w-2 h-2 rounded-full bg-[#B8837E]/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <div className="w-2 h-2 rounded-full bg-[#B8837E]/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                          <div className="w-2 h-2 rounded-full bg-[#7C1D2E]/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <div className="w-2 h-2 rounded-full bg-[#7C1D2E]/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <div className="w-2 h-2 rounded-full bg-[#7C1D2E]/40 animate-bounce" style={{ animationDelay: "300ms" }} />
                         </div>
                       </div>
                     </div>
@@ -483,7 +483,7 @@ export default function RecommendationsPage() {
                     <div className="flex flex-wrap gap-1.5">
                       {SUGGESTED_NEEDS.slice(0, 6).map((need) => (
                         <button key={need} onClick={() => handleChatSend(need)}
-                          className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#FAF6F0] text-[#9C8A82] hover:bg-[#B8837E]/10 hover:text-[#B8837E] transition-all">
+                          className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#FDF8F3] text-[#9C8A82] hover:bg-[#7C1D2E]/10 hover:text-[#7C1D2E] transition-all">
                           {need}
                         </button>
                       ))}
@@ -493,9 +493,9 @@ export default function RecommendationsPage() {
                     <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && !chatLoading && handleChatSend()}
                       placeholder="Describe tu situación..."
-                      className="flex-1 h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                      className="flex-1 h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
                     <button onClick={() => handleChatSend()} disabled={!chatInput.trim() || chatLoading}
-                      className="flex items-center gap-2 bg-[#B8837E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm disabled:opacity-50">
+                      className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50">
                       <Send size={16} />
                     </button>
                   </div>

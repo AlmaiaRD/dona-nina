@@ -61,7 +61,7 @@ export default function DataTable<TData>({ table: tableProp, columns, data, sear
             value={globalFilter ?? ""}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder={searchPlaceholder || "Buscar..."}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E8E0D8] rounded-xl text-sm text-[#5C3E35] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/20 focus:border-[#B8837E] transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E8E0D8] rounded-xl text-sm text-[#3D2B1F] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/20 focus:border-[#7C1D2E] transition-all"
           />
         </div>
       )}
@@ -90,7 +90,7 @@ export default function DataTable<TData>({ table: tableProp, columns, data, sear
                 className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] hover:shadow-md transition-shadow duration-200"
               >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-3.5 text-sm text-[#5C3E35]">
+                  <td key={cell.id} className="px-4 py-3.5 text-sm text-[#3D2B1F]">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -111,14 +111,14 @@ export default function DataTable<TData>({ table: tableProp, columns, data, sear
             <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="p-2 text-[#9C8A82] hover:text-[#5C3E35] disabled:opacity-30 transition-colors"
+              className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] disabled:opacity-30 transition-colors"
             >
               <ChevronLeft size={18} />
             </button>
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="p-2 text-[#9C8A82] hover:text-[#5C3E35] disabled:opacity-30 transition-colors"
+              className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] disabled:opacity-30 transition-colors"
             >
               <ChevronRight size={18} />
             </button>

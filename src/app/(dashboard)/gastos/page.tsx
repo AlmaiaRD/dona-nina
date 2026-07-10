@@ -42,7 +42,7 @@ function CategorySelect({ value, onChange, allCategories, newInput, setNewInput 
     <div>
       <select value={value}
         onChange={(e) => { onChange(e.target.value); }}
-        className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] bg-white focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 appearance-none">
+        className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 appearance-none">
         {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}
         <option value={AGREGAR_NUEVA}>+ Agregar nueva...</option>
       </select>
@@ -50,7 +50,7 @@ function CategorySelect({ value, onChange, allCategories, newInput, setNewInput 
         <input type="text" value={newInput}
           onChange={(e) => setNewInput(e.target.value)}
           placeholder="Nombre de la nueva categoría..."
-          className="w-full h-10 px-4 mt-2 rounded-xl border border-[#D4A0A0] text-sm text-[#5C3E35] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+          className="w-full h-10 px-4 mt-2 rounded-xl border border-[#E07A3A] text-sm text-[#3D2B1F] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
       )}
     </div>
   );
@@ -72,7 +72,7 @@ function SubcategorySelect({ value, onChange, category, newCatInput, customSubca
     <div>
       <select value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] bg-white focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 appearance-none">
+        className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 appearance-none">
         <option value="">Sin subcategoría</option>
         {options.map((s) => <option key={s} value={s}>{s}</option>)}
         <option value={AGREGAR_NUEVA}>+ Agregar nueva...</option>
@@ -81,7 +81,7 @@ function SubcategorySelect({ value, onChange, category, newCatInput, customSubca
         <input type="text" value={newInput}
           onChange={(e) => setNewInput(e.target.value)}
           placeholder="Nombre de la nueva subcategoría..."
-          className="w-full h-10 px-4 mt-2 rounded-xl border border-[#D4A0A0] text-sm text-[#5C3E35] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+          className="w-full h-10 px-4 mt-2 rounded-xl border border-[#E07A3A] text-sm text-[#3D2B1F] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
       )}
     </div>
   );
@@ -97,7 +97,7 @@ function badgeColor(cat: string) {
     Salarios: "bg-green-50 text-green-600",
     Suministros: "bg-orange-50 text-orange-600",
   };
-  return colors[cat] || "bg-[#FAF6F0] text-[#9C8A82]";
+  return colors[cat] || "bg-[#FDF8F3] text-[#9C8A82]";
 }
 
 export default function GastosPage() {
@@ -365,68 +365,68 @@ export default function GastosPage() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Fecha</label>
+          <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Fecha</label>
           <input type="date" value={form.expense_date}
             onChange={(e) => setForm({ ...form, expense_date: e.target.value })}
-            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Categoría</label>
+          <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Categoría</label>
           <CategorySelect value={form.category} onChange={(v) => setForm({ ...form, category: v, subcategory: "" })}
             allCategories={allCategories} newInput={newCategoryInput} setNewInput={setNewCategoryInput} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Subcategoría <span className="text-[#9C8A82] font-normal">(opcional)</span></label>
+          <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Subcategoría <span className="text-[#9C8A82] font-normal">(opcional)</span></label>
           <SubcategorySelect value={form.subcategory} onChange={(v) => setForm({ ...form, subcategory: v })}
             category={form.category} newCatInput={newCategoryInput}
             customSubcats={customSubcategories} newInput={newSubcategoryInput} setNewInput={setNewSubcategoryInput} />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Método de Pago</label>
+          <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Método de Pago</label>
           <select value={form.payment_method}
             onChange={(e) => setForm({ ...form, payment_method: e.target.value })}
-            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] bg-white focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 appearance-none">
+            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 appearance-none">
             {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
       </div>
       <div>
-        <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Concepto</label>
+        <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Concepto</label>
         <input type="text" value={form.concept}
           onChange={(e) => setForm({ ...form, concept: e.target.value })}
           placeholder="Describe el gasto..."
-          className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+          className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Monto RD$</label>
+          <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Monto RD$</label>
           <input type="number" step="0.01" min="0" value={form.amount}
             onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
-            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Beneficiario <span className="text-[#9C8A82] font-normal">(opcional)</span></label>
+          <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Beneficiario <span className="text-[#9C8A82] font-normal">(opcional)</span></label>
           <input type="text" value={form.beneficiary}
             onChange={(e) => setForm({ ...form, beneficiary: e.target.value })}
             placeholder="A quién se pagó..."
-            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">N° Comprobante <span className="text-[#9C8A82] font-normal">(opcional)</span></label>
+          <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">N° Comprobante <span className="text-[#9C8A82] font-normal">(opcional)</span></label>
           <input type="text" value={form.receipt_number}
             onChange={(e) => setForm({ ...form, receipt_number: e.target.value })}
             placeholder="Factura o recibo..."
-            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
         </div>
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Sucursal <span className="text-[#9C8A82] font-normal">(opcional)</span></label>
+          <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Sucursal <span className="text-[#9C8A82] font-normal">(opcional)</span></label>
           <select value={form.branch}
             onChange={(e) => setForm({ ...form, branch: e.target.value })}
-            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] bg-white focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 appearance-none">
+            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 appearance-none">
             <option value="">Sin asignar</option>
             {BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
@@ -435,35 +435,35 @@ export default function GastosPage() {
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={form.is_deductible}
               onChange={(e) => setForm({ ...form, is_deductible: e.target.checked })}
-              className="w-5 h-5 rounded border-[#E8E0D8] text-[#B8837E] focus:ring-[#B8837E]/30" />
-            <span className="text-sm text-[#5C3E35]">Deducible</span>
+              className="w-5 h-5 rounded border-[#E8E0D8] text-[#7C1D2E] focus:ring-[#7C1D2E]/30" />
+            <span className="text-sm text-[#3D2B1F]">Deducible</span>
           </label>
         </div>
         <div className="flex items-end pb-2">
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={form.is_recurring}
               onChange={(e) => setForm({ ...form, is_recurring: e.target.checked, recurring_period: e.target.checked ? form.recurring_period || "Mensual" : "" })}
-              className="w-5 h-5 rounded border-[#E8E0D8] text-[#B8837E] focus:ring-[#B8837E]/30" />
-            <span className="text-sm text-[#5C3E35]">Recurrente</span>
+              className="w-5 h-5 rounded border-[#E8E0D8] text-[#7C1D2E] focus:ring-[#7C1D2E]/30" />
+            <span className="text-sm text-[#3D2B1F]">Recurrente</span>
           </label>
         </div>
       </div>
       {form.is_recurring && (
         <div>
-          <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Periodicidad</label>
+          <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Periodicidad</label>
           <select value={form.recurring_period}
             onChange={(e) => setForm({ ...form, recurring_period: e.target.value })}
-            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] bg-white focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 appearance-none">
+            className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 appearance-none">
             {RECURRING_PERIODS.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
       )}
       <div>
-        <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Notas <span className="text-[#9C8A82] font-normal">(opcional)</span></label>
+        <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Notas <span className="text-[#9C8A82] font-normal">(opcional)</span></label>
         <textarea value={form.comments}
           onChange={(e) => setForm({ ...form, comments: e.target.value })}
           rows={2} placeholder="Notas adicionales..."
-          className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 resize-none" />
+          className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 resize-none" />
       </div>
     </div>
   );
@@ -472,11 +472,11 @@ export default function GastosPage() {
     <PageContainer>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#5C3E35]">Gastos</h1>
+          <h1 className="text-xl font-bold text-[#3D2B1F]">Gastos</h1>
           <p className="text-sm text-[#9C8A82] mt-1">Registro de gastos operativos</p>
         </div>
         <button onClick={() => { resetForm(); setShowCreate(true); }}
-          className="flex items-center gap-2 bg-[#D4A0A0] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#C08080] transition-all shadow-sm">
+          className="flex items-center gap-2 bg-[#E07A3A] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#C08080] transition-all shadow-sm">
           <Plus size={18} /> Registrar Gasto
         </button>
       </div>
@@ -484,7 +484,7 @@ export default function GastosPage() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8]">
           <p className="text-xs text-[#9C8A82] mb-1">Total Gastos</p>
-          <p className="text-2xl font-bold text-[#D4A0A0]">{formatCurrency(total)}</p>
+          <p className="text-2xl font-bold text-[#E07A3A]">{formatCurrency(total)}</p>
         </div>
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8]">
           <p className="text-xs text-[#9C8A82] mb-1">Gastos Deducibles</p>
@@ -500,26 +500,26 @@ export default function GastosPage() {
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
         <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Buscar por concepto, beneficiario, categoría o comprobante..."
-          className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all" />
+          className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
       </div>
 
       <div className="flex gap-3 mb-6">
         <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}
-          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30">
+          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30">
           <option value="">Todos los meses</option>
           {["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].map((m, i) => (
             <option key={i} value={String(i + 1).padStart(2, "0")}>{m}</option>
           ))}
         </select>
         <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}
-          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30">
+          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30">
           <option value="">Todos los años</option>
           {[2024, 2025, 2026, 2027].map((y) => (
             <option key={y} value={y}>{y}</option>
           ))}
         </select>
         {(filterMonth || filterYear) && (
-          <button onClick={() => { setFilterMonth(""); setFilterYear(""); }} className="text-xs text-[#9C8A82] hover:text-[#5C3E35] px-3">Limpiar filtros</button>
+          <button onClick={() => { setFilterMonth(""); setFilterYear(""); }} className="text-xs text-[#9C8A82] hover:text-[#3D2B1F] px-3">Limpiar filtros</button>
         )}
       </div>
 
@@ -554,17 +554,17 @@ export default function GastosPage() {
                     {g.subcategory && <span className="block text-[10px] text-[#9C8A82] mt-0.5">{g.subcategory}</span>}
                   </td>
                   <td className="px-4 py-3.5">
-                    <button onClick={() => setShowDetail(g)} className="text-left hover:text-[#B8837E] transition-colors">
-                      <p className="text-sm text-[#5C3E35] font-medium">{g.concept}</p>
+                    <button onClick={() => setShowDetail(g)} className="text-left hover:text-[#7C1D2E] transition-colors">
+                      <p className="text-sm text-[#3D2B1F] font-medium">{g.concept}</p>
                     </button>
                     {g.comments && <p className="text-xs text-[#9C8A82] mt-0.5 truncate max-w-[200px]">{g.comments}</p>}
                   </td>
-                  <td className="px-3 py-3.5 text-sm text-[#5C3E35]">
+                  <td className="px-3 py-3.5 text-sm text-[#3D2B1F]">
                     {g.beneficiary || <span className="text-[#C8C0B8]">—</span>}
                     {g.receipt_number && <span className="block text-[10px] text-[#9C8A82]">N° {g.receipt_number}</span>}
                   </td>
-                  <td className="px-3 py-3.5 text-sm text-[#5C3E35]">
-                    <span className="bg-[#FAF6F0] text-[#9C8A82] px-2 py-0.5 rounded text-xs">{g.payment_method}</span>
+                  <td className="px-3 py-3.5 text-sm text-[#3D2B1F]">
+                    <span className="bg-[#FDF8F3] text-[#9C8A82] px-2 py-0.5 rounded text-xs">{g.payment_method}</span>
                     {g.branch && <span className="block text-[10px] text-[#9C8A82] mt-0.5">{g.branch}</span>}
                   </td>
                   <td className="px-3 py-3.5 text-center">
@@ -572,18 +572,18 @@ export default function GastosPage() {
                       ? <span className="text-green-500 text-xs font-medium">Sí</span>
                       : <span className="text-[#C8C0B8] text-xs">No</span>}
                   </td>
-                  <td className="px-4 py-3.5 text-sm text-[#D4A0A0] text-right font-medium whitespace-nowrap">
+                  <td className="px-4 py-3.5 text-sm text-[#E07A3A] text-right font-medium whitespace-nowrap">
                     {formatCurrency(Number(g.amount))}
                     {g.is_recurring && <span className="block text-[10px] text-[#9C8A82]">Recurrente {g.recurring_period}</span>}
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex justify-center gap-1">
                       <button onClick={() => setShowDetail(g)}
-                        className="p-2 text-[#9C8A82] hover:bg-[#FAF6F0] rounded-lg transition-all" title="Ver detalle"><Eye size={15} /></button>
+                        className="p-2 text-[#9C8A82] hover:bg-[#FDF8F3] rounded-lg transition-all" title="Ver detalle"><Eye size={15} /></button>
                       <button onClick={() => openEdit(g)}
-                        className="p-2 text-[#9C8A82] hover:bg-[#FAF6F0] rounded-lg transition-all" title="Editar"><Edit3 size={15} /></button>
+                        className="p-2 text-[#9C8A82] hover:bg-[#FDF8F3] rounded-lg transition-all" title="Editar"><Edit3 size={15} /></button>
                       <button onClick={() => setShowDelete(g)}
-                        className="p-2 text-[#D4A0A0] hover:bg-[#D4A0A0]/10 rounded-lg transition-all" title="Eliminar"><Trash2 size={15} /></button>
+                        className="p-2 text-[#E07A3A] hover:bg-[#E07A3A]/10 rounded-lg transition-all" title="Eliminar"><Trash2 size={15} /></button>
                     </div>
                   </td>
                 </tr>
@@ -597,9 +597,9 @@ export default function GastosPage() {
         {formFields}
         <div className="flex gap-3 pt-4">
           <button onClick={() => setShowCreate(false)}
-            className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">Cancelar</button>
+            className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
           <button onClick={handleCreate} disabled={saving}
-            className="flex-1 h-12 bg-[#D4A0A0] text-white rounded-xl text-sm font-medium hover:bg-[#C08080] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
+            className="flex-1 h-12 bg-[#E07A3A] text-white rounded-xl text-sm font-medium hover:bg-[#C08080] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
             <Save size={18} /> {saving ? "Guardando..." : "Registrar"}
           </button>
         </div>
@@ -609,9 +609,9 @@ export default function GastosPage() {
         {formFields}
         <div className="flex gap-3 pt-4">
           <button onClick={() => setShowEdit(null)}
-            className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">Cancelar</button>
+            className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
           <button onClick={handleEdit} disabled={saving}
-            className="flex-1 h-12 bg-[#D4A0A0] text-white rounded-xl text-sm font-medium hover:bg-[#C08080] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
+            className="flex-1 h-12 bg-[#E07A3A] text-white rounded-xl text-sm font-medium hover:bg-[#C08080] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
             <Save size={18} /> {saving ? "Guardando..." : "Actualizar"}
           </button>
         </div>
@@ -619,12 +619,12 @@ export default function GastosPage() {
 
       <Modal isOpen={!!showDelete} onClose={() => setShowDelete(null)} title="Eliminar Gasto">
         <div className="space-y-4">
-          <p className="text-sm text-[#5C3E35]">
+          <p className="text-sm text-[#3D2B1F]">
             ¿Eliminar <strong>{showDelete?.concept}</strong> por <strong>{formatCurrency(Number(showDelete?.amount || 0))}</strong>?
           </p>
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={() => setShowDelete(null)}
-              className="px-5 h-11 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] hover:bg-[#FAF6F0] transition-all">Cancelar</button>
+              className="px-5 h-11 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] hover:bg-[#FDF8F3] transition-all">Cancelar</button>
             <button onClick={handleDelete} disabled={saving}
               className="px-5 h-11 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-all disabled:opacity-50">
               {saving ? "Eliminando..." : "Eliminar"}
@@ -639,7 +639,7 @@ export default function GastosPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-[#9C8A82] mb-1">Fecha</p>
-                <p className="text-sm text-[#5C3E35] font-medium">{formatDate(showDetail.expense_date)}</p>
+                <p className="text-sm text-[#3D2B1F] font-medium">{formatDate(showDetail.expense_date)}</p>
               </div>
               <div>
                 <p className="text-xs text-[#9C8A82] mb-1">Categoría</p>
@@ -649,22 +649,22 @@ export default function GastosPage() {
             {showDetail.subcategory && (
               <div>
                 <p className="text-xs text-[#9C8A82] mb-1">Subcategoría</p>
-                <p className="text-sm text-[#5C3E35]">{showDetail.subcategory}</p>
+                <p className="text-sm text-[#3D2B1F]">{showDetail.subcategory}</p>
               </div>
             )}
             <div>
               <p className="text-xs text-[#9C8A82] mb-1">Concepto</p>
-              <p className="text-sm text-[#5C3E35] font-medium">{showDetail.concept}</p>
+              <p className="text-sm text-[#3D2B1F] font-medium">{showDetail.concept}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-[#9C8A82] mb-1">Monto</p>
-                <p className="text-lg font-bold text-[#D4A0A0]">{formatCurrency(Number(showDetail.amount))}</p>
+                <p className="text-lg font-bold text-[#E07A3A]">{formatCurrency(Number(showDetail.amount))}</p>
                 <p className="text-xs text-[#9C8A82] mt-0.5 italic">{numberToWords(Number(showDetail.amount))}</p>
               </div>
               <div>
                 <p className="text-xs text-[#9C8A82] mb-1">Método de Pago</p>
-                <p className="text-sm text-[#5C3E35]">{showDetail.payment_method}</p>
+                <p className="text-sm text-[#3D2B1F]">{showDetail.payment_method}</p>
               </div>
             </div>
             {(showDetail.beneficiary || showDetail.receipt_number) && (
@@ -672,13 +672,13 @@ export default function GastosPage() {
                 {showDetail.beneficiary && (
                   <div>
                     <p className="text-xs text-[#9C8A82] mb-1">Beneficiario</p>
-                    <p className="text-sm text-[#5C3E35]">{showDetail.beneficiary}</p>
+                    <p className="text-sm text-[#3D2B1F]">{showDetail.beneficiary}</p>
                   </div>
                 )}
                 {showDetail.receipt_number && (
                   <div>
                     <p className="text-xs text-[#9C8A82] mb-1">N° Comprobante</p>
-                    <p className="text-sm text-[#5C3E35]">{showDetail.receipt_number}</p>
+                    <p className="text-sm text-[#3D2B1F]">{showDetail.receipt_number}</p>
                   </div>
                 )}
               </div>
@@ -686,7 +686,7 @@ export default function GastosPage() {
             {showDetail.branch && (
               <div>
                 <p className="text-xs text-[#9C8A82] mb-1">Sucursal</p>
-                <p className="text-sm text-[#5C3E35]">{showDetail.branch}</p>
+                <p className="text-sm text-[#3D2B1F]">{showDetail.branch}</p>
               </div>
             )}
             <div className="flex gap-6">
@@ -699,23 +699,23 @@ export default function GastosPage() {
               {showDetail.is_recurring && (
                 <div>
                   <p className="text-xs text-[#9C8A82] mb-1">Recurrente</p>
-                  <p className="text-sm text-[#5C3E35]">{showDetail.recurring_period}</p>
+                  <p className="text-sm text-[#3D2B1F]">{showDetail.recurring_period}</p>
                 </div>
               )}
             </div>
             {showDetail.comments && (
               <div>
                 <p className="text-xs text-[#9C8A82] mb-1">Notas</p>
-                <p className="text-sm text-[#5C3E35] bg-[#FAF6F0] rounded-xl p-3">{showDetail.comments}</p>
+                <p className="text-sm text-[#3D2B1F] bg-[#FDF8F3] rounded-xl p-3">{showDetail.comments}</p>
               </div>
             )}
             <div className="flex gap-3 pt-2">
               <button onClick={() => { handlePrintPdf(showDetail); }}
-                className="flex-1 h-12 border border-[#D4A0A0] text-[#D4A0A0] rounded-xl text-sm font-medium hover:bg-[#D4A0A0]/5 transition-all flex items-center justify-center gap-2">
+                className="flex-1 h-12 border border-[#E07A3A] text-[#E07A3A] rounded-xl text-sm font-medium hover:bg-[#E07A3A]/5 transition-all flex items-center justify-center gap-2">
                 <FileText size={18} /> Descargar PDF
               </button>
               <button onClick={() => handlePrintJpg(showDetail)}
-                className="flex-1 h-12 border border-[#D4A0A0] text-[#D4A0A0] rounded-xl text-sm font-medium hover:bg-[#D4A0A0]/5 transition-all flex items-center justify-center gap-2">
+                className="flex-1 h-12 border border-[#E07A3A] text-[#E07A3A] rounded-xl text-sm font-medium hover:bg-[#E07A3A]/5 transition-all flex items-center justify-center gap-2">
                 <Download size={18} /> Descargar JPG
               </button>
             </div>
@@ -727,13 +727,15 @@ export default function GastosPage() {
         {jpgData && (
           <div id="expense-preview" className="bg-white p-8" style={{ fontFamily: "system-ui, sans-serif" }}>
             <div className="flex items-center justify-center gap-2 border-b border-[#E8E0D8] pb-4 mb-6">
-              <CakeIcon size={22} className="text-[#B8837E]" />
+              <div className="w-10 h-10 rounded-full bg-[#7C1D2E]/60 flex items-center justify-center">
+                <CakeIcon size={20} className="text-white" />
+              </div>
               <div>
-                <h1 style={{ fontSize: "22px", fontWeight: "bold", color: "#5C3E35", margin: 0 }}>{settings?.business_name || "Doña Nina"}</h1>
+                <h1 style={{ fontSize: "22px", fontWeight: "bold", color: "#3D2B1F", margin: 0 }}>{settings?.business_name || "Doña Nina"}</h1>
                 <p style={{ fontSize: "12px", color: "#9C8A82", margin: "2px 0 0" }}>Comprobante de Gasto</p>
               </div>
             </div>
-            <table style={{ width: "100%", fontSize: "11px", color: "#5C3E35", borderCollapse: "collapse" }}>
+            <table style={{ width: "100%", fontSize: "11px", color: "#3D2B1F", borderCollapse: "collapse" }}>
               <tbody>
                 {[
                   ["Fecha", formatDate(jpgData.expense_date)],
@@ -756,7 +758,7 @@ export default function GastosPage() {
               </tbody>
             </table>
             <div style={{ marginTop: "20px", padding: "16px", background: "#FCFAF7", borderRadius: "8px", textAlign: "center" }}>
-              <p style={{ fontSize: "20px", fontWeight: "bold", color: "#D4A0A0", margin: 0 }}>{formatCurrency(Number(jpgData.amount))}</p>
+              <p style={{ fontSize: "20px", fontWeight: "bold", color: "#E07A3A", margin: 0 }}>{formatCurrency(Number(jpgData.amount))}</p>
               <p style={{ fontSize: "10px", color: "#9C8A82", margin: "4px 0 0" }}>{numberToWords(Number(jpgData.amount))}</p>
             </div>
             <div style={{ marginTop: "24px", textAlign: "center", fontSize: "9px", color: "#9C8A82" }}>

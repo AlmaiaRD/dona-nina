@@ -54,7 +54,7 @@ export default function CrossSellSection({ clientId, topProducts }: Props) {
   return (
     <div className="flex flex-wrap gap-2">
       {suggestions.map((s, i) => (
-        <span key={i} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-[#B8837E]/10 text-[#B8837E] border border-[#B8837E]/20">
+        <span key={i} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-[#7C1D2E]/10 text-[#7C1D2E] border border-[#7C1D2E]/20">
           <ShoppingCart size={12} />
           {s.product_name}
           <span className="text-[10px] opacity-60">{s.frequency}%</span>

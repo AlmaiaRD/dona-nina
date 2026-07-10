@@ -12,11 +12,11 @@ interface BadgeProps {
 }
 
 const variantMap: Record<BadgeVariant, string> = {
-  success: "bg-[#86C7A3]/15 text-[#86C7A3]",
-  warning: "bg-[#E8C87A]/15 text-[#E8C87A]",
-  danger: "bg-[#D4A0A0]/15 text-[#D4A0A0]",
+  success: "bg-[#5B9E6B]/15 text-[#5B9E6B]",
+  warning: "bg-[#D4A017]/15 text-[#D4A017]",
+  danger: "bg-[#E07A3A]/15 text-[#E07A3A]",
   neutral: "bg-[#E8E0D8]/50 text-[#9C8A82]",
-  info: "bg-[#B8837E]/10 text-[#B8837E]",
+  info: "bg-[#7C1D2E]/10 text-[#7C1D2E]",
 };
 
 const statusMap: Record<string, BadgeVariant> = {

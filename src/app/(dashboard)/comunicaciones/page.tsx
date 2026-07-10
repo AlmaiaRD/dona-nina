@@ -104,7 +104,7 @@ export default function ComunicacionesPage() {
     <PageContainer>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#5C3E35]">Centro de Comunicaciones</h1>
+          <h1 className="text-xl font-bold text-[#3D2B1F]">Centro de Comunicaciones</h1>
           <p className="text-sm text-[#9C8A82] mt-1">Gestiona tus mensajes y comunicaciones</p>
         </div>
       </div>
@@ -115,8 +115,8 @@ export default function ComunicacionesPage() {
           onClick={() => setActiveTab("historial")}
           className={`pb-3 px-4 text-sm font-medium transition-colors border-b-2 ${
             activeTab === "historial"
-              ? "text-[#B8837E] border-[#B8837E]"
-              : "text-[#9C8A82] border-transparent hover:text-[#5C3E35]"
+              ? "text-[#7C1D2E] border-[#7C1D2E]"
+              : "text-[#9C8A82] border-transparent hover:text-[#3D2B1F]"
           }`}
         >
           <div className="flex items-center gap-2">
@@ -128,8 +128,8 @@ export default function ComunicacionesPage() {
           onClick={() => setActiveTab("componer")}
           className={`pb-3 px-4 text-sm font-medium transition-colors border-b-2 ${
             activeTab === "componer"
-              ? "text-[#B8837E] border-[#B8837E]"
-              : "text-[#9C8A82] border-transparent hover:text-[#5C3E35]"
+              ? "text-[#7C1D2E] border-[#7C1D2E]"
+              : "text-[#9C8A82] border-transparent hover:text-[#3D2B1F]"
           }`}
         >
           <div className="flex items-center gap-2">
@@ -149,11 +149,11 @@ export default function ComunicacionesPage() {
                 type="text" value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Buscar por cliente o asunto..."
-                className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+                className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
               />
             </div>
             <select value={filterType} onChange={e => setFilterType(e.target.value)}
-              className="h-12 px-4 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] text-sm">
+              className="h-12 px-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm">
               <option value="">Todos</option>
               <option value="email">Email</option>
               <option value="whatsapp">WhatsApp</option>
@@ -161,7 +161,7 @@ export default function ComunicacionesPage() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#B8837E] border-t-transparent rounded-full animate-spin" /></div>
+            <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-16 text-[#9C8A82]">
               <Mail size={40} className="mx-auto mb-3 opacity-40" />
@@ -179,14 +179,14 @@ export default function ComunicacionesPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          {c.type === "email" ? <Mail size={16} className="text-[#B8837E]" /> : <MessageCircle size={16} className="text-[#86C7A3]" />}
-                          <span className="text-sm font-semibold text-[#5C3E35] capitalize">{c.type}</span>
+                          {c.type === "email" ? <Mail size={16} className="text-[#7C1D2E]" /> : <MessageCircle size={16} className="text-[#5B9E6B]" />}
+                          <span className="text-sm font-semibold text-[#3D2B1F] capitalize">{c.type}</span>
                           <Badge variant={s.variant}>{s.label}</Badge>
                           {c.document_type && (
                             <span className="text-xs text-[#9C8A82]">{c.document_type === "invoice" ? "Factura" : "Recibo"}</span>
                           )}
                         </div>
-                        <p className="text-sm text-[#5C3E35] font-medium truncate">{c.clients?.full_name || "—"}</p>
+                        <p className="text-sm text-[#3D2B1F] font-medium truncate">{c.clients?.full_name || "—"}</p>
                         {c.subject && <p className="text-xs text-[#9C8A82] mt-0.5 truncate">{c.subject}</p>}
                         {c.body && <p className="text-xs text-[#9C8A82] mt-1 line-clamp-2">{c.body}</p>}
                         <div className="flex items-center gap-3 mt-2 text-[10px] text-[#9C8A82]">
@@ -196,7 +196,7 @@ export default function ComunicacionesPage() {
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
                         <button onClick={() => openDetail(c)}
-                          className="p-1.5 text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0] rounded-lg"><Eye size={15} /></button>
+                          className="p-1.5 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg"><Eye size={15} /></button>
                         <button onClick={() => handleDelete(c.id)}
                           className="p-1.5 text-[#9C8A82] hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={15} /></button>
                       </div>
@@ -209,11 +209,11 @@ export default function ComunicacionesPage() {
         </>
       ) : (
         <div className="text-center py-16">
-          <Sparkles size={40} className="mx-auto mb-4 text-[#B8837E] opacity-40" />
+          <Sparkles size={40} className="mx-auto mb-4 text-[#7C1D2E] opacity-40" />
           <p className="text-sm text-[#9C8A82] mb-4">Crea mensajes personalizados para tus clientes</p>
           <button
             onClick={() => setShowComposer(true)}
-            className="inline-flex items-center gap-2 bg-[#B8837E] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm"
+            className="inline-flex items-center gap-2 bg-[#7C1D2E] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm"
           >
             <Plus size={18} />
             Componer Nuevo Mensaje
@@ -256,7 +256,7 @@ export default function ComunicacionesPage() {
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Asunto</label>
                 <input type="text" value={editSubject}
                   onChange={e => setEditSubject(e.target.value)}
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
               </div>
             )}
 
@@ -264,14 +264,14 @@ export default function ComunicacionesPage() {
               <label className="block text-xs font-medium text-[#9C8A82] mb-1">Mensaje</label>
               <textarea value={editBody} rows={12}
                 onChange={e => setEditBody(e.target.value)}
-                className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 whitespace-pre-wrap" />
+                className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 whitespace-pre-wrap" />
             </div>
 
             <div className="flex gap-3 pt-2">
               {detailComm.status === "draft" && (
                 <>
                   <button onClick={handleSaveEdit} disabled={saving}
-                    className="flex-1 h-12 bg-[#B8837E] text-white rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all disabled:opacity-50">
+                    className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all disabled:opacity-50">
                     {saving ? "Guardando..." : "Guardar Cambios"}
                   </button>
                   {detailComm.type === "email" && (
@@ -305,18 +305,18 @@ export default function ComunicacionesPage() {
                         toast.error(err?.message || "Error al enviar email");
                       }
                     }}
-                      className="flex-1 h-12 bg-[#86C7A3] text-white rounded-xl text-sm font-medium hover:bg-[#6DB08A] transition-all flex items-center justify-center gap-2">
+                      className="flex-1 h-12 bg-[#5B9E6B] text-white rounded-xl text-sm font-medium hover:bg-[#6DB08A] transition-all flex items-center justify-center gap-2">
                       <Send size={16} /> Enviar Email
                     </button>
                   )}
                   <button onClick={handleMarkSent}
-                    className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all flex items-center justify-center gap-2">
+                    className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all flex items-center justify-center gap-2">
                     <Send size={16} /> Marcar como Enviado
                   </button>
                 </>
               )}
               <button onClick={() => setDetailComm(null)}
-                className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">
+                className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">
                 Cerrar
               </button>
             </div>

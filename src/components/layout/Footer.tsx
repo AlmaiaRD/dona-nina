@@ -6,7 +6,7 @@ export default function Footer() {
         <p className="text-[11px] sm:text-xs text-[#9C8A82] mt-1">
           Gestión Comercial de Submarcas Amway
         </p>
-        <p className="text-[10px] sm:text-[11px] text-[#B8837E]/60 mt-1 leading-relaxed">
+        <p className="text-[10px] sm:text-[11px] text-[#7C1D2E]/60 mt-1 leading-relaxed">
           Nutrilite &bull; Artistry &bull; Glister &bull; G&H &bull; Satinique &bull; Amway Home
         </p>
       </div>

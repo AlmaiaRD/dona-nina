@@ -22,12 +22,12 @@ export default class ErrorBoundary extends Component<Props, State> {
         <div className="min-h-screen flex items-center justify-center bg-[#FCFAF7] p-8">
           <div className="max-w-md text-center">
             <h2 className="text-xl font-bold text-red-600 mb-4">Error en la aplicación</h2>
-            <p className="text-sm text-[#5C3E35] mb-4 font-mono bg-[#FAF6F0] p-4 rounded-xl border border-[#E8E0D8] text-left overflow-auto">
+            <p className="text-sm text-[#3D2B1F] mb-4 font-mono bg-[#FDF8F3] p-4 rounded-xl border border-[#E8E0D8] text-left overflow-auto">
               {this.state.error.message}
             </p>
             <button
               onClick={() => { this.setState({ error: null }); window.location.reload(); }}
-              className="h-10 px-6 bg-[#B8837E] text-white rounded-xl text-sm font-medium hover:bg-[#9A6B66]"
+              className="h-10 px-6 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420]"
             >
               Reintentar
             </button>

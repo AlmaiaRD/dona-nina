@@ -228,23 +228,23 @@ export default function CatalogoPage() {
     <PageContainer>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#5C3E35]">Catálogo de Productos</h1>
+          <h1 className="text-xl font-bold text-[#3D2B1F]">Catálogo de Productos</h1>
           <p className="text-sm text-[#9C8A82] mt-1">Base de datos de productos Amway</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={() => setShowArchived(!showArchived)}
-            className={`h-12 px-4 rounded-xl border text-sm font-medium transition-all duration-200 flex items-center gap-2 ${showArchived ? "bg-[#B8837E]/10 border-[#B8837E] text-[#B8837E]" : "border-[#E8E0D8] text-[#9C8A82] hover:bg-[#FAF6F0]"}`}
+            className={`h-12 px-4 rounded-xl border text-sm font-medium transition-all duration-200 flex items-center gap-2 ${showArchived ? "bg-[#7C1D2E]/10 border-[#7C1D2E] text-[#7C1D2E]" : "border-[#E8E0D8] text-[#9C8A82] hover:bg-[#FDF8F3]"}`}
           >
             <Archive size={18} /> {showArchived ? "Ocultar archivados" : "Ver archivados"}
           </button>
-          <button onClick={() => router.push("/recomendaciones")} className="flex items-center gap-2 bg-white border border-[#E8E0D8] text-[#5C3E35] px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all duration-200">
+          <button onClick={() => router.push("/recomendaciones")} className="flex items-center gap-2 bg-white border border-[#E8E0D8] text-[#3D2B1F] px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all duration-200">
             <Brain size={18} /> IA Recomendaciones
           </button>
-          <button onClick={handleImportPdf} className="flex items-center gap-2 bg-white border border-[#E8E0D8] text-[#5C3E35] px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all duration-200">
+          <button onClick={handleImportPdf} className="flex items-center gap-2 bg-white border border-[#E8E0D8] text-[#3D2B1F] px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all duration-200">
             <Upload size={18} /> Importar PDF
           </button>
-          <button onClick={openNew} className="flex items-center gap-2 bg-[#B8837E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all duration-200 shadow-sm">
+          <button onClick={openNew} className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all duration-200 shadow-sm">
             <Plus size={18} /> Nuevo Producto
           </button>
         </div>
@@ -253,7 +253,7 @@ export default function CatalogoPage() {
       <div className="flex items-center gap-3 mb-6">
         <div className="relative flex-1">
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
-          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Buscar producto por nombre o código..." className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all" />
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Buscar producto por nombre o código..." className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
         </div>
         {settings && (
           <div className="flex items-center gap-2 px-4 h-12 rounded-xl border border-[#E8E0D8] bg-white text-sm">
@@ -267,13 +267,13 @@ export default function CatalogoPage() {
                 if (error) { toast.error("Error al guardar"); setSettings(settings); }
                 else toast.success(newVal ? "ITBIS activado para Nutrilite" : "ITBIS desactivado para Nutrilite");
               }}
-              className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${settings.nutrilite_itbis_enabled ? "bg-[#B8837E]" : "bg-gray-300"}`}
+              className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${settings.nutrilite_itbis_enabled ? "bg-[#7C1D2E]" : "bg-gray-300"}`}
             >
               <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${settings.nutrilite_itbis_enabled ? "translate-x-6" : "translate-x-0.5"}`} />
             </button>
           </div>
         )}
-        <button onClick={() => setShowFilters(!showFilters)} className={`h-12 px-4 rounded-xl border text-sm font-medium transition-all duration-200 flex items-center gap-2 ${showFilters || filterSubbrand || filterCategory ? "bg-[#B8837E]/10 border-[#B8837E] text-[#B8837E]" : "border-[#E8E0D8] text-[#9C8A82] hover:bg-[#FAF6F0]"}`}>
+        <button onClick={() => setShowFilters(!showFilters)} className={`h-12 px-4 rounded-xl border text-sm font-medium transition-all duration-200 flex items-center gap-2 ${showFilters || filterSubbrand || filterCategory ? "bg-[#7C1D2E]/10 border-[#7C1D2E] text-[#7C1D2E]" : "border-[#E8E0D8] text-[#9C8A82] hover:bg-[#FDF8F3]"}`}>
           <Filter size={18} /> Filtros
         </button>
       </div>
@@ -283,14 +283,14 @@ export default function CatalogoPage() {
           <div className="flex-1">
             <label className="block text-xs font-medium text-[#9C8A82] mb-1 flex items-center gap-1">
               Submarca
-              <button onClick={() => setShowManageSubbrands(true)} className="text-[#B8837E] hover:text-[#9A6B66]" title="Gestionar submarcas">
+              <button onClick={() => setShowManageSubbrands(true)} className="text-[#7C1D2E] hover:text-[#5C1420]" title="Gestionar submarcas">
                 <SettingsIcon size={14} />
               </button>
             </label>
             <select value={filterSubbrand} onChange={(e) => {
               if (e.target.value === "__new__") { setNewForFilter("subbrand"); setShowNewSubbrand(true); return; }
               setFilterSubbrand(e.target.value);
-            }} className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all">
+            }} className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all">
               <option value="">Todas</option>
               {subbrands.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               <option value="__new__">+ Otra...</option>
@@ -299,14 +299,14 @@ export default function CatalogoPage() {
           <div className="flex-1">
             <label className="block text-xs font-medium text-[#9C8A82] mb-1 flex items-center gap-1">
               Categoría
-              <button onClick={() => setShowManageCategories(true)} className="text-[#B8837E] hover:text-[#9A6B66]" title="Gestionar categorías">
+              <button onClick={() => setShowManageCategories(true)} className="text-[#7C1D2E] hover:text-[#5C1420]" title="Gestionar categorías">
                 <SettingsIcon size={14} />
               </button>
             </label>
             <select value={filterCategory} onChange={(e) => {
               if (e.target.value === "__new__") { setNewForFilter("category"); setShowNewCategory(true); return; }
               setFilterCategory(e.target.value);
-            }} className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all">
+            }} className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all">
               <option value="">Todas</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               <option value="__new__">+ Otra...</option>
@@ -316,7 +316,7 @@ export default function CatalogoPage() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#B8837E] border-t-transparent rounded-full animate-spin" /></div>
+        <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>
       ) : products.length === 0 ? (
         <div className="text-center py-16 text-[#9C8A82]"><BookOpen size={40} className="mx-auto mb-3 opacity-40" /><p className="text-sm">No hay productos registrados</p></div>
       ) : (
@@ -326,16 +326,16 @@ export default function CatalogoPage() {
               <div key={product.id} className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8] hover:shadow-md transition-shadow duration-200">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="font-medium text-[#5C3E35]">{product.name}</h3>
+                    <h3 className="font-medium text-[#3D2B1F]">{product.name}</h3>
                     <p className="text-xs text-[#9C8A82] mt-0.5">{product.code}</p>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => setViewingProduct(product)} className="p-2 text-[#86C7A3] hover:bg-green-50 rounded-lg transition-colors" title="Ver detalles"><Eye size={14} /></button>
-                    <button onClick={() => openEdit(product)} className="p-2 text-[#9C8A82] hover:bg-[#FAF6F0] rounded-lg transition-colors"><Edit2 size={14} /></button>
+                    <button onClick={() => setViewingProduct(product)} className="p-2 text-[#5B9E6B] hover:bg-green-50 rounded-lg transition-colors" title="Ver detalles"><Eye size={14} /></button>
+                    <button onClick={() => openEdit(product)} className="p-2 text-[#9C8A82] hover:bg-[#FDF8F3] rounded-lg transition-colors"><Edit2 size={14} /></button>
                     {!product.active ? (
-                      <button onClick={() => handleRestoreProduct(product)} className="p-2 text-[#86C7A3] hover:bg-green-50 rounded-lg transition-colors" title="Restaurar"><RotateCcw size={14} /></button>
+                      <button onClick={() => handleRestoreProduct(product)} className="p-2 text-[#5B9E6B] hover:bg-green-50 rounded-lg transition-colors" title="Restaurar"><RotateCcw size={14} /></button>
                     ) : (
-                      <button onClick={() => handleArchiveProduct(product)} className="p-2 text-[#9C8A82] hover:bg-[#FAF6F0] rounded-lg transition-colors" title="Archivar"><Archive size={14} /></button>
+                      <button onClick={() => handleArchiveProduct(product)} className="p-2 text-[#9C8A82] hover:bg-[#FDF8F3] rounded-lg transition-colors" title="Archivar"><Archive size={14} /></button>
                     )}
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export default function CatalogoPage() {
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between"><span className="text-[#9C8A82]">Costo Amway</span><span className="font-medium">{formatCurrency(product.cost)}</span></div>
                   {product.apply_itbis !== false && (
-                    <div className="flex justify-between border-b border-[#E8E0D8] pb-1.5 mb-1.5"><span className="text-[#9C8A82]">Costo + ITBIS</span><span className="font-bold text-[#5C3E35]">{formatCurrency(product.cost * (1 + ITBIS_RATE))}</span></div>
+                    <div className="flex justify-between border-b border-[#E8E0D8] pb-1.5 mb-1.5"><span className="text-[#9C8A82]">Costo + ITBIS</span><span className="font-bold text-[#3D2B1F]">{formatCurrency(product.cost * (1 + ITBIS_RATE))}</span></div>
                   )}
                   <div className="flex justify-between items-center">
                     <span className="text-[#9C8A82]">30% exacto</span>
@@ -360,11 +360,11 @@ export default function CatalogoPage() {
                         onChange={(e) => setEditingPrice({ ...editingPrice, value: Number(e.target.value) })}
                         onBlur={handlePriceSave}
                         onKeyDown={(e) => { if (e.key === "Enter") handlePriceSave(); if (e.key === "Escape") setEditingPrice(null); }}
-                        className="w-28 h-7 px-2 text-right rounded-lg border border-[#B8837E] text-sm font-medium text-[#5C3E35] bg-white focus:outline-none"
+                        className="w-28 h-7 px-2 text-right rounded-lg border border-[#7C1D2E] text-sm font-medium text-[#3D2B1F] bg-white focus:outline-none"
                       />
                     ) : (
                       <span onClick={() => setEditingPrice({ id: product.id, field: "price_30", value: product.price_30 || 0 })}
-                        className="font-medium text-[#B8837E] cursor-pointer hover:bg-[#FAF6F0] px-2 py-0.5 rounded transition-colors">
+                        className="font-medium text-[#7C1D2E] cursor-pointer hover:bg-[#FDF8F3] px-2 py-0.5 rounded transition-colors">
                         {formatCurrency(product.price_30 || 0)}
                       </span>
                     )}
@@ -380,19 +380,19 @@ export default function CatalogoPage() {
                         onChange={(e) => setEditingPrice({ ...editingPrice, value: Number(e.target.value) })}
                         onBlur={handlePriceSave}
                         onKeyDown={(e) => { if (e.key === "Enter") handlePriceSave(); if (e.key === "Escape") setEditingPrice(null); }}
-                        className="w-28 h-7 px-2 text-right rounded-lg border border-[#B8837E] text-sm font-medium text-[#5C3E35] bg-white focus:outline-none"
+                        className="w-28 h-7 px-2 text-right rounded-lg border border-[#7C1D2E] text-sm font-medium text-[#3D2B1F] bg-white focus:outline-none"
                       />
                     ) : (
                       <span onClick={() => setEditingPrice({ id: product.id, field: "price_35", value: product.price_35 || 0 })}
-                        className="font-medium text-[#B8837E] cursor-pointer hover:bg-[#FAF6F0] px-2 py-0.5 rounded transition-colors">
+                        className="font-medium text-[#7C1D2E] cursor-pointer hover:bg-[#FDF8F3] px-2 py-0.5 rounded transition-colors">
                         {formatCurrency(product.price_35 || 0)}
                       </span>
                     )}
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-[#E8E0D8] mt-2">
-                    <span className="text-xs font-medium text-[#5C3E35]">ITBIS</span>
+                    <span className="text-xs font-medium text-[#3D2B1F]">ITBIS</span>
                     <button onClick={() => handleToggleItbis(product)} disabled={savingItbis === product.id}
-                      className={`relative w-12 h-6 rounded-full transition-colors ${product.apply_itbis !== false ? "bg-[#B8837E]" : "bg-gray-300"}`}>
+                      className={`relative w-12 h-6 rounded-full transition-colors ${product.apply_itbis !== false ? "bg-[#7C1D2E]" : "bg-gray-300"}`}>
                       <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${product.apply_itbis !== false ? "translate-x-6" : "translate-x-0"}`} />
                     </button>
                   </div>
@@ -407,22 +407,22 @@ export default function CatalogoPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Código *</label>
-              <input type="text" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="A12345" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all" />
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Código *</label>
+              <input type="text" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="A12345" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Nombre *</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Nombre *</label>
               <input type="text" value={form.name} onChange={(e) => {
                 const newName = e.target.value;
                 const isNutri = subbrands.find((s: any) => s.id === form.subbrand_id)?.name === "Nutrilite";
                 const isProteina = newName.toLowerCase().includes("proteína vegetal");
                 setForm({ ...form, name: newName, apply_itbis: isNutri ? isProteina : true });
-              }} placeholder="Nombre del producto" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all" />
+              }} placeholder="Nombre del producto" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Submarca</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Submarca</label>
               <select value={form.subbrand_id} onChange={(e) => {
                 if (e.target.value === "__new__") { setNewForFilter(null); setShowNewSubbrand(true); return; }
                 const sub = subbrands.find((s: any) => s.id === e.target.value);
@@ -430,18 +430,18 @@ export default function CatalogoPage() {
                 const isNutri = sub?.name === "Nutrilite";
                 const isProteina = name.includes("proteína vegetal");
                 setForm({ ...form, subbrand_id: e.target.value, apply_itbis: !(isNutri && !isProteina) });
-              }} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all">
+              }} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all">
                 <option value="">Seleccionar...</option>
                 {subbrands.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 <option value="__new__">+ Crear nueva...</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Categoría</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Categoría</label>
               <select value={form.category_id} onChange={(e) => {
                 if (e.target.value === "__new__") { setNewForFilter(null); setShowNewCategory(true); return; }
                 setForm({ ...form, category_id: e.target.value });
-              }} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all">
+              }} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all">
                 <option value="">Seleccionar...</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 <option value="__new__">+ Crear nueva...</option>
@@ -450,41 +450,41 @@ export default function CatalogoPage() {
           </div>
           <div className="grid grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Costo Amway (RD$)</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Costo Amway (RD$)</label>
               <input type="number" step="0.01" value={form.cost} onChange={(e) => {
                 const c = Number(e.target.value);
                 const total = c * (form.apply_itbis !== false ? (1 + ITBIS_RATE) : 1);
                 setForm({ ...form, cost: c, price_30: roundToNearest50(total * 1.3), price_35: roundToNearest50(total * 1.35) });
-              }} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all" />
+              }} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">PV</label>
-              <input type="number" step="0.01" value={form.pv} onChange={(e) => setForm({ ...form, pv: Number(e.target.value) })} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all" />
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">PV</label>
+              <input type="number" step="0.01" value={form.pv} onChange={(e) => setForm({ ...form, pv: Number(e.target.value) })} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Precio 30%</label>
-              <input type="number" step="0.01" value={form.price_30} onChange={(e) => setForm({ ...form, price_30: Number(e.target.value) })} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all" />
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Precio 30%</label>
+              <input type="number" step="0.01" value={form.price_30} onChange={(e) => setForm({ ...form, price_30: Number(e.target.value) })} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
               <p className="text-[10px] text-[#9C8A82] mt-1">Exacto: {formatCurrency(Number(form.cost) * (form.apply_itbis !== false ? (1 + ITBIS_RATE) : 1) * 1.3)}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Precio 35%</label>
-              <input type="number" step="0.01" value={form.price_35} onChange={(e) => setForm({ ...form, price_35: Number(e.target.value) })} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all" />
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Precio 35%</label>
+              <input type="number" step="0.01" value={form.price_35} onChange={(e) => setForm({ ...form, price_35: Number(e.target.value) })} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
               <p className="text-[10px] text-[#9C8A82] mt-1">Exacto: {formatCurrency(Number(form.cost) * (form.apply_itbis !== false ? (1 + ITBIS_RATE) : 1) * 1.35)}</p>
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-[#5C3E35]">Aplicar ITBIS en cálculos</label>
+            <label className="text-sm font-medium text-[#3D2B1F]">Aplicar ITBIS en cálculos</label>
             <button type="button" onClick={() => {
               const newVal = !(form.apply_itbis !== false);
               setForm({ ...form, apply_itbis: newVal });
             }}
-              className={`relative w-10 h-5 rounded-full transition-colors ${form.apply_itbis !== false ? "bg-[#B8837E]" : "bg-gray-300"}`}
+              className={`relative w-10 h-5 rounded-full transition-colors ${form.apply_itbis !== false ? "bg-[#7C1D2E]" : "bg-gray-300"}`}
               style={{ height: "20px" }}>
               <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${form.apply_itbis !== false ? "translate-x-[21px]" : "translate-x-0.5"}`} />
             </button>
           </div>
           <div className="border-t border-[#E8E0D8] pt-4 mt-2">
-            <label className="block text-sm font-medium text-[#5C3E35] mb-2">Duración del producto</label>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-2">Duración del producto</label>
             <p className="text-xs text-[#9C8A82] mb-3">Define cuántos días dura este producto para programar automáticamente la próxima compra en CRM.</p>
             <div className="flex gap-2 flex-wrap">
               {[null, 10, 15, 20, 30, 60].map((d) => (
@@ -494,8 +494,8 @@ export default function CatalogoPage() {
                   onClick={() => setForm({ ...form, duracion_dias: d })}
                   className={`px-4 py-2 rounded-xl text-xs font-medium transition-all border ${
                     form.duracion_dias === d
-                      ? "bg-[#B8837E]/10 border-[#B8837E] text-[#B8837E]"
-                      : "border-[#E8E0D8] text-[#9C8A82] hover:border-[#B8837E]/30 hover:text-[#5C3E35]"
+                      ? "bg-[#7C1D2E]/10 border-[#7C1D2E] text-[#7C1D2E]"
+                      : "border-[#E8E0D8] text-[#9C8A82] hover:border-[#7C1D2E]/30 hover:text-[#3D2B1F]"
                   }`}
                 >
                   {d ? `${d} días` : "Sin duración"}
@@ -504,12 +504,12 @@ export default function CatalogoPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Descripción</label>
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all resize-none" />
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Descripción</label>
+            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all resize-none" />
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">Cancelar</button>
-            <button onClick={handleSave} disabled={saving} className="flex-1 h-12 bg-[#B8837E] text-white rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
+            <button onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
+            <button onClick={handleSave} disabled={saving} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
               <Save size={18} /> {saving ? "Guardando..." : "Guardar"}
             </button>
           </div>
@@ -519,12 +519,12 @@ export default function CatalogoPage() {
       <Modal isOpen={showNewSubbrand} onClose={() => { setShowNewSubbrand(false); setNewSubbrandName(""); setNewForFilter(null); }} title="Nueva Submarca">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Nombre de la submarca</label>
-            <input type="text" value={newSubbrandName} onChange={(e) => setNewSubbrandName(e.target.value)} placeholder="Ej: Nutrilite" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all" />
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Nombre de la submarca</label>
+            <input type="text" value={newSubbrandName} onChange={(e) => setNewSubbrandName(e.target.value)} placeholder="Ej: Nutrilite" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
           </div>
           <div className="flex gap-3">
-            <button onClick={() => { setShowNewSubbrand(false); setNewSubbrandName(""); setNewForFilter(null); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">Cancelar</button>
-            <button onClick={() => handleCreateSubbrand(newSubbrandName)} disabled={!newSubbrandName.trim()} className="flex-1 h-12 bg-[#B8837E] text-white rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm disabled:opacity-50">Crear</button>
+            <button onClick={() => { setShowNewSubbrand(false); setNewSubbrandName(""); setNewForFilter(null); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
+            <button onClick={() => handleCreateSubbrand(newSubbrandName)} disabled={!newSubbrandName.trim()} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50">Crear</button>
           </div>
         </div>
       </Modal>
@@ -532,12 +532,12 @@ export default function CatalogoPage() {
       <Modal isOpen={showNewCategory} onClose={() => { setShowNewCategory(false); setNewCategoryName(""); setNewForFilter(null); }} title="Nueva Categoría">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#5C3E35] mb-1.5">Nombre de la categoría</label>
-            <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Ej: Vitaminas" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all" />
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Nombre de la categoría</label>
+            <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Ej: Vitaminas" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
           </div>
           <div className="flex gap-3">
-            <button onClick={() => { setShowNewCategory(false); setNewCategoryName(""); setNewForFilter(null); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">Cancelar</button>
-            <button onClick={() => handleCreateCategory(newCategoryName)} disabled={!newCategoryName.trim()} className="flex-1 h-12 bg-[#B8837E] text-white rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm disabled:opacity-50">Crear</button>
+            <button onClick={() => { setShowNewCategory(false); setNewCategoryName(""); setNewForFilter(null); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
+            <button onClick={() => handleCreateCategory(newCategoryName)} disabled={!newCategoryName.trim()} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50">Crear</button>
           </div>
         </div>
       </Modal>
@@ -547,8 +547,8 @@ export default function CatalogoPage() {
           {subbrands.length === 0 ? (
             <p className="text-sm text-[#9C8A82] py-4 text-center">No hay submarcas</p>
           ) : subbrands.map((s) => (
-            <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-[#FAF6F0]">
-              <span className="text-sm text-[#5C3E35]">{s.name}</span>
+            <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-[#FDF8F3]">
+              <span className="text-sm text-[#3D2B1F]">{s.name}</span>
               <button
                 onClick={async () => {
                   if (deletingSubbrand === s.id || !confirm(`¿Eliminar "${s.name}"?`)) return;
@@ -577,8 +577,8 @@ export default function CatalogoPage() {
           {categories.length === 0 ? (
             <p className="text-sm text-[#9C8A82] py-4 text-center">No hay categorías</p>
           ) : categories.map((c) => (
-            <div key={c.id} className="flex items-center justify-between p-3 rounded-xl bg-[#FAF6F0]">
-              <span className="text-sm text-[#5C3E35]">{c.name}</span>
+            <div key={c.id} className="flex items-center justify-between p-3 rounded-xl bg-[#FDF8F3]">
+              <span className="text-sm text-[#3D2B1F]">{c.name}</span>
               <button
                 onClick={async () => {
                   if (deletingCategory === c.id || !confirm(`¿Eliminar "${c.name}"?`)) return;
@@ -608,49 +608,49 @@ export default function CatalogoPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Código</label>
-                <p className="text-sm text-[#5C3E35]">{viewingProduct.code || "N/A"}</p>
+                <p className="text-sm text-[#3D2B1F]">{viewingProduct.code || "N/A"}</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Submarca</label>
-                <p className="text-sm text-[#5C3E35]">{viewingProduct.subbrands?.name || "N/A"}</p>
+                <p className="text-sm text-[#3D2B1F]">{viewingProduct.subbrands?.name || "N/A"}</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Categoría</label>
-                <p className="text-sm text-[#5C3E35]">{viewingProduct.categories?.name || "N/A"}</p>
+                <p className="text-sm text-[#3D2B1F]">{viewingProduct.categories?.name || "N/A"}</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">PV</label>
-                <p className="text-sm text-[#5C3E35]">{viewingProduct.pv || "N/A"}</p>
+                <p className="text-sm text-[#3D2B1F]">{viewingProduct.pv || "N/A"}</p>
               </div>
             </div>
             <div className="grid grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Costo Amway</label>
-                <p className="text-sm font-medium text-[#5C3E35]">{formatCurrency(viewingProduct.cost)}</p>
+                <p className="text-sm font-medium text-[#3D2B1F]">{formatCurrency(viewingProduct.cost)}</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Costo + ITBIS</label>
-                <p className="text-sm font-bold text-[#5C3E35]">{formatCurrency(viewingProduct.cost * (viewingProduct.apply_itbis !== false ? (1 + ITBIS_RATE) : 1))}</p>
+                <p className="text-sm font-bold text-[#3D2B1F]">{formatCurrency(viewingProduct.cost * (viewingProduct.apply_itbis !== false ? (1 + ITBIS_RATE) : 1))}</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Precio 30%</label>
-                <p className="text-sm font-medium text-[#B8837E]">{formatCurrency(viewingProduct.price_30 || 0)}</p>
+                <p className="text-sm font-medium text-[#7C1D2E]">{formatCurrency(viewingProduct.price_30 || 0)}</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Precio 35%</label>
-                <p className="text-sm font-medium text-[#B8837E]">{formatCurrency(viewingProduct.price_35 || 0)}</p>
+                <p className="text-sm font-medium text-[#7C1D2E]">{formatCurrency(viewingProduct.price_35 || 0)}</p>
               </div>
             </div>
             {(viewingProduct.description || viewingProduct.benefits) && (
               <div className="border-t border-[#E8E0D8] pt-4">
                 <label className="block text-xs font-medium text-[#9C8A82] mb-2">Descripción completa</label>
-                <div className="p-4 bg-[#FAF6F0] rounded-xl max-h-[60vh] overflow-y-auto">
-                  <p className="text-sm text-[#5C3E35] whitespace-pre-wrap leading-relaxed">{viewingProduct.description || viewingProduct.benefits}</p>
+                <div className="p-4 bg-[#FDF8F3] rounded-xl max-h-[60vh] overflow-y-auto">
+                  <p className="text-sm text-[#3D2B1F] whitespace-pre-wrap leading-relaxed">{viewingProduct.description || viewingProduct.benefits}</p>
                 </div>
               </div>
             )}
             <div className="flex justify-end pt-2">
-              <button onClick={() => setViewingProduct(null)} className="h-10 px-6 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">Cerrar</button>
+              <button onClick={() => setViewingProduct(null)} className="h-10 px-6 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cerrar</button>
             </div>
           </div>
         )}

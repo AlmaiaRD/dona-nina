@@ -58,8 +58,8 @@ interface ReceiptData {
 
 const M = 15;
 const CW = 215.9 - M * 2;
-const PRIMARY = "#B8837E";
-const DARK = "#5C3E35";
+const PRIMARY = "#7C1D2E";
+const DARK = "#3D2B1F";
 const GRAY = "#9C8A82";
 const CREAM = "#FCFAF7";
 const TABLE_HDR_BG = "#F0EBE3";
@@ -111,7 +111,7 @@ function drawFlowerIcon(doc: jsPDF, cx: number, cy: number, size: number) {
   doc.circle(cx, cy, size * 0.5, "F");
 
   // Petals
-  setDrawFillColor(doc, "#B8837E");
+  setDrawFillColor(doc, "#7C1D2E");
   for (let i = 0; i < petalCount; i++) {
     const angle = (i * 360) / petalCount;
     const rad = (angle * Math.PI) / 180;
@@ -121,9 +121,9 @@ function drawFlowerIcon(doc: jsPDF, cx: number, cy: number, size: number) {
   }
 
   // Center circle
-  setDrawFillColor(doc, "#5C3E35");
+  setDrawFillColor(doc, "#3D2B1F");
   doc.circle(cx, cy, centerR, "F");
-  setDrawFillColor(doc, "#B8837E");
+  setDrawFillColor(doc, "#7C1D2E");
   doc.circle(cx, cy, centerR * 0.55, "F");
 }
 
@@ -424,7 +424,7 @@ export async function generateInvoicePdf(invoice: InvoiceData): Promise<void> {
   if (invoice.discount_amount > 0) {
     setTextColor(doc, GRAY);
     doc.text("Descuento:", summaryX, y);
-    setTextColor(doc, "#D4A0A0");
+    setTextColor(doc, "#E07A3A");
     doc.text(`-${formatCurrency(invoice.discount_amount)}`, summaryX + summaryW, y, { align: "right" });
     y += 6;
   }
@@ -445,7 +445,7 @@ export async function generateInvoicePdf(invoice: InvoiceData): Promise<void> {
   if (invoice.paid_amount > 0) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    setTextColor(doc, "#86C7A3");
+    setTextColor(doc, "#5B9E6B");
     doc.text("Monto Cobrado:", summaryX, y);
     doc.text(formatCurrency(invoice.paid_amount), summaryX + summaryW, y, { align: "right" });
     y += 6;
@@ -548,8 +548,8 @@ export async function generateReceiptPdf(receipt: ReceiptData): Promise<void> {
   const bizEmail = receipt.email || "";
   const bizPhone = receipt.phone || "";
 
-  const primary = "#86C7A3";
-  const dark = "#5C3E35";
+  const primary = "#5B9E6B";
+  const dark = "#3D2B1F";
   const gray = "#9C8A82";
 
   function setColor(hex: string) {
@@ -693,8 +693,8 @@ export async function generateExpensePdf(expense: ExpenseData): Promise<void> {
   const bizEmail = expense.email || "";
   const bizPhone = expense.phone || "";
 
-  const primary = "#D4A0A0";
-  const dark = "#5C3E35";
+  const primary = "#E07A3A";
+  const dark = "#3D2B1F";
   const gray = "#9C8A82";
 
   function setColor(hex: string) {

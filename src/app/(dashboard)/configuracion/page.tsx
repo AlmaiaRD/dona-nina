@@ -289,7 +289,7 @@ Responde en español en máximo 3 oraciones:`,
     return (
       <PageContainer>
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-2 border-[#B8837E] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" />
         </div>
       </PageContainer>
     );
@@ -298,7 +298,7 @@ Responde en español en máximo 3 oraciones:`,
   return (
     <PageContainer>
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-[#5C3E35]">Configuración</h1>
+        <h1 className="text-xl font-bold text-[#3D2B1F]">Configuración</h1>
         <p className="text-sm text-[#9C8A82] mt-1">Personaliza tu sistema</p>
       </div>
 
@@ -307,7 +307,7 @@ Responde en español en máximo 3 oraciones:`,
           {([["general", "Datos del Negocio"], ["ai", "Prompts IA"], ["banks", "Cuentas Bancarias"], ["backup", "Backup"]] as [Tab, string][]).map(([key, label]) => (
             <button key={key} onClick={() => setActiveTab(key)}
               className={`pb-3 text-sm font-medium transition-colors ${
-                activeTab === key ? "text-[#B8837E] border-b-2 border-[#B8837E]" : "text-[#9C8A82] hover:text-[#5C3E35]"
+                activeTab === key ? "text-[#7C1D2E] border-b-2 border-[#7C1D2E]" : "text-[#9C8A82] hover:text-[#3D2B1F]"
               }`}>{label}</button>
           ))}
         </div>
@@ -316,19 +316,19 @@ Responde en español en máximo 3 oraciones:`,
       {activeTab === "general" && (
         <div className="max-w-2xl space-y-6">
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0D8] space-y-5">
-            <h3 className="text-sm font-semibold text-[#5C3E35]">Información del Negocio</h3>
+            <h3 className="text-sm font-semibold text-[#3D2B1F]">Información del Negocio</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Nombre del Negocio</label>
                 <input type="text" value={form.business_name}
                   onChange={(e) => setForm({ ...form, business_name: e.target.value })}
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Margen Predeterminado</label>
                 <select value={form.default_margin}
                   onChange={(e) => setForm({ ...form, default_margin: Number(e.target.value) })}
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30">
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30">
                   <option value={30}>30%</option>
                   <option value={35}>35%</option>
                 </select>
@@ -338,75 +338,75 @@ Responde en español en máximo 3 oraciones:`,
                 <input type="email" value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="info@almaia-rd.com"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Nombre del remitente</label>
                 <input type="text" value={form.sender_name}
                   onChange={(e) => setForm({ ...form, sender_name: e.target.value })}
                   placeholder="Yrahisa Mateo"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
               </div>
             </div>
 
             <div className="border-t border-[#E8E0D8] pt-5">
-              <h4 className="text-sm font-semibold text-[#5C3E35] mb-3">Plantillas de Mensajes</h4>
-              <p className="text-xs text-[#9C8A82] mb-4">Usa <code className="text-[#B8837E]">{"{{clientName}}"}</code>, <code className="text-[#B8837E]">{"{{documentNumber}}"}</code>, <code className="text-[#B8837E]">{"{{businessName}}"}</code>, <code className="text-[#B8837E]">{"{{senderName}}"}</code>, <code className="text-[#B8837E]">{"{{total}}"}</code>, <code className="text-[#B8837E]">{"{{label}}"}</code></p>
+              <h4 className="text-sm font-semibold text-[#3D2B1F] mb-3">Plantillas de Mensajes</h4>
+              <p className="text-xs text-[#9C8A82] mb-4">Usa <code className="text-[#7C1D2E]">{"{{clientName}}"}</code>, <code className="text-[#7C1D2E]">{"{{documentNumber}}"}</code>, <code className="text-[#7C1D2E]">{"{{businessName}}"}</code>, <code className="text-[#7C1D2E]">{"{{senderName}}"}</code>, <code className="text-[#7C1D2E]">{"{{total}}"}</code>, <code className="text-[#7C1D2E]">{"{{label}}"}</code></p>
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-[#9C8A82] mb-1">Plantilla Email</label>
                   <textarea value={form.email_template} rows={8}
                     onChange={(e) => setForm({ ...form, email_template: e.target.value })}
                     placeholder="Hola, {{clientName}}..."
-                    className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                    className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#9C8A82] mb-1">Plantilla WhatsApp</label>
                   <textarea value={form.whatsapp_template} rows={5}
                     onChange={(e) => setForm({ ...form, whatsapp_template: e.target.value })}
                     placeholder="Hola {{clientName}}..."
-                    className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                    className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
                 </div>
               </div>
             </div>
 
             <div className="border-t border-[#E8E0D8] pt-5">
-              <h4 className="text-sm font-semibold text-[#5C3E35] mb-3">Servidor SMTP (Gmail)</h4>
-              <p className="text-xs text-[#9C8A82] mb-4">Configuración para enviar correos realmente. Para Gmail usa <strong>smtp.gmail.com</strong>, puerto <strong>587</strong>, y una <a href="https://support.google.com/accounts/answer/185833" target="_blank" className="text-[#B8837E] underline">Contraseña de Aplicación</a> de Google.</p>
+              <h4 className="text-sm font-semibold text-[#3D2B1F] mb-3">Servidor SMTP (Gmail)</h4>
+              <p className="text-xs text-[#9C8A82] mb-4">Configuración para enviar correos realmente. Para Gmail usa <strong>smtp.gmail.com</strong>, puerto <strong>587</strong>, y una <a href="https://support.google.com/accounts/answer/185833" target="_blank" className="text-[#7C1D2E] underline">Contraseña de Aplicación</a> de Google.</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-[#9C8A82] mb-1">Servidor SMTP</label>
                   <input type="text" value={form.smtp_host}
                     onChange={(e) => setForm({ ...form, smtp_host: e.target.value })}
                     placeholder="smtp.gmail.com"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#9C8A82] mb-1">Puerto</label>
                   <input type="number" value={form.smtp_port}
                     onChange={(e) => setForm({ ...form, smtp_port: Number(e.target.value) })}
                     placeholder="587"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#9C8A82] mb-1">Usuario (correo)</label>
                   <input type="text" value={form.smtp_user}
                     onChange={(e) => setForm({ ...form, smtp_user: e.target.value })}
                     placeholder="tucorreo@gmail.com"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#9C8A82] mb-1">Contraseña / App Password</label>
                   <input type="password" value={form.smtp_pass}
                     onChange={(e) => setForm({ ...form, smtp_pass: e.target.value })}
                     placeholder="••••••••"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
                 </div>
                 <div className="flex items-center gap-3 h-11">
                   <input type="checkbox" id="smtp_secure" checked={form.smtp_secure}
                     onChange={(e) => setForm({ ...form, smtp_secure: e.target.checked })}
-                    className="w-4 h-4 rounded border-[#E8E0D8] text-[#B8837E] focus:ring-[#B8837E]/30" />
-                  <label htmlFor="smtp_secure" className="text-xs text-[#5C3E35]">Usar SSL (puerto 465)</label>
+                    className="w-4 h-4 rounded border-[#E8E0D8] text-[#7C1D2E] focus:ring-[#7C1D2E]/30" />
+                  <label htmlFor="smtp_secure" className="text-xs text-[#3D2B1F]">Usar SSL (puerto 465)</label>
                 </div>
               </div>
             </div>
@@ -418,7 +418,7 @@ Responde en español en máximo 3 oraciones:`,
                   {form.logo_url && (
                     <img src={form.logo_url} alt="Logo" className="w-14 h-14 rounded-xl object-cover border border-[#E8E0D8]" />
                   )}
-                  <label className="flex-1 flex items-center justify-center gap-2 h-11 px-4 rounded-xl border border-dashed border-[#E8E0D8] bg-[#FCFAF7] text-[#9C8A82] text-sm cursor-pointer hover:bg-[#FAF6F0] hover:border-[#B8837E]/30 transition-all">
+                  <label className="flex-1 flex items-center justify-center gap-2 h-11 px-4 rounded-xl border border-dashed border-[#E8E0D8] bg-[#FCFAF7] text-[#9C8A82] text-sm cursor-pointer hover:bg-[#FDF8F3] hover:border-[#7C1D2E]/30 transition-all">
                     <Upload size={16} />
                     {form.logo_url ? "Cambiar logo" : "Subir logo"}
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
@@ -437,7 +437,7 @@ Responde en español en máximo 3 oraciones:`,
                   {form.signature_url && (
                     <img src={form.signature_url} alt="Firma" className="w-14 h-14 rounded-xl object-cover border border-[#E8E0D8]" />
                   )}
-                  <label className="flex-1 flex items-center justify-center gap-2 h-11 px-4 rounded-xl border border-dashed border-[#E8E0D8] bg-[#FCFAF7] text-[#9C8A82] text-sm cursor-pointer hover:bg-[#FAF6F0] hover:border-[#B8837E]/30 transition-all">
+                  <label className="flex-1 flex items-center justify-center gap-2 h-11 px-4 rounded-xl border border-dashed border-[#E8E0D8] bg-[#FCFAF7] text-[#9C8A82] text-sm cursor-pointer hover:bg-[#FDF8F3] hover:border-[#7C1D2E]/30 transition-all">
                     <Upload size={16} />
                     {form.signature_url ? "Cambiar firma" : "Subir firma"}
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
@@ -453,32 +453,32 @@ Responde en español en máximo 3 oraciones:`,
             </div>
 
             <div className="border-t border-[#E8E0D8] pt-5">
-              <h4 className="text-sm font-semibold text-[#5C3E35] mb-3">Prefijos de Documentos</h4>
+              <h4 className="text-sm font-semibold text-[#3D2B1F] mb-3">Prefijos de Documentos</h4>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-[#9C8A82] mb-1">Facturas</label>
                   <input type="text" value={form.invoice_prefix}
                     onChange={(e) => setForm({ ...form, invoice_prefix: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                    className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#9C8A82] mb-1">Recibos</label>
                   <input type="text" value={form.receipt_prefix}
                     onChange={(e) => setForm({ ...form, receipt_prefix: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                    className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#9C8A82] mb-1">Compras</label>
                   <input type="text" value={form.purchase_prefix}
                     onChange={(e) => setForm({ ...form, purchase_prefix: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                    className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
                 </div>
               </div>
             </div>
           </div>
 
           <button onClick={handleSaveSettings} disabled={saving}
-            className="flex items-center gap-2 bg-[#B8837E] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm disabled:opacity-50">
+            className="flex items-center gap-2 bg-[#7C1D2E] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50">
             <Save size={18} /> {saving ? "Guardando..." : "Guardar Configuración"}
           </button>
         </div>
@@ -487,10 +487,10 @@ Responde en español en máximo 3 oraciones:`,
       {activeTab === "ai" && (
         <div className="max-w-2xl space-y-6">
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0D8] space-y-6">
-            <h3 className="text-sm font-semibold text-[#5C3E35]">Prompts de Inteligencia Artificial</h3>
+            <h3 className="text-sm font-semibold text-[#3D2B1F]">Prompts de Inteligencia Artificial</h3>
             <p className="text-xs text-xs text-[#9C8A82]">
               Personaliza los prompts que usa la IA para generar resúmenes de clientes y analizar notas de aprendizaje.
-              Usa variables entre llaves dobles: <code className="text-[#B8837E] bg-[#FAF6F0] px-1.5 py-0.5 rounded text-[10px]">{"{{clientName}}"}</code>, <code className="text-[#B8837E] bg-[#FAF6F0] px-1.5 py-0.5 rounded text-[10px]">{"{{totalSpent}}"}</code>, etc.
+              Usa variables entre llaves dobles: <code className="text-[#7C1D2E] bg-[#FDF8F3] px-1.5 py-0.5 rounded text-[10px]">{"{{clientName}}"}</code>, <code className="text-[#7C1D2E] bg-[#FDF8F3] px-1.5 py-0.5 rounded text-[10px]">{"{{totalSpent}}"}</code>, etc.
             </p>
 
             <div>
@@ -512,7 +512,7 @@ Compras realizadas: {{numPurchases}}
 Productos favoritos: {{topProducts}}
 
 Destaca el valor del cliente, su comportamiento de pago, y sugiere oportunidades de venta."
-                className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 font-mono text-[11px]"
+                className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 font-mono text-[11px]"
               />
             </div>
 
@@ -533,12 +533,12 @@ Responde en formato:
 LECCIÓN: ...
 ERROR: ...
 ACCIÓN: ..."
-                className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 font-mono text-[11px]"
+                className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 font-mono text-[11px]"
               />
             </div>
 
-            <div className="bg-[#FAF6F0] rounded-xl p-4 border border-[#E8E0D8]">
-              <h4 className="text-xs font-semibold text-[#5C3E35] mb-2">Variables disponibles</h4>
+            <div className="bg-[#FDF8F3] rounded-xl p-4 border border-[#E8E0D8]">
+              <h4 className="text-xs font-semibold text-[#3D2B1F] mb-2">Variables disponibles</h4>
               <div className="grid grid-cols-2 gap-1 text-[10px] text-[#9C8A82] font-mono">
                 <span>{"{{clientName}}"}</span><span>{"{{stage}}"}</span>
                 <span>{"{{totalSpent}}"}</span><span>{"{{totalPaid}}"}</span>
@@ -553,7 +553,7 @@ ACCIÓN: ..."
           </div>
 
           <button onClick={handleSaveSettings} disabled={saving}
-            className="flex items-center gap-2 bg-[#B8837E] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm disabled:opacity-50">
+            className="flex items-center gap-2 bg-[#7C1D2E] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50">
             <Save size={18} /> {saving ? "Guardando..." : "Guardar Configuración"}
           </button>
         </div>
@@ -562,59 +562,59 @@ ACCIÓN: ..."
       {activeTab === "banks" && (
         <div className="max-w-2xl space-y-6">
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0D8]">
-            <h3 className="text-sm font-semibold text-[#5C3E35] mb-4">{editingBank ? "Editar Cuenta Bancaria" : "Agregar Cuenta Bancaria"}</h3>
+            <h3 className="text-sm font-semibold text-[#3D2B1F] mb-4">{editingBank ? "Editar Cuenta Bancaria" : "Agregar Cuenta Bancaria"}</h3>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Banco</label>
                 <input type="text" value={newBank.bank_name}
                   onChange={(e) => setNewBank({ ...newBank, bank_name: e.target.value })}
                   placeholder="Ej: Banco Popular Dominicano"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Tipo de Cuenta</label>
                 <input type="text" value={newBank.account_type}
                   onChange={(e) => setNewBank({ ...newBank, account_type: e.target.value })}
                   placeholder="Ej: Cuenta Corriente DOP"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Número de Cuenta</label>
                 <input type="text" value={newBank.account_number}
                   onChange={(e) => setNewBank({ ...newBank, account_number: e.target.value })}
                   placeholder="Ej: 772922126"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Titular</label>
                 <input type="text" value={newBank.holder_name}
                   onChange={(e) => setNewBank({ ...newBank, holder_name: e.target.value })}
                   placeholder="Ej: Yrahisa Mateo"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Cédula / RNC</label>
                 <input type="text" value={newBank.id_number}
                   onChange={(e) => setNewBank({ ...newBank, id_number: e.target.value })}
                   placeholder="Ej: 001-1234567-8"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#9C8A82] mb-1">Correo Electrónico</label>
                 <input type="email" value={newBank.email}
                   onChange={(e) => setNewBank({ ...newBank, email: e.target.value })}
                   placeholder="Ej: correo@ejemplo.com"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
               </div>
             </div>
             <div className="flex gap-3">
               <button onClick={handleAddBank}
-                className="flex items-center gap-2 bg-[#B8837E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm">
+                className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm">
                 <Save size={18} /> {editingBank ? "Actualizar Cuenta" : "Agregar Cuenta"}
               </button>
               {editingBank && (
                 <button onClick={cancelEditBank}
-                  className="px-5 py-2.5 rounded-xl border border-[#E8E0D8] text-[#5C3E35] text-sm font-medium hover:bg-[#FAF6F0] transition-all">
+                  className="px-5 py-2.5 rounded-xl border border-[#E8E0D8] text-[#3D2B1F] text-sm font-medium hover:bg-[#FDF8F3] transition-all">
                   Cancelar
                 </button>
               )}
@@ -631,7 +631,7 @@ ACCIÓN: ..."
               banks.map((bank) => (
                 <div key={bank.id} className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8] flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-[#5C3E35]">{bank.bank_name}</p>
+                    <p className="font-medium text-[#3D2B1F]">{bank.bank_name}</p>
                     <p className="text-sm text-[#9C8A82]">{bank.account_type} — {bank.account_number}</p>
                     <p className="text-xs text-[#9C8A82]">{bank.holder_name}</p>
                     {(bank as any).id_number && <p className="text-xs text-[#9C8A82]">Cédula: {(bank as any).id_number}</p>}
@@ -639,15 +639,15 @@ ACCIÓN: ..."
                   </div>
                   <div className="flex items-center gap-3">
                     {bank.is_default ? (
-                      <span className="text-xs bg-[#86C7A3]/10 text-[#86C7A3] px-3 py-1 rounded-full font-medium">Predeterminada</span>
+                      <span className="text-xs bg-[#5B9E6B]/10 text-[#5B9E6B] px-3 py-1 rounded-full font-medium">Predeterminada</span>
                     ) : (
                       <button onClick={() => handleSetDefault(bank.id)}
-                        className="text-xs text-[#9C8A82] hover:text-[#B8837E] transition-colors">Establecer como predeterminada</button>
+                        className="text-xs text-[#9C8A82] hover:text-[#7C1D2E] transition-colors">Establecer como predeterminada</button>
                     )}
                     <button onClick={() => openEditBank(bank)}
-                      className="p-2 text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0] rounded-lg transition-colors"><Edit2 size={16} /></button>
+                      className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-colors"><Edit2 size={16} /></button>
                     <button onClick={() => handleDeleteBank(bank.id)}
-                      className="p-2 text-[#D4A0A0] hover:bg-[#D4A0A0]/10 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                      className="p-2 text-[#E07A3A] hover:bg-[#E07A3A]/10 rounded-lg transition-colors"><Trash2 size={16} /></button>
                   </div>
                 </div>
               ))
@@ -664,12 +664,12 @@ ACCIÓN: ..."
                 <Database size={20} className="text-blue-600" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-[#5C3E35]">Exportar Backup</h3>
+                <h3 className="text-sm font-semibold text-[#3D2B1F]">Exportar Backup</h3>
                 <p className="text-xs text-[#9C8A82]">Descarga todos los datos del sistema en formato JSON</p>
               </div>
             </div>
             <button onClick={handleExportBackup}
-              className="flex items-center gap-2 bg-[#B8837E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm">
+              className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm">
               <Download size={18} /> Descargar Backup
             </button>
           </div>
@@ -680,7 +680,7 @@ ACCIÓN: ..."
                 <Upload size={20} className="text-green-600" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-[#5C3E35]">Importar Backup</h3>
+                <h3 className="text-sm font-semibold text-[#3D2B1F]">Importar Backup</h3>
                 <p className="text-xs text-[#9C8A82]">Restaura datos desde un archivo JSON de backup</p>
               </div>
             </div>
@@ -696,7 +696,7 @@ ACCIÓN: ..."
                 toast.error("Error al leer el archivo");
               }
             }}
-              className="block w-full text-sm text-[#9C8A82] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-[#FAF6F0] file:text-[#5C3E35] hover:file:bg-[#F0EBE3]" />
+              className="block w-full text-sm text-[#9C8A82] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-[#FDF8F3] file:text-[#3D2B1F] hover:file:bg-[#F0EBE3]" />
           </div>
         </div>
       )}

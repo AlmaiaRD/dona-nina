@@ -46,7 +46,7 @@ export default function NavMenu() {
     <>
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="md:hidden flex items-center gap-2 text-[#9C8A82] hover:text-[#5C3E35] px-2 py-2"
+        className="md:hidden flex items-center gap-2 text-[#9C8A82] hover:text-[#3D2B1F] px-2 py-2"
         aria-label="Menú de navegación"
       >
         {mobileOpen ? <X size={24} /> : <Menu size={24} />}
@@ -66,8 +66,8 @@ export default function NavMenu() {
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200",
                   isActive
-                    ? "bg-[#B8837E]/10 text-[#B8837E]"
-                    : "text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0]"
+                    ? "bg-[#7C1D2E]/10 text-[#7C1D2E]"
+                    : "text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3]"
                 )}
               >
                 <Icon size={20} />
@@ -90,8 +90,8 @@ export default function NavMenu() {
                 className={cn(
                   "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap",
                   isActive
-                    ? "bg-[#B8837E]/10 text-[#B8837E] border-b-2 border-[#B8837E]"
-                    : "text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0]"
+                    ? "bg-[#7C1D2E]/10 text-[#7C1D2E] border-b-2 border-[#7C1D2E]"
+                    : "text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3]"
                 )}
               >
                 <Icon size={24} />
@@ -111,8 +111,8 @@ export default function NavMenu() {
                 className={cn(
                   "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap",
                   isActive
-                    ? "bg-[#B8837E]/10 text-[#B8837E] border-b-2 border-[#B8837E]"
-                    : "text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0]"
+                    ? "bg-[#7C1D2E]/10 text-[#7C1D2E] border-b-2 border-[#7C1D2E]"
+                    : "text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3]"
                 )}
               >
                 <Icon size={24} />

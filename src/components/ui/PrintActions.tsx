@@ -73,14 +73,14 @@ export default function PrintActions({
       <div className="flex items-center gap-1">
         <button
           onClick={handlePdf}
-          className="p-2 text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0] rounded-lg transition-all"
+          className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-all"
           title="Descargar PDF"
         >
           <FileText size={15} />
         </button>
         <button
           onClick={handleJpg}
-          className="p-2 text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0] rounded-lg transition-all"
+          className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-all"
           title="Descargar JPG"
         >
           <Download size={15} />
@@ -93,7 +93,7 @@ export default function PrintActions({
     <div className="relative">
       <button
         onClick={onToggle}
-        className="p-2 text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0] rounded-lg transition-all"
+        className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-all"
         title="Descargar"
       >
         <Download size={15} />
@@ -107,7 +107,7 @@ export default function PrintActions({
                 handlePdf();
                 onClose?.();
               }}
-              className="w-full text-left px-4 py-2 text-sm text-[#5C3E35] hover:bg-[#FAF6F0] flex items-center gap-2"
+              className="w-full text-left px-4 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3] flex items-center gap-2"
             >
               <FileText size={14} /> PDF
             </button>
@@ -116,7 +116,7 @@ export default function PrintActions({
                 handleJpg();
                 onClose?.();
               }}
-              className="w-full text-left px-4 py-2 text-sm text-[#5C3E35] hover:bg-[#FAF6F0] flex items-center gap-2"
+              className="w-full text-left px-4 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3] flex items-center gap-2"
             >
               <Download size={14} /> JPG
             </button>

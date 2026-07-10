@@ -129,13 +129,13 @@ export default function CommunicationDraftModal({
             <div>
               <label className="block text-xs font-medium text-[#9C8A82] mb-1">Para</label>
               <input type="text" readOnly value={client.email || ""}
-                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm" />
+                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm" />
             </div>
             <div>
               <label className="block text-xs font-medium text-[#9C8A82] mb-1">Asunto</label>
               <input type="text" value={subject}
                 onChange={e => setSubject(e.target.value)}
-                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
             </div>
           </>
         )}
@@ -143,35 +143,35 @@ export default function CommunicationDraftModal({
           <div>
             <label className="block text-xs font-medium text-[#9C8A82] mb-1">Enviar a</label>
             <input type="text" readOnly value={client.phone || ""}
-              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm" />
+              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm" />
           </div>
         )}
         <div>
           <label className="block text-xs font-medium text-[#9C8A82] mb-1">Mensaje</label>
           <textarea value={body} rows={10}
             onChange={e => setBody(e.target.value)}
-            className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+            className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
         </div>
 
         <div className="flex gap-3 pt-2">
           <button onClick={() => handleSave("draft")} disabled={saving}
-            className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all disabled:opacity-50">
+            className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all disabled:opacity-50">
             {saving ? "Guardando..." : "Guardar Borrador"}
           </button>
           {isEmail && (
             <button onClick={() => handleSave("sent")} disabled={saving || !smtpOk}
               title={!smtpOk ? "Configura SMTP en Ajustes para enviar" : ""}
-              className="flex-1 h-12 bg-[#86C7A3] text-white rounded-xl text-sm font-medium hover:bg-[#6DB08A] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+              className="flex-1 h-12 bg-[#5B9E6B] text-white rounded-xl text-sm font-medium hover:bg-[#6DB08A] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
               <Send size={16} /> {!smtpOk ? "SMTP no configurado" : "Enviar Ahora"}
             </button>
           )}
           <button onClick={onClose}
-            className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">
+            className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">
             Cancelar
           </button>
         </div>
         {isEmail && !smtpOk && (
-          <p className="text-xs text-[#D4A0A0] text-center">Ve a Configuración → SMTP para habilitar el envío real</p>
+          <p className="text-xs text-[#E07A3A] text-center">Ve a Configuración → SMTP para habilitar el envío real</p>
         )}
       </div>
     </Modal>

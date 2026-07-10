@@ -31,23 +31,23 @@ export default function CuentasPorCobrarPage() {
   return (
     <PageContainer>
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-[#5C3E35]">Cuentas por Cobrar</h1>
+        <h1 className="text-xl font-bold text-[#3D2B1F]">Cuentas por Cobrar</h1>
         <p className="text-sm text-[#9C8A82] mt-1">Saldos pendientes de clientes</p>
       </div>
 
       <div className="flex items-start gap-4 mb-6">
         <div className="flex-1 bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8]">
           <p className="text-xs text-[#9C8A82] mb-1">Total Pendiente</p>
-          <p className="text-2xl font-bold text-[#5C3E35]">{formatCurrency(totalPending)}</p>
+          <p className="text-2xl font-bold text-[#3D2B1F]">{formatCurrency(totalPending)}</p>
           <p className="text-xs text-[#9C8A82] mt-1">{filtered.length} factura(s) pendientes</p>
         </div>
         <a href="/creditos" className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8] hover:shadow-md transition-all min-w-[180px] block">
           <div className="flex items-center gap-2 mb-1">
-            <Wallet size={16} className="text-[#86C7A3]" />
+            <Wallet size={16} className="text-[#5B9E6B]" />
             <p className="text-xs text-[#9C8A82]">Saldos a Favor</p>
           </div>
-          <p className="text-lg font-bold text-[#86C7A3]">RD$ 0.00</p>
-          <p className="text-xs text-[#86C7A3] mt-1 flex items-center gap-1">Ver créditos <ArrowUpRight size={12} /></p>
+          <p className="text-lg font-bold text-[#5B9E6B]">RD$ 0.00</p>
+          <p className="text-xs text-[#5B9E6B] mt-1 flex items-center gap-1">Ver créditos <ArrowUpRight size={12} /></p>
         </a>
       </div>
 
@@ -56,12 +56,12 @@ export default function CuentasPorCobrarPage() {
         <input
           type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Buscar por cliente o factura..."
-          className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 focus:border-[#B8837E] transition-all"
+          className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
         />
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#B8837E] border-t-transparent rounded-full animate-spin" /></div>
+        <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-[#9C8A82]">
           <DollarSign size={40} className="mx-auto mb-3 opacity-40" />
@@ -76,14 +76,14 @@ export default function CuentasPorCobrarPage() {
               <div key={inv.id} className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8] hover:shadow-md transition-all">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <span className="text-sm font-semibold text-[#5C3E35]">{inv.invoice_number}</span>
+                    <span className="text-sm font-semibold text-[#3D2B1F]">{inv.invoice_number}</span>
                     <span className="text-xs text-[#9C8A82] ml-2">{inv.clients?.full_name}</span>
                   </div>
                   <Badge variant={inv.status === "PENDING" ? "warning" : "info"}>{statusLabel}</Badge>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-[#9C8A82]">Total: {formatCurrency(inv.total)}</span>
-                  <span className="text-[#5C3E35] font-bold">{formatCurrency(due)}</span>
+                  <span className="text-[#3D2B1F] font-bold">{formatCurrency(due)}</span>
                 </div>
                 {inv.clients?.phone && (
                   <div className="flex items-center gap-1.5 mt-2 text-xs text-[#9C8A82]">

@@ -21,11 +21,11 @@ export default function Header() {
     <header className="bg-white border-b border-[#E8E0D8] px-4 sm:px-6 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
         <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#B8837E]/10 flex items-center justify-center flex-shrink-0">
-            <CakeIcon size={28} className="text-[#B8837E]" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#7C1D2E]/60 flex items-center justify-center flex-shrink-0">
+            <CakeIcon size={28} className="text-white" />
           </div>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold text-[#5C3E35] leading-tight tracking-wide">Doña Nina</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-[#3D2B1F] leading-tight tracking-wide">Doña Nina</h1>
             <p className="text-[10px] sm:text-[11px] text-[#9C8A82] tracking-widest uppercase leading-tight font-medium">
               Bienestar & Salud
             </p>
@@ -36,28 +36,28 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-3">
           <Link
             href="/facturacion?nueva=true"
-            className="flex items-center gap-2 bg-[#B8837E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all duration-200 shadow-sm"
+            className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all duration-200 shadow-sm"
           >
             <Plus size={18} />
             Nueva Factura
           </Link>
           <Link
             href="/recibos?nuevo=true"
-            className="flex items-center gap-2 bg-[#86C7A3] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#6DB08A] transition-all duration-200 shadow-sm"
+            className="flex items-center gap-2 bg-[#5B9E6B] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#6DB08A] transition-all duration-200 shadow-sm"
           >
             <Plus size={18} />
             Registrar Pago
           </Link>
           <Link
             href="/inventario?nueva-compra=true"
-            className="flex items-center gap-2 bg-[#C9A89C] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#B08E82] transition-all duration-200 shadow-sm"
+            className="flex items-center gap-2 bg-[#2C4A6E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#1B3454] transition-all duration-200 shadow-sm"
           >
             <Plus size={18} />
             Registrar Compra
           </Link>
           <Link
             href="/clientes?nuevo=true"
-            className="flex items-center gap-2 bg-[#B8837E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all duration-200 shadow-sm"
+            className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all duration-200 shadow-sm"
           >
             <UserPlus size={18} />
             Añadir Cliente
@@ -75,7 +75,7 @@ export default function Header() {
         <div className="md:hidden relative">
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="flex items-center gap-1 bg-[#B8837E] text-white px-3 py-2 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm"
+            className="flex items-center gap-1 bg-[#7C1D2E] text-white px-3 py-2 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm"
           >
             <Plus size={18} />
             <ChevronDown size={14} className={`transition-transform ${showMobileMenu ? "rotate-180" : ""}`} />
@@ -88,42 +88,42 @@ export default function Header() {
                 <Link
                   href="/facturacion?nueva=true"
                   onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6F0] transition-colors border-b border-[#E8E0D8]"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FDF8F3] transition-colors border-b border-[#E8E0D8]"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[#B8837E]/10 flex items-center justify-center">
-                    <FileText size={16} className="text-[#B8837E]" />
+                  <div className="w-8 h-8 rounded-lg bg-[#7C1D2E]/10 flex items-center justify-center">
+                    <FileText size={16} className="text-[#7C1D2E]" />
                   </div>
-                  <span className="text-sm text-[#5C3E35] font-medium">Nueva Factura</span>
+                  <span className="text-sm text-[#3D2B1F] font-medium">Nueva Factura</span>
                 </Link>
                 <Link
                   href="/recibos?nuevo=true"
                   onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6F0] transition-colors border-b border-[#E8E0D8]"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FDF8F3] transition-colors border-b border-[#E8E0D8]"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[#86C7A3]/10 flex items-center justify-center">
-                    <Receipt size={16} className="text-[#86C7A3]" />
+                  <div className="w-8 h-8 rounded-lg bg-[#5B9E6B]/10 flex items-center justify-center">
+                    <Receipt size={16} className="text-[#5B9E6B]" />
                   </div>
-                  <span className="text-sm text-[#5C3E35] font-medium">Registrar Pago</span>
+                  <span className="text-sm text-[#3D2B1F] font-medium">Registrar Pago</span>
                 </Link>
                 <Link
                   href="/inventario?nueva-compra=true"
                   onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6F0] transition-colors border-b border-[#E8E0D8]"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FDF8F3] transition-colors border-b border-[#E8E0D8]"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[#C9A89C]/10 flex items-center justify-center">
-                    <ShoppingCart size={16} className="text-[#C9A89C]" />
+                  <div className="w-8 h-8 rounded-lg bg-[#2C4A6E]/10 flex items-center justify-center">
+                    <ShoppingCart size={16} className="text-[#2C4A6E]" />
                   </div>
-                  <span className="text-sm text-[#5C3E35] font-medium">Registrar Compra</span>
+                  <span className="text-sm text-[#3D2B1F] font-medium">Registrar Compra</span>
                 </Link>
                 <Link
                   href="/clientes?nuevo=true"
                   onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6F0] transition-colors border-b border-[#E8E0D8]"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FDF8F3] transition-colors border-b border-[#E8E0D8]"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[#B8837E]/10 flex items-center justify-center">
-                    <UserPlus size={16} className="text-[#B8837E]" />
+                  <div className="w-8 h-8 rounded-lg bg-[#7C1D2E]/10 flex items-center justify-center">
+                    <UserPlus size={16} className="text-[#7C1D2E]" />
                   </div>
-                  <span className="text-sm text-[#5C3E35] font-medium">Añadir Cliente</span>
+                  <span className="text-sm text-[#3D2B1F] font-medium">Añadir Cliente</span>
                 </Link>
                 <button
                   onClick={() => { setShowMobileMenu(false); handleLogout(); }}

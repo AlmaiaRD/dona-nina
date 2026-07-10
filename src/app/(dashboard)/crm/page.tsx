@@ -60,7 +60,7 @@ function getActivityColor(comments: string): string {
     "Capacitación": "bg-cyan-500",
     "Recordatorio de pago": "bg-amber-500",
   };
-  return colors[type] || "bg-[#B8837E]";
+  return colors[type] || "bg-[#7C1D2E]";
 }
 
 export default function CrmPage() {
@@ -299,12 +299,12 @@ export default function CrmPage() {
     <PageContainer>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#5C3E35]">CRM y Seguimiento</h1>
+          <h1 className="text-xl font-bold text-[#3D2B1F]">CRM y Seguimiento</h1>
           <p className="text-sm text-[#9C8A82] mt-1">Calendario de actividades comerciales</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-[#B8837E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm"
+          className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm"
         >
           <Plus size={18} /> Nueva Actividad
         </button>
@@ -314,25 +314,25 @@ export default function CrmPage() {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <button
           onClick={() => router.push("/creditos")}
-          className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm border border-[#E8E0D8] hover:shadow-md hover:border-[#B8837E]/30 transition-all text-left"
+          className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm border border-[#E8E0D8] hover:shadow-md hover:border-[#7C1D2E]/30 transition-all text-left"
         >
           <div className="w-12 h-12 rounded-xl bg-cyan-50 flex items-center justify-center">
             <Wallet size={22} className="text-cyan-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-[#5C3E35]">Créditos</p>
+            <p className="text-sm font-semibold text-[#3D2B1F]">Créditos</p>
             <p className="text-xs text-[#9C8A82]">Saldos a favor de clientes</p>
           </div>
         </button>
         <button
           onClick={() => router.push("/whatsapp")}
-          className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm border border-[#E8E0D8] hover:shadow-md hover:border-[#B8837E]/30 transition-all text-left"
+          className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm border border-[#E8E0D8] hover:shadow-md hover:border-[#7C1D2E]/30 transition-all text-left"
         >
           <div className="w-12 h-12 rounded-xl bg-[#25D366]/10 flex items-center justify-center">
             <MessageCircle size={22} className="text-[#25D366]" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-[#5C3E35]">WhatsApp Business</p>
+            <p className="text-sm font-semibold text-[#3D2B1F]">WhatsApp Business</p>
             <p className="text-xs text-[#9C8A82]">Enviar mensajes y facturas</p>
           </div>
         </button>
@@ -340,7 +340,7 @@ export default function CrmPage() {
 
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-          <p className="text-2xl font-bold text-[#5C3E35]">{followups.length}</p>
+          <p className="text-2xl font-bold text-[#3D2B1F]">{followups.length}</p>
           <p className="text-xs text-[#9C8A82] mt-1">Total actividades</p>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
@@ -363,19 +363,19 @@ export default function CrmPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-[#E8E0D8] p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-[#FAF6F0] text-[#9C8A82] transition-all">
+                <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-[#FDF8F3] text-[#9C8A82] transition-all">
                   <ChevronLeft size={20} />
                 </button>
-                <h2 className="text-base font-semibold text-[#5C3E35] min-w-[160px] text-center">
+                <h2 className="text-base font-semibold text-[#3D2B1F] min-w-[160px] text-center">
                   {MONTHS[calMonth]} {calYear}
                 </h2>
-                <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-[#FAF6F0] text-[#9C8A82] transition-all">
+                <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-[#FDF8F3] text-[#9C8A82] transition-all">
                   <ChevronRight size={20} />
                 </button>
               </div>
               <button
                 onClick={goToday}
-                className="px-3 py-1.5 rounded-lg border border-[#E8E0D8] text-xs text-[#5C3E35] hover:bg-[#FAF6F0] transition-all"
+                className="px-3 py-1.5 rounded-lg border border-[#E8E0D8] text-xs text-[#3D2B1F] hover:bg-[#FDF8F3] transition-all"
               >
                 Hoy
               </button>
@@ -404,17 +404,17 @@ export default function CrmPage() {
                     onClick={() => setSelectedDate(d.date === selectedDate ? null : d.date)}
                     className={`relative aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all ${
                       isSelected
-                        ? "bg-[#B8837E] text-white shadow-sm"
+                        ? "bg-[#7C1D2E] text-white shadow-sm"
                         : d.isToday
-                          ? "bg-[#B8837E]/10 text-[#5C3E35] font-semibold"
-                          : "text-[#5C3E35] hover:bg-[#FAF6F0]"
+                          ? "bg-[#7C1D2E]/10 text-[#3D2B1F] font-semibold"
+                          : "text-[#3D2B1F] hover:bg-[#FDF8F3]"
                     }`}
                   >
                     <span>{d.day}</span>
                     {(activityIcons.length > 0 || repurchaseDates.has(d.date)) && (
                       <div className="absolute -bottom-0.5 flex gap-0.5">
                         {repurchaseDates.has(d.date) && (
-                          <div className={`w-2 h-2 rounded-full ${isSelected ? "bg-white/80" : "bg-[#86C7A3]"}`} title="Recompra estimada" />
+                          <div className={`w-2 h-2 rounded-full ${isSelected ? "bg-white/80" : "bg-[#5B9E6B]"}`} title="Recompra estimada" />
                         )}
                         {activityIcons.map((a, i) => (
                           <div key={i} className={`w-2 h-2 rounded-full ${isSelected ? "bg-white/80" : a.color}`} title={getActivityType(dayFollowups[i]?.comments || "")} />
@@ -432,7 +432,7 @@ export default function CrmPage() {
           {selectedDate && (
             <div className="bg-white rounded-2xl shadow-sm border border-[#E8E0D8] p-5 mb-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-[#5C3E35]">
+                <h3 className="text-sm font-semibold text-[#3D2B1F]">
                   Actividades del {formatDate(selectedDate)}
                 </h3>
                 <span className="text-xs text-[#9C8A82]">{dayActivities.length} actividad(es)</span>
@@ -441,15 +441,15 @@ export default function CrmPage() {
                 const dayRepurchases = Object.entries(repurchaseMap).filter(([, date]) => date === selectedDate);
                 if (dayRepurchases.length === 0) return null;
                 return (
-                  <div className="mb-3 p-3 bg-[#86C7A3]/10 border border-[#86C7A3]/30 rounded-xl space-y-1.5">
-                    <p className="text-xs font-semibold text-[#86C7A3]">⚡ Recompra estimada</p>
+                  <div className="mb-3 p-3 bg-[#5B9E6B]/10 border border-[#5B9E6B]/30 rounded-xl space-y-1.5">
+                    <p className="text-xs font-semibold text-[#5B9E6B]">⚡ Recompra estimada</p>
                     {dayRepurchases.map(([clientId]) => {
                       const name = clients.find(c => c.id === clientId)?.full_name || "Cliente";
                       return (
                         <button
                           key={clientId}
                           onClick={() => router.push(`/pipeline`)}
-                          className="w-full text-left text-xs text-[#86C7A3]/80 hover:text-[#86C7A3] hover:underline flex items-center gap-1"
+                          className="w-full text-left text-xs text-[#5B9E6B]/80 hover:text-[#5B9E6B] hover:underline flex items-center gap-1"
                         >
                           {name}
                         </button>
@@ -466,15 +466,15 @@ export default function CrmPage() {
                     const ActivityIcon = getActivityIcon(f.comments);
                     const activityColor = getActivityColor(f.comments);
                     return (
-                      <div key={f.id} className="flex items-center justify-between p-3 rounded-xl bg-[#FAF6F0] hover:bg-[#F5F0EB] transition-all">
+                      <div key={f.id} className="flex items-center justify-between p-3 rounded-xl bg-[#FDF8F3] hover:bg-[#F5F0EB] transition-all">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className={`w-8 h-8 rounded-full ${activityColor} flex items-center justify-center flex-shrink-0`}>
                             <ActivityIcon size={14} className="text-white" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-[#5C3E35] truncate">{f.clients?.full_name}</p>
+                            <p className="text-sm font-medium text-[#3D2B1F] truncate">{f.clients?.full_name}</p>
                             {f.client_id && repurchaseMap[f.client_id] && (
-                              <p className="text-[10px] text-[#86C7A3] font-medium">⚡ Recompra: {formatDate(repurchaseMap[f.client_id])}</p>
+                              <p className="text-[10px] text-[#5B9E6B] font-medium">⚡ Recompra: {formatDate(repurchaseMap[f.client_id])}</p>
                             )}
                             <p className="text-xs text-[#9C8A82] truncate">{f.comments}</p>
                           </div>
@@ -501,7 +501,7 @@ export default function CrmPage() {
           )}
           <div className="bg-white rounded-2xl shadow-sm border border-[#E8E0D8] p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[#5C3E35]">Todas las actividades</h3>
+              <h3 className="text-sm font-semibold text-[#3D2B1F]">Todas las actividades</h3>
               <span className="text-xs text-[#9C8A82]">{filtered.length} registros</span>
             </div>
 
@@ -512,7 +512,7 @@ export default function CrmPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar..."
-                className="w-full h-10 pl-9 pr-3 rounded-xl border border-[#E8E0D8] bg-white text-[#5C3E35] placeholder-[#9C8A82] text-xs focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+                className="w-full h-10 pl-9 pr-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] placeholder-[#9C8A82] text-xs focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
               />
             </div>
 
@@ -522,7 +522,7 @@ export default function CrmPage() {
                   key={s}
                   onClick={() => setFilterStatus(s)}
                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    filterStatus === s ? "bg-[#B8837E]/10 text-[#B8837E]" : "text-[#9C8A82] hover:text-[#5C3E35]"
+                    filterStatus === s ? "bg-[#7C1D2E]/10 text-[#7C1D2E]" : "text-[#9C8A82] hover:text-[#3D2B1F]"
                   }`}
                 >
                   {s === "ALL" ? "Todas" : s === "PENDING" ? "Pendientes" : s === "COMPLETED" ? "Completadas" : "Vencidas"}
@@ -540,17 +540,17 @@ export default function CrmPage() {
             ) : (
               <div className="space-y-2 max-h-[500px] overflow-y-auto">
                 {filtered.map((f) => (
-                  <div key={f.id} className="p-3 rounded-xl border border-[#E8E0D8] hover:bg-[#FAF6F0] transition-all relative">
+                  <div key={f.id} className="p-3 rounded-xl border border-[#E8E0D8] hover:bg-[#FDF8F3] transition-all relative">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className="text-xs font-semibold text-[#5C3E35] truncate">{f.clients?.full_name || "—"}</p>
+                          <p className="text-xs font-semibold text-[#3D2B1F] truncate">{f.clients?.full_name || "—"}</p>
                           <StatusBadge status={f.status} />
                           {f.client_id && repurchaseMap[f.client_id] && (
-                            <span className="text-[10px] text-[#86C7A3] font-medium">⚡ {formatDate(repurchaseMap[f.client_id])}</span>
+                            <span className="text-[10px] text-[#5B9E6B] font-medium">⚡ {formatDate(repurchaseMap[f.client_id])}</span>
                           )}
                         </div>
-                        <p className="text-xs text-[#5C3E35] mt-1 leading-relaxed line-clamp-2">{f.comments}</p>
+                        <p className="text-xs text-[#3D2B1F] mt-1 leading-relaxed line-clamp-2">{f.comments}</p>
                         <div className="flex items-center gap-2 mt-1.5 text-[10px] text-[#9C8A82]">
                           <span>{formatDate(f.contact_date)}</span>
                           {f.next_followup && <span>→ {formatDate(f.next_followup)}</span>}
@@ -569,13 +569,13 @@ export default function CrmPage() {
                             <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-[#E8E0D8] py-1 z-20 min-w-[130px]">
                               <button
                                 onClick={() => { openEdit(f); }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#5C3E35] hover:bg-[#FAF6F0]"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#3D2B1F] hover:bg-[#FDF8F3]"
                               >
                                 <Edit3 size={12} /> Editar
                               </button>
                               <button
                                 onClick={() => { handleToggleStatus(f); setMenuOpen(null); }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#5C3E35] hover:bg-[#FAF6F0]"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#3D2B1F] hover:bg-[#FDF8F3]"
                               >
                                 <MessageSquare size={12} /> {f.status === "COMPLETED" ? "Pendiente" : "Completada"}
                               </button>
@@ -602,11 +602,11 @@ export default function CrmPage() {
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Nueva Actividad" subtitle="Registrar seguimiento a un cliente">
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Cliente</label>
+            <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Cliente</label>
             <select
               value={createForm.client_id}
               onChange={(e) => setCreateForm({ ...createForm, client_id: e.target.value })}
-              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] bg-white focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 appearance-none"
+              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 appearance-none"
             >
               <option value="">Seleccionar cliente...</option>
               {clients.map((c) => (
@@ -616,33 +616,33 @@ export default function CrmPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Fecha de contacto</label>
+              <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Fecha de contacto</label>
               <input type="date" value={createForm.contact_date} onChange={(e) => setCreateForm({ ...createForm, contact_date: e.target.value })}
-                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Próximo contacto (opcional)</label>
+              <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Próximo contacto (opcional)</label>
               <input type="date" value={createForm.next_followup} onChange={(e) => setCreateForm({ ...createForm, next_followup: e.target.value })}
-                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Tipo de actividad</label>
+            <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Tipo de actividad</label>
             <select value={createForm.activity_type}
               onChange={(e) => setCreateForm({ ...createForm, activity_type: e.target.value })}
-              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] bg-white focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 appearance-none">
+              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 appearance-none">
               <option value="">Seleccionar tipo...</option>
               {ACTIVITY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               <option value="Otro">Otro (escribir abajo)</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Notas</label>
+            <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Notas</label>
             <textarea value={createForm.comments} onChange={(e) => setCreateForm({ ...createForm, comments: e.target.value })} rows={3}
-              placeholder="Detalles de la actividad..." className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 resize-none" />
+              placeholder="Detalles de la actividad..." className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 resize-none" />
           </div>
           <div className="flex items-center gap-3">
-            <label className="text-xs font-medium text-[#5C3E35]">Estado:</label>
+            <label className="text-xs font-medium text-[#3D2B1F]">Estado:</label>
             {(["PENDING", "COMPLETED"] as const).map((s) => (
               <button key={s} onClick={() => setCreateForm({ ...createForm, status: s })}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${createForm.status === s ? (s === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700") : "bg-[#F5F0EB] text-[#9C8A82]"}`}>
@@ -651,8 +651,8 @@ export default function CrmPage() {
             ))}
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <button onClick={() => setShowCreate(false)} className="px-5 h-11 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] hover:bg-[#FAF6F0] transition-all">Cancelar</button>
-            <button onClick={handleCreate} disabled={saving} className="px-5 h-11 rounded-xl bg-[#B8837E] text-white text-sm font-medium hover:bg-[#9A6B66] transition-all disabled:opacity-50">
+            <button onClick={() => setShowCreate(false)} className="px-5 h-11 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] hover:bg-[#FDF8F3] transition-all">Cancelar</button>
+            <button onClick={handleCreate} disabled={saving} className="px-5 h-11 rounded-xl bg-[#7C1D2E] text-white text-sm font-medium hover:bg-[#5C1420] transition-all disabled:opacity-50">
               {saving ? "Guardando..." : "Guardar Actividad"}
             </button>
           </div>
@@ -664,33 +664,33 @@ export default function CrmPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Fecha de contacto</label>
+              <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Fecha de contacto</label>
               <input type="date" value={editForm.contact_date} onChange={(e) => setEditForm({ ...editForm, contact_date: e.target.value })}
-                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Próximo contacto (opcional)</label>
+              <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Próximo contacto (opcional)</label>
               <input type="date" value={editForm.next_followup} onChange={(e) => setEditForm({ ...editForm, next_followup: e.target.value })}
-                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Tipo de actividad</label>
+            <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Tipo de actividad</label>
             <select value={editForm.activity_type}
               onChange={(e) => setEditForm({ ...editForm, activity_type: e.target.value })}
-              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] bg-white focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 appearance-none">
+              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 appearance-none">
               <option value="">Seleccionar tipo...</option>
               {ACTIVITY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               <option value="Otro">Otro (escribir abajo)</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#5C3E35] mb-1.5">Notas</label>
+            <label className="block text-xs font-medium text-[#3D2B1F] mb-1.5">Notas</label>
             <textarea value={editForm.comments} onChange={(e) => setEditForm({ ...editForm, comments: e.target.value })} rows={3}
-              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 resize-none" />
+              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 resize-none" />
           </div>
           <div className="flex items-center gap-3">
-            <label className="text-xs font-medium text-[#5C3E35]">Estado:</label>
+            <label className="text-xs font-medium text-[#3D2B1F]">Estado:</label>
             {(["PENDING", "COMPLETED", "OVERDUE"] as const).map((s) => (
               <button key={s} onClick={() => setEditForm({ ...editForm, status: s })}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${editForm.status === s ? (s === "COMPLETED" ? "bg-green-100 text-green-700" : s === "OVERDUE" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700") : "bg-[#F5F0EB] text-[#9C8A82]"}`}>
@@ -699,8 +699,8 @@ export default function CrmPage() {
             ))}
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <button onClick={() => setShowEdit(null)} className="px-5 h-11 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] hover:bg-[#FAF6F0] transition-all">Cancelar</button>
-            <button onClick={handleEdit} disabled={saving} className="px-5 h-11 rounded-xl bg-[#B8837E] text-white text-sm font-medium hover:bg-[#9A6B66] transition-all disabled:opacity-50">
+            <button onClick={() => setShowEdit(null)} className="px-5 h-11 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] hover:bg-[#FDF8F3] transition-all">Cancelar</button>
+            <button onClick={handleEdit} disabled={saving} className="px-5 h-11 rounded-xl bg-[#7C1D2E] text-white text-sm font-medium hover:bg-[#5C1420] transition-all disabled:opacity-50">
               {saving ? "Guardando..." : "Guardar Cambios"}
             </button>
           </div>
@@ -710,12 +710,12 @@ export default function CrmPage() {
       {/* DELETE CONFIRMATION */}
       <Modal isOpen={!!showDelete} onClose={() => setShowDelete(null)} title="Eliminar Actividad">
         <div className="space-y-4">
-          <p className="text-sm text-[#5C3E35]">
+          <p className="text-sm text-[#3D2B1F]">
             ¿Estás seguro de eliminar esta actividad de <strong>{showDelete?.clients?.full_name}</strong>?
           </p>
-          <p className="text-xs text-[#9C8A82] bg-[#FAF6F0] p-3 rounded-xl">{showDelete?.comments}</p>
+          <p className="text-xs text-[#9C8A82] bg-[#FDF8F3] p-3 rounded-xl">{showDelete?.comments}</p>
           <div className="flex justify-end gap-3 pt-2">
-            <button onClick={() => setShowDelete(null)} className="px-5 h-11 rounded-xl border border-[#E8E0D8] text-sm text-[#5C3E35] hover:bg-[#FAF6F0] transition-all">Cancelar</button>
+            <button onClick={() => setShowDelete(null)} className="px-5 h-11 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] hover:bg-[#FDF8F3] transition-all">Cancelar</button>
             <button onClick={handleDelete} disabled={saving} className="px-5 h-11 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-all disabled:opacity-50">
               {saving ? "Eliminando..." : "Eliminar"}
             </button>

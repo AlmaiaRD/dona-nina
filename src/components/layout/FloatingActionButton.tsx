@@ -5,10 +5,10 @@ import { Plus, X, FileText, Receipt, ShoppingCart, UserPlus } from "lucide-react
 import Link from "next/link";
 
 const actions = [
-  { href: "/facturacion?nueva=true", label: "Nueva Factura", icon: FileText, color: "bg-[#B8837E]", bgLight: "bg-[#B8837E]/10", textColor: "text-[#B8837E]" },
-  { href: "/recibos?nuevo=true", label: "Registrar Pago", icon: Receipt, color: "bg-[#86C7A3]", bgLight: "bg-[#86C7A3]/10", textColor: "text-[#86C7A3]" },
+  { href: "/facturacion?nueva=true", label: "Nueva Factura", icon: FileText, color: "bg-[#7C1D2E]", bgLight: "bg-[#7C1D2E]/10", textColor: "text-[#7C1D2E]" },
+  { href: "/recibos?nuevo=true", label: "Registrar Pago", icon: Receipt, color: "bg-[#5B9E6B]", bgLight: "bg-[#5B9E6B]/10", textColor: "text-[#5B9E6B]" },
   { href: "/inventario?nueva-compra=true", label: "Registrar Compra", icon: ShoppingCart, color: "bg-[#C9A89C]", bgLight: "bg-[#C9A89C]/10", textColor: "text-[#C9A89C]" },
-  { href: "/clientes?nuevo=true", label: "Añadir Cliente", icon: UserPlus, color: "bg-[#B8837E]", bgLight: "bg-[#B8837E]/10", textColor: "text-[#B8837E]" },
+  { href: "/clientes?nuevo=true", label: "Añadir Cliente", icon: UserPlus, color: "bg-[#7C1D2E]", bgLight: "bg-[#7C1D2E]/10", textColor: "text-[#7C1D2E]" },
 ];
 
 const STORAGE_KEY = "fab-pos-right";
@@ -101,7 +101,7 @@ export default function FloatingActionButton() {
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl shadow-lg border border-[#E8E0D8] hover:shadow-xl transition-all"
               >
-                <span className="text-sm font-medium text-[#5C3E35] whitespace-nowrap">{action.label}</span>
+                <span className="text-sm font-medium text-[#3D2B1F] whitespace-nowrap">{action.label}</span>
                 <div className={`w-8 h-8 rounded-lg ${action.bgLight} flex items-center justify-center`}>
                   <Icon size={16} className={action.textColor} />
                 </div>
@@ -112,7 +112,7 @@ export default function FloatingActionButton() {
       )}
       <button
         onClick={handleClick}
-        className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-200 ${dragging ? "scale-110" : "hover:scale-105"} ${open ? "bg-[#5C3E35] rotate-45" : "bg-[#B8837E] hover:bg-[#9A6B66]"}`}
+        className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-200 ${dragging ? "scale-110" : "hover:scale-105"} ${open ? "bg-[#3D2B1F] rotate-45" : "bg-[#7C1D2E] hover:bg-[#5C1420]"}`}
       >
         {open ? <X size={24} className="text-white" /> : <Plus size={28} className="text-white" />}
       </button>

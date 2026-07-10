@@ -4,7 +4,7 @@ interface CakeIconProps {
   strokeWidth?: number;
 }
 
-export default function CakeIcon({ size = 22, className = "text-[#B8837E]", strokeWidth = 2 }: CakeIconProps) {
+export default function CakeIcon({ size = 22, className = "text-[#7C1D2E]", strokeWidth = 1.8 }: CakeIconProps) {
   return (
     <svg
       width={size}
@@ -17,11 +17,18 @@ export default function CakeIcon({ size = 22, className = "text-[#B8837E]", stro
       strokeLinejoin="round"
       className={className}
     >
-      <path d="M3 21h18" />
-      <rect x="4" y="13" width="16" height="8" rx="1.5" />
-      <rect x="6" y="8" width="12" height="6" rx="1.5" />
-      <circle cx="12" cy="7" r="2" fill="#B8837E" stroke="none" />
-      <path d="M12 5v-1" />
+      <g transform="translate(12,12) rotate(-25) translate(-12,-12)">
+        <path d="M12 4v14" />
+        <path d="M8 4v3" />
+        <path d="M10 4v6" />
+        <path d="M14 4v6" />
+        <path d="M16 4v3" />
+        <path d="M12 18v2" />
+      </g>
+      <g transform="translate(12,12) rotate(25) translate(-12,-12)">
+        <path d="M18 4v16" />
+        <path d="M18 4c-2.5 0-4 2-4 4.5" />
+      </g>
     </svg>
   );
 }

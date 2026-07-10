@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#B8837E",
+  themeColor: "#7C1D2E",
 };
 
 export default function RootLayout({
@@ -43,7 +43,7 @@ export default function RootLayout({
       lang="es"
       className={`${jakarta.variable} ${greatVibes.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#FCFAF7] text-[#5C3E35]">
+      <body className="min-h-full flex flex-col bg-[#FCFAF7] text-[#3D2B1F]">
         <KillServiceWorker />
         <ErrorBoundary>
           <AuthProvider>

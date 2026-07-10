@@ -504,10 +504,10 @@ export default function WhatsAppPage() {
   return (
     <PageContainer>
       <div className="mb-8">
-        <button onClick={() => router.push("/crm")} className="flex items-center gap-2 text-sm text-[#9C8A82] hover:text-[#5C3E35] mb-3 transition-colors">
+        <button onClick={() => router.push("/crm")} className="flex items-center gap-2 text-sm text-[#9C8A82] hover:text-[#3D2B1F] mb-3 transition-colors">
           <ArrowLeft size={16} /> Volver a CRM
         </button>
-        <h1 className="text-2xl font-bold text-[#5C3E35]">WhatsApp Business</h1>
+        <h1 className="text-2xl font-bold text-[#3D2B1F]">WhatsApp Business</h1>
         <p className="text-sm text-[#9C8A82] mt-1">Envía mensajes, plantillas y recordatorios por WhatsApp</p>
       </div>
 
@@ -528,8 +528,8 @@ export default function WhatsAppPage() {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               activeTab === tab.key
-                ? "bg-[#B8837E]/10 text-[#B8837E]"
-                : "text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0]"
+                ? "bg-[#7C1D2E]/10 text-[#7C1D2E]"
+                : "text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3]"
             }`}
           >
             <tab.icon size={16} />
@@ -542,7 +542,7 @@ export default function WhatsAppPage() {
       {activeTab === "send" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0D8]">
-            <h3 className="text-sm font-semibold text-[#5C3E35] mb-4">Enviar Mensaje</h3>
+            <h3 className="text-sm font-semibold text-[#3D2B1F] mb-4">Enviar Mensaje</h3>
 
             {/* Select Config */}
             <div className="mb-4">
@@ -553,7 +553,7 @@ export default function WhatsAppPage() {
                   const config = configs.find((c) => c.id === e.target.value);
                   setSelectedConfig(config || null);
                 }}
-                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
               >
                 <option value="">Seleccionar cuenta...</option>
                 {configs.map((config) => (
@@ -574,7 +574,7 @@ export default function WhatsAppPage() {
                   value={searchClient}
                   onChange={(e) => setSearchClient(e.target.value)}
                   placeholder="Nombre o teléfono..."
-                  className="w-full h-10 pl-10 pr-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+                  className="w-full h-10 pl-10 pr-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
                 />
               </div>
               {searchClient && filteredClients.length > 0 && (
@@ -583,10 +583,10 @@ export default function WhatsAppPage() {
                     <button
                       key={client.id}
                       onClick={() => selectClient(client)}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-[#FAF6F0] flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-[#FDF8F3] flex items-center gap-2"
                     >
                       <Phone size={14} className="text-[#9C8A82]" />
-                      <span className="text-[#5C3E35]">{client.name}</span>
+                      <span className="text-[#3D2B1F]">{client.name}</span>
                       <span className="text-xs text-[#9C8A82]">{client.phone}</span>
                     </button>
                   ))}
@@ -602,7 +602,7 @@ export default function WhatsAppPage() {
                 value={recipientPhone}
                 onChange={(e) => setRecipientPhone(e.target.value)}
                 placeholder="Ej: 8091234567"
-                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+                className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
               />
             </div>
 
@@ -623,7 +623,7 @@ export default function WhatsAppPage() {
                       setSelectedLocalTemplate("");
                     }
                   }}
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
                 >
                   <option value="">Escribir mensaje manualmente...</option>
                   {localTemplates.map((tpl) => (
@@ -641,7 +641,7 @@ export default function WhatsAppPage() {
                 onChange={(e) => setMessageText(e.target.value)}
                 placeholder="Escribe tu mensaje..."
                 rows={5}
-                className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 resize-none"
+                className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 resize-none"
               />
               {messageText && (
                 <p className="text-xs text-[#9C8A82] mt-1">{messageText.length} caracteres</p>
@@ -669,8 +669,8 @@ export default function WhatsAppPage() {
           <div className="space-y-4">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0D8]">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-[#5C3E35]">Acciones Rápidas</h3>
-                <button onClick={openCreateAction} className="flex items-center gap-1.5 text-xs font-medium text-[#B8837E] hover:text-[#9A6B66] transition-colors">
+                <h3 className="text-sm font-semibold text-[#3D2B1F]">Acciones Rápidas</h3>
+                <button onClick={openCreateAction} className="flex items-center gap-1.5 text-xs font-medium text-[#7C1D2E] hover:text-[#5C1420] transition-colors">
                   <Plus size={14} /> Nueva
                 </button>
               </div>
@@ -681,19 +681,19 @@ export default function WhatsAppPage() {
                     <div key={action.id} className="flex items-center gap-2 group">
                       <button
                         onClick={() => executeQuickAction(action)}
-                        className="flex-1 flex items-center gap-3 p-3 rounded-xl border border-[#E8E0D8] hover:bg-[#FAF6F0] transition-all text-left"
+                        className="flex-1 flex items-center gap-3 p-3 rounded-xl border border-[#E8E0D8] hover:bg-[#FDF8F3] transition-all text-left"
                       >
                         <div className={`w-10 h-10 rounded-lg ${action.bgColor} flex items-center justify-center`}>
                           <IconComp size={18} className={action.color} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#5C3E35] truncate">{action.name}</p>
+                          <p className="text-sm font-medium text-[#3D2B1F] truncate">{action.name}</p>
                           <p className="text-xs text-[#9C8A82] truncate">{action.description}</p>
                         </div>
                       </button>
                       <button
                         onClick={() => openEditAction(action)}
-                        className="p-2 text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0] rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                        className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-all opacity-0 group-hover:opacity-100"
                       >
                         <Edit3 size={14} />
                       </button>
@@ -705,12 +705,12 @@ export default function WhatsAppPage() {
 
             {/* Webhook Info */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0D8]">
-              <h3 className="text-sm font-semibold text-[#5C3E35] mb-4">Configuración Webhook</h3>
+              <h3 className="text-sm font-semibold text-[#3D2B1F] mb-4">Configuración Webhook</h3>
               <div className="space-y-2 text-sm">
                 <p className="text-[#9C8A82]">
-                  <span className="font-medium text-[#5C3E35]">URL del Webhook:</span>
+                  <span className="font-medium text-[#3D2B1F]">URL del Webhook:</span>
                 </p>
-                <code className="block p-3 bg-[#FAF6F0] rounded-xl text-xs text-[#5C3E35] break-all">
+                <code className="block p-3 bg-[#FDF8F3] rounded-xl text-xs text-[#3D2B1F] break-all">
                   {typeof window !== "undefined" ? `${window.location.origin}/api/whatsapp/webhook` : "/api/whatsapp/webhook"}
                 </code>
               </div>
@@ -723,7 +723,7 @@ export default function WhatsAppPage() {
       {activeTab === "templates" && (
         <div className="space-y-4">
           <div className="flex justify-end">
-            <button onClick={openCreateTemplate} className="flex items-center gap-2 bg-[#B8837E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm">
+            <button onClick={openCreateTemplate} className="flex items-center gap-2 bg-[#7C1D2E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm">
               <Plus size={18} /> Nueva Plantilla
             </button>
           </div>
@@ -740,20 +740,20 @@ export default function WhatsAppPage() {
                 <div key={template.id} className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8] hover:shadow-md transition-all">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-[#B8837E]/10 flex items-center justify-center">
-                        <FileText size={16} className="text-[#B8837E]" />
+                      <div className="w-8 h-8 rounded-lg bg-[#7C1D2E]/10 flex items-center justify-center">
+                        <FileText size={16} className="text-[#7C1D2E]" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-[#5C3E35]">{template.name}</p>
+                        <p className="text-sm font-semibold text-[#3D2B1F]">{template.name}</p>
                         <p className="text-xs text-[#9C8A82]">{template.category}</p>
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs text-[#5C3E35] bg-[#FAF6F0] rounded-xl p-3 mb-3 line-clamp-3">{template.message}</p>
+                  <p className="text-xs text-[#3D2B1F] bg-[#FDF8F3] rounded-xl p-3 mb-3 line-clamp-3">{template.message}</p>
                   {template.variables.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-3">
                       {template.variables.map((v) => (
-                        <span key={v} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#B8837E]/10 text-[#B8837E]">
+                        <span key={v} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#7C1D2E]/10 text-[#7C1D2E]">
                           {`{${v}}`}
                         </span>
                       ))}
@@ -763,13 +763,13 @@ export default function WhatsAppPage() {
                     <button onClick={() => selectTemplate(template)} className="flex-1 h-9 bg-[#25D366] text-white rounded-xl text-xs font-medium hover:bg-[#128C7E] transition-all flex items-center justify-center gap-1">
                       <Send size={12} /> Usar
                     </button>
-                    <button onClick={() => { setPreviewTemplate(template); setPreviewVars({}); }} className="h-9 w-9 border border-[#E8E0D8] rounded-xl flex items-center justify-center text-[#9C8A82] hover:bg-[#FAF6F0] transition-all">
+                    <button onClick={() => { setPreviewTemplate(template); setPreviewVars({}); }} className="h-9 w-9 border border-[#E8E0D8] rounded-xl flex items-center justify-center text-[#9C8A82] hover:bg-[#FDF8F3] transition-all">
                       <Eye size={14} />
                     </button>
-                    <button onClick={() => openEditTemplate(template)} className="h-9 w-9 border border-[#E8E0D8] rounded-xl flex items-center justify-center text-[#9C8A82] hover:bg-[#FAF6F0] transition-all">
+                    <button onClick={() => openEditTemplate(template)} className="h-9 w-9 border border-[#E8E0D8] rounded-xl flex items-center justify-center text-[#9C8A82] hover:bg-[#FDF8F3] transition-all">
                       <Edit3 size={14} />
                     </button>
-                    <button onClick={() => deleteTemplate(template.id)} className="h-9 w-9 border border-[#E8E0D8] rounded-xl flex items-center justify-center text-[#D4A0A0] hover:bg-red-50 transition-all">
+                    <button onClick={() => deleteTemplate(template.id)} className="h-9 w-9 border border-[#E8E0D8] rounded-xl flex items-center justify-center text-[#E07A3A] hover:bg-red-50 transition-all">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -784,7 +784,7 @@ export default function WhatsAppPage() {
       {activeTab === "actions" && (
         <div className="space-y-4">
           <div className="flex justify-end">
-            <button onClick={openCreateAction} className="flex items-center gap-2 bg-[#B8837E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm">
+            <button onClick={openCreateAction} className="flex items-center gap-2 bg-[#7C1D2E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm">
               <Plus size={18} /> Nueva Acción
             </button>
           </div>
@@ -799,20 +799,20 @@ export default function WhatsAppPage() {
                       <IconComp size={22} className={action.color} />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-[#5C3E35]">{action.name}</p>
+                      <p className="text-sm font-semibold text-[#3D2B1F]">{action.name}</p>
                       <p className="text-xs text-[#9C8A82]">{action.description}</p>
                     </div>
                   </div>
-                  <p className="text-xs text-[#5C3E35] bg-[#FAF6F0] rounded-xl p-3 mb-3 line-clamp-3">{action.message}</p>
+                  <p className="text-xs text-[#3D2B1F] bg-[#FDF8F3] rounded-xl p-3 mb-3 line-clamp-3">{action.message}</p>
                   <div className="flex items-center gap-2">
                     <button onClick={() => executeQuickAction(action)} className="flex-1 h-9 bg-[#25D366] text-white rounded-xl text-xs font-medium hover:bg-[#128C7E] transition-all flex items-center justify-center gap-1">
                       <Send size={12} /> Usar
                     </button>
-                    <button onClick={() => openEditAction(action)} className="h-9 w-9 border border-[#E8E0D8] rounded-xl flex items-center justify-center text-[#9C8A82] hover:bg-[#FAF6F0] transition-all">
+                    <button onClick={() => openEditAction(action)} className="h-9 w-9 border border-[#E8E0D8] rounded-xl flex items-center justify-center text-[#9C8A82] hover:bg-[#FDF8F3] transition-all">
                       <Edit3 size={14} />
                     </button>
                     {!action.isDefault && (
-                      <button onClick={() => deleteAction(action.id)} className="h-9 w-9 border border-[#E8E0D8] rounded-xl flex items-center justify-center text-[#D4A0A0] hover:bg-red-50 transition-all">
+                      <button onClick={() => deleteAction(action.id)} className="h-9 w-9 border border-[#E8E0D8] rounded-xl flex items-center justify-center text-[#E07A3A] hover:bg-red-50 transition-all">
                         <Trash2 size={14} />
                       </button>
                     )}
@@ -828,7 +828,7 @@ export default function WhatsAppPage() {
       {activeTab === "configs" && (
         <div className="space-y-4">
           <div className="flex justify-end">
-            <button onClick={() => setShowAddConfig(true)} className="flex items-center gap-2 bg-[#B8837E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm">
+            <button onClick={() => setShowAddConfig(true)} className="flex items-center gap-2 bg-[#7C1D2E] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm">
               <Plus size={18} /> Agregar Cuenta
             </button>
           </div>
@@ -839,23 +839,23 @@ export default function WhatsAppPage() {
             </div>
           ) : (
             configs.map((config) => (
-              <div key={config.id} className={`bg-white rounded-2xl p-5 shadow-sm border transition-all ${selectedConfig?.id === config.id ? "border-[#B8837E] ring-2 ring-[#B8837E]/20" : "border-[#E8E0D8]"}`}>
+              <div key={config.id} className={`bg-white rounded-2xl p-5 shadow-sm border transition-all ${selectedConfig?.id === config.id ? "border-[#7C1D2E] ring-2 ring-[#7C1D2E]/20" : "border-[#E8E0D8]"}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-[#25D366]/10 flex items-center justify-center">
                       <MessageCircle size={24} className="text-[#25D366]" />
                     </div>
                     <div>
-                      <p className="font-medium text-[#5C3E35]">{config.label}</p>
+                      <p className="font-medium text-[#3D2B1F]">{config.label}</p>
                       <p className="text-sm text-[#9C8A82]">ID: {config.phone_number_id}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     {config.is_active ? <Badge variant="success">Activa</Badge> : <Badge variant="neutral">Inactiva</Badge>}
-                    <button onClick={() => setSelectedConfig(config)} className="p-2 text-[#9C8A82] hover:text-[#5C3E35] hover:bg-[#FAF6F0] rounded-lg transition-all">
+                    <button onClick={() => setSelectedConfig(config)} className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-all">
                       <Settings size={16} />
                     </button>
-                    <button onClick={() => handleDeleteConfig(config.id)} className="p-2 text-[#D4A0A0] hover:bg-[#D4A0A0]/10 rounded-lg transition-all">
+                    <button onClick={() => handleDeleteConfig(config.id)} className="p-2 text-[#E07A3A] hover:bg-[#E07A3A]/10 rounded-lg transition-all">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -886,14 +886,14 @@ export default function WhatsAppPage() {
               </thead>
               <tbody>
                 {logs.map((log) => (
-                  <tr key={log.id} className="border-b border-[#E8E0D8] last:border-0 hover:bg-[#FAF6F0]">
-                    <td className="px-4 py-3 text-sm text-[#5C3E35]">{formatDate(log.created_at)}</td>
-                    <td className="px-4 py-3 text-sm text-[#5C3E35]">{log.to}</td>
+                  <tr key={log.id} className="border-b border-[#E8E0D8] last:border-0 hover:bg-[#FDF8F3]">
+                    <td className="px-4 py-3 text-sm text-[#3D2B1F]">{formatDate(log.created_at)}</td>
+                    <td className="px-4 py-3 text-sm text-[#3D2B1F]">{log.to}</td>
                     <td className="px-4 py-3 text-sm text-[#9C8A82]">{log.message_type}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         {log.status === "sent" ? <CheckCircle size={14} className="text-green-500" /> : log.status === "failed" ? <AlertCircle size={14} className="text-red-500" /> : <Clock size={14} className="text-gray-400" />}
-                        <span className="text-sm text-[#5C3E35] capitalize">{log.status}</span>
+                        <span className="text-sm text-[#3D2B1F] capitalize">{log.status}</span>
                       </div>
                     </td>
                   </tr>
@@ -914,7 +914,7 @@ export default function WhatsAppPage() {
               value={templateForm.name}
               onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
               placeholder="Ej: Bienvenida Cliente"
-              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
             />
           </div>
           <div>
@@ -922,7 +922,7 @@ export default function WhatsAppPage() {
             <select
               value={templateForm.category}
               onChange={(e) => setTemplateForm({ ...templateForm, category: e.target.value })}
-              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
             >
               {templateCategories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -936,7 +936,7 @@ export default function WhatsAppPage() {
               onChange={(e) => setTemplateForm({ ...templateForm, message: e.target.value })}
               placeholder="Escribe el mensaje. Usa {nombre}, {monto}, {fecha} para variables."
               rows={5}
-              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 resize-none"
             />
           </div>
           <div>
@@ -946,15 +946,15 @@ export default function WhatsAppPage() {
               value={templateForm.variables}
               onChange={(e) => setTemplateForm({ ...templateForm, variables: e.target.value })}
               placeholder="Ej: nombre, monto, fecha"
-              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
             />
             <p className="text-[10px] text-[#9C8A82] mt-1">Usa {"{nombre}"} en el mensaje para insertar la variable</p>
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={() => setShowTemplateModal(false)} className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">
+            <button onClick={() => setShowTemplateModal(false)} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">
               Cancelar
             </button>
-            <button onClick={saveTemplate} className="flex-1 h-12 bg-[#B8837E] text-white rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm">
+            <button onClick={saveTemplate} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm">
               {editingTemplate ? "Actualizar" : "Crear"}
             </button>
           </div>
@@ -967,7 +967,7 @@ export default function WhatsAppPage() {
           <div className="space-y-4">
             <div className="bg-[#E5DDD5] rounded-2xl p-4 relative">
               <div className="bg-white rounded-2xl p-4 shadow-sm max-w-sm ml-auto">
-                <p className="text-sm text-[#5C3E35] whitespace-pre-wrap">
+                <p className="text-sm text-[#3D2B1F] whitespace-pre-wrap">
                   {(() => {
                     let msg = previewTemplate.message;
                     previewTemplate.variables.forEach((v) => {
@@ -990,7 +990,7 @@ export default function WhatsAppPage() {
                     value={previewVars[v] || ""}
                     onChange={(e) => setPreviewVars({ ...previewVars, [v]: e.target.value })}
                     placeholder={v}
-                    className="w-full h-10 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+                    className="w-full h-10 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
                   />
                 ))}
               </div>
@@ -999,7 +999,7 @@ export default function WhatsAppPage() {
               <button onClick={() => { selectTemplate(previewTemplate); setPreviewTemplate(null); }} className="flex-1 h-12 bg-[#25D366] text-white rounded-xl text-sm font-medium hover:bg-[#128C7E] transition-all shadow-sm flex items-center justify-center gap-2">
                 <Send size={16} /> Usar Plantilla
               </button>
-              <button onClick={() => { navigator.clipboard.writeText(previewTemplate.message); toast.success("Mensaje copiado"); }} className="h-12 px-4 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all flex items-center gap-2">
+              <button onClick={() => { navigator.clipboard.writeText(previewTemplate.message); toast.success("Mensaje copiado"); }} className="h-12 px-4 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all flex items-center gap-2">
                 <Copy size={16} /> Copiar
               </button>
             </div>
@@ -1017,7 +1017,7 @@ export default function WhatsAppPage() {
               value={actionForm.name}
               onChange={(e) => setActionForm({ ...actionForm, name: e.target.value })}
               placeholder="Ej: Enviar Catálogo"
-              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
             />
           </div>
           <div>
@@ -1027,14 +1027,14 @@ export default function WhatsAppPage() {
               value={actionForm.description}
               onChange={(e) => setActionForm({ ...actionForm, description: e.target.value })}
               placeholder="Breve descripción"
-              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30"
+              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#9C8A82] mb-1">Icono</label>
             <button
               onClick={() => setShowIconPicker(!showIconPicker)}
-              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm flex items-center gap-3 hover:bg-[#FAF6F0] transition-all"
+              className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm flex items-center gap-3 hover:bg-[#FDF8F3] transition-all"
             >
               {(() => {
                 const iconData = getIconComponent(actionForm.iconName);
@@ -1059,7 +1059,7 @@ export default function WhatsAppPage() {
                       key={opt.name}
                       title={opt.name}
                       onClick={() => { setActionForm({ ...actionForm, iconName: opt.name }); setShowIconPicker(false); }}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${actionForm.iconName === opt.name ? "ring-2 ring-[#B8837E] " + opt.bgColor : "hover:bg-[#FAF6F0]"}`}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${actionForm.iconName === opt.name ? "ring-2 ring-[#7C1D2E] " + opt.bgColor : "hover:bg-[#FDF8F3]"}`}
                     >
                       <Ic size={15} className={opt.color} />
                     </button>
@@ -1075,14 +1075,14 @@ export default function WhatsAppPage() {
               onChange={(e) => setActionForm({ ...actionForm, message: e.target.value })}
               placeholder="Escribe el mensaje. Usa {cliente}, {monto}, {fecha} para variables."
               rows={4}
-              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30 resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 resize-none"
             />
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={() => setShowActionModal(false)} className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">
+            <button onClick={() => setShowActionModal(false)} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">
               Cancelar
             </button>
-            <button onClick={saveAction} className="flex-1 h-12 bg-[#B8837E] text-white rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm">
+            <button onClick={saveAction} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm">
               {editingAction ? "Actualizar" : "Crear"}
             </button>
           </div>
@@ -1094,27 +1094,27 @@ export default function WhatsAppPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-[#9C8A82] mb-1">Etiqueta</label>
-            <input type="text" value={configForm.label} onChange={(e) => setConfigForm({ ...configForm, label: e.target.value })} placeholder="Ej: WhatsApp Principal" className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+            <input type="text" value={configForm.label} onChange={(e) => setConfigForm({ ...configForm, label: e.target.value })} placeholder="Ej: WhatsApp Principal" className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#9C8A82] mb-1">Phone Number ID</label>
-            <input type="text" value={configForm.phone_number_id} onChange={(e) => setConfigForm({ ...configForm, phone_number_id: e.target.value })} placeholder="ID del número de teléfono desde Meta" className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+            <input type="text" value={configForm.phone_number_id} onChange={(e) => setConfigForm({ ...configForm, phone_number_id: e.target.value })} placeholder="ID del número de teléfono desde Meta" className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#9C8A82] mb-1">Access Token</label>
-            <input type="password" value={configForm.access_token} onChange={(e) => setConfigForm({ ...configForm, access_token: e.target.value })} placeholder="Token de acceso permanente" className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+            <input type="password" value={configForm.access_token} onChange={(e) => setConfigForm({ ...configForm, access_token: e.target.value })} placeholder="Token de acceso permanente" className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#9C8A82] mb-1">Verify Token</label>
-            <input type="text" value={configForm.verify_token} onChange={(e) => setConfigForm({ ...configForm, verify_token: e.target.value })} placeholder="Token de verificación del webhook" className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+            <input type="text" value={configForm.verify_token} onChange={(e) => setConfigForm({ ...configForm, verify_token: e.target.value })} placeholder="Token de verificación del webhook" className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[#9C8A82] mb-1">Business Account ID</label>
-            <input type="text" value={configForm.business_account_id} onChange={(e) => setConfigForm({ ...configForm, business_account_id: e.target.value })} placeholder="ID de la cuenta de WhatsApp Business" className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#5C3E35] text-sm focus:outline-none focus:ring-2 focus:ring-[#B8837E]/30" />
+            <input type="text" value={configForm.business_account_id} onChange={(e) => setConfigForm({ ...configForm, business_account_id: e.target.value })} placeholder="ID de la cuenta de WhatsApp Business" className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={() => setShowAddConfig(false)} className="flex-1 h-12 border border-[#E8E0D8] text-[#5C3E35] rounded-xl text-sm font-medium hover:bg-[#FAF6F0] transition-all">Cancelar</button>
-            <button onClick={handleAddConfig} className="flex-1 h-12 bg-[#B8837E] text-white rounded-xl text-sm font-medium hover:bg-[#9A6B66] transition-all shadow-sm">Guardar</button>
+            <button onClick={() => setShowAddConfig(false)} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
+            <button onClick={handleAddConfig} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm">Guardar</button>
           </div>
         </div>
       </Modal>

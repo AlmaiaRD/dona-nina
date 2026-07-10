@@ -10,10 +10,10 @@ export default function KpiCard({
   color?: "primary" | "green" | "amber" | "rose";
 }) {
   const colorMap = {
-    primary: "bg-[#B8837E]/10 text-[#B8837E]",
-    green: "bg-[#86C7A3]/10 text-[#86C7A3]",
-    amber: "bg-[#E8C87A]/10 text-[#E8C87A]",
-    rose: "bg-[#D4A0A0]/10 text-[#D4A0A0]",
+    primary: "bg-[#7C1D2E]/10 text-[#7C1D2E]",
+    green: "bg-[#5B9E6B]/10 text-[#5B9E6B]",
+    amber: "bg-[#D4A017]/10 text-[#D4A017]",
+    rose: "bg-[#E07A3A]/10 text-[#E07A3A]",
   };
 
   return (
@@ -24,7 +24,7 @@ export default function KpiCard({
           <Icon size={20} />
         </div>
       </div>
-      <p className="text-2xl font-bold text-[#5C3E35]">{value}</p>
+      <p className="text-2xl font-bold text-[#3D2B1F]">{value}</p>
     </div>
   );
 }
