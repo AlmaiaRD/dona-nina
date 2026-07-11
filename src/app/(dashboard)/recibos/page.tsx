@@ -2,25 +2,19 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import PageContainer from "@/components/layout/PageContainer";
-import Modal from "@/components/ui/Modal";
-import Badge from "@/components/ui/Badge";
-import { getReceipts, getReceipt, createReceipt, deleteReceipt, updateReceiptWithInvoice } from "@/services/receipts";
-import { getInvoices, getBankAccounts } from "@/services/invoices";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { Modal } from "@/components/ui/Modal";
+import { Badge } from "@/components/ui/Badge";
+import { getReceipt, createReceipt, deleteReceipt, updateReceiptWithInvoice } from "@/services/receipts";
+import { getBankAccounts } from "@/services/invoices";
 import { getSettings } from "@/services/settings";
-import { getLocalDateString } from "@/lib/utils";
-import { formatCurrency, formatDate, numberToWords } from "@/lib/utils";
-import { Receipt, Plus, Search, Eye, Printer, Trash2, X, Save, Wallet, Download, Edit2, Flower2, Mail, MessageCircle } from "lucide-react";
-import type { BankAccount, Settings } from "@/types/database";
+import { getLocalDateString, formatCurrency, formatDate, sanitizeHtml } from "@/lib/utils";
+import { FileText, Plus, Search, Eye, Printer, Trash2, Save, Download, Edit2, Mail, MessageCircle } from "lucide-react";
+import Image from "next/image";
+import type { BankAccount, Setting } from "@/types/database";
 import toast from "react-hot-toast";
 import { normalize } from "@/lib/search";
 import CommunicationDraftModal from "@/components/communications/CommunicationDraftModal";
-
-const methodMap: Record<string, { label: string; variant: "success" | "warning" | "info" | "neutral" }> = {
-  CASH: { label: "Efectivo", variant: "success" },
-  TRANSFER: { label: "Transferencia", variant: "info" },
-  CARD: { label: "Tarjeta", variant: "warning" },
-};
 
 const methodLabel: Record<string, string> = {
   CASH: "Efectivo",
@@ -28,12 +22,18 @@ const methodLabel: Record<string, string> = {
   CARD: "Tarjeta",
 };
 
+const methodColors: Record<string, string> = {
+  CASH: "bg-green-100 text-green-800",
+  TRANSFER: "bg-blue-100 text-blue-800",
+  CARD: "bg-yellow-100 text-yellow-800",
+};
+
 export default function RecibosPage() {
   const searchParams = useSearchParams();
   const [receipts, setReceipts] = useState<any[]>([]);
   const [pendingInvoices, setPendingInvoices] = useState<any[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [settings, setSettings] = useState<Setting | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
@@ -44,7 +44,7 @@ export default function RecibosPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
   const [saving, setSaving] = useState(false);
-  const [openPrintId, setOpenPrintId] = useState<string | null>(null);
+  const [, setOpenPrintId] = useState<string | null>(null);
 
   const [selectedInvoice, setSelectedInvoice] = useState("");
   const [draftModal, setDraftModal] = useState<{ type: "email" | "whatsapp" } | null>(null);
@@ -58,23 +58,30 @@ export default function RecibosPage() {
 
   const load = useCallback(async () => {
     try {
-      const [rec, inv, ba, st] = await Promise.all([getReceipts(), getInvoices(), getBankAccounts(), getSettings().catch(() => null)]);
-      setReceipts(rec);
-      setPendingInvoices(inv.filter((i: any) => i.status !== "PAID" && i.status !== "CANCELLED"));
+      const [recRes, invRes, ba, st] = await Promise.all([
+        fetch('/api/receipts').then(r => r.json()),
+        fetch('/api/invoices').then(r => r.json()),
+        getBankAccounts(),
+        getSettings().catch(() => null),
+      ]);
+      setReceipts(recRes.data || []);
+      setPendingInvoices((invRes.data || []).filter((i: any) => i.status !== "PAID" && i.status !== "CANCELLED"));
       setBankAccounts(ba);
       setSettings(st);
     } catch { toast.error("Error al cargar recibos"); }
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { queueMicrotask(() => load()); }, [load]);
 
   useEffect(() => {
     if (searchParams.get("nuevo") === "true") {
-      resetForm();
-      const invId = searchParams.get("invoice_id");
-      if (invId) setSelectedInvoice(invId);
-      setShowModal(true);
+      queueMicrotask(() => {
+        resetForm();
+        const invId = searchParams.get("invoice_id");
+        if (invId) setSelectedInvoice(invId);
+        setShowModal(true);
+      });
     }
   }, [searchParams]);
 
@@ -91,25 +98,22 @@ export default function RecibosPage() {
   const balanceDue = selectedInvoiceData ? Number(selectedInvoiceData.total) - Number(selectedInvoiceData.amount_paid || 0) : 0;
 
   const receiptSearchFiltered = receipts.filter((r: any) => {
-    // Filter by status
     if (filterStatus !== "all") {
       const invoiceStatus = r.invoices?.status;
       if (filterStatus === "paid" && invoiceStatus !== "PAID") return false;
       if (filterStatus === "pending" && invoiceStatus === "PAID") return false;
     }
 
-    // Filter by search query
     if (searchQuery) {
       const q = normalize(searchQuery);
       const matchesSearch =
         normalize(r.receipt_number ?? "").includes(q) ||
         normalize(r.invoices?.invoice_number ?? "").includes(q) ||
-        normalize(r.clients?.full_name ?? "").includes(q) ||
+        normalize(r.client?.full_name ?? "").includes(q) ||
         normalize(r.invoices?.clients?.full_name ?? "").includes(q);
       if (!matchesSearch) return false;
     }
 
-    // Filter by month/year
     if (filterMonth || filterYear) {
       const d = new Date(r.created_at);
       if (filterMonth && String(d.getMonth() + 1).padStart(2, "0") !== filterMonth) return false;
@@ -121,75 +125,78 @@ export default function RecibosPage() {
 
   async function buildReceiptPreviewEl(data: any, settings: any) {
     const el = document.createElement("div");
-    el.style.cssText = "position:fixed;top:0;left:0;z-index:9999;background:#fff;width:600px;padding:32px;font-family:system-ui,sans-serif;font-size:16px;";
+    const sh = sanitizeHtml;
+    el.style.cssText = "position:fixed;top:0;left:0;z-index:9999;background:#fff;width:750px;padding:32px;font-family:Inter,system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-wrap:normal; word-break:normal; hyphens:none; white-space:nowrap; text-wrap:stable; text-align:justify;";
     el.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
-        <div style="display:flex;align-items:flex-start;gap:8px;">
-          <div style="width:56px;height:56px;border-radius:50%;background:rgba(184,131,126,0.1);display:flex;align-items:center;justify-content:center;margin-top:4px;">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7C1D2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18" /><rect x="4" y="13" width="16" height="8" rx="1.5" /><rect x="6" y="8" width="12" height="6" rx="1.5" /><circle cx="12" cy="7" r="2" fill="#7C1D2E" /><path d="M12 5v-1" /></svg>
-          </div>
-          <div>
-            <h2 style="font-size:24px;font-weight:700;color:#3D2B1F;margin:0;">${settings?.business_name || "Doña Nina"}</h2>
-            <p style="font-size:12px;letter-spacing:0.1em;color:#7C1D2E;text-transform:uppercase;margin:2px 0 0;">Bienestar & Salud</p>
-            <p style="font-size:12px;color:#9C8A82;margin:4px 0 0;">Distribuidor Independiente Amway &middot; Rep\u00fablica Dominicana</p>
+        <div style="display:flex;align-items:flex-start;gap:8px;flex-shrink:0;">
+          <div style="font-size:28px;margin-top:2px;flex-shrink:0;">🍰</div>
+          <div style="white-space:nowrap;">
+            <h2 style="font-size:26px;font-weight:800;color:#111827;margin:0;line-height:1.1;letter-spacing:-0.02em;">Donde Doña Nina</h2>
+            <p style="font-size:11px;letter-spacing:0.08em;color:#DC2626;text-transform:uppercase;margin:2px 0 0;line-height:1.4;font-weight:600;">Hechas con el amor de mamá</p>
+            <p style="font-size:10px;color:#6B7280;margin:2px 0 0;line-height:1.4;font-weight:500;">Sabor Dominicano</p>
           </div>
         </div>
-        <div style="text-align:right;">
-          <span style="display:inline-block;background:#F0FAF4;color:#6DB08A;font-size:12px;font-weight:700;padding:8px 16px;border-radius:999px;white-space:nowrap;">RECIBO DE PAGO</span>
-          <p style="font-size:18px;font-weight:700;color:#3D2B1F;margin:12px 0 0;">${data.receipt_number}</p>
-          <p style="font-size:12px;color:#9C8A82;margin:2px 0 0;">Fecha: ${formatDate(data.receipt_date || data.created_at)}</p>
+        <div style="text-align:right;white-space:nowrap;">
+          <span style="display:inline-block;background:#D1FAE5;color:#047857;font-size:12px;font-weight:700;padding:8px 16px;border-radius:999px;">RECIBO DE PAGO</span>
+          <p style="font-size:18px;font-weight:700;color:#111827;margin:12px 0 0;line-height:1.2;white-space:nowrap;">${sh(data.receipt_number)}</p>
+          <p style="font-size:12px;color:#6B7280;margin:2px 0 0;line-height:1.4;">Fecha: ${formatDate(data.receipt_date || data.created_at)}</p>
         </div>
       </div>
-      <div style="border-top:1px solid #E8E0D8;margin-bottom:20px;"></div>
-      <div style="border:1px solid #E8E0D8;background:#FCFAF7;border-radius:12px;padding:16px;margin-bottom:20px;">
-        <p style="font-size:11px;font-weight:700;color:#6DB08A;margin:0 0 12px;">INFORMACI\u00d3N DEL PAGO</p>
+      <div style="border-top:1px solid #E5E7EB;margin-bottom:20px;"></div>
+      <div style="border:1px solid #E5E7EB;background:#F9FAFB;border-radius:12px;padding:16px;margin-bottom:20px;">
+        <p style="font-size:11px;font-weight:700;color:#059669;margin:0 0 12px;">INFORMACIÓN DEL PAGO</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:13px;">
-          <p style="color:#3D2B1F;margin:0;"><span style="color:#9C8A82;">Cliente:</span> ${data.clients?.full_name || data.invoices?.clients?.full_name || "\u2014"}</p>
-          <p style="color:#3D2B1F;margin:0;"><span style="color:#9C8A82;">Factura:</span> ${data.invoices?.invoice_number || "\u2014"}</p>
-          <p style="color:#3D2B1F;margin:0;grid-column:1/-1;"><span style="color:#9C8A82;">M\u00e9todo de pago:</span> ${methodLabel[data.payment_method] || data.payment_method}${data.bank_accounts ? ` &mdash; ${data.bank_accounts.bank_name}` : ""}</p>
+          <p style="color:#111827;margin:0;"><span style="color:#6B7280;">Cliente:</span> ${sh(data.client?.full_name || data.invoice?.client?.full_name) || "—"}</p>
+          <p style="color:#111827;margin:0;"><span style="color:#6B7280;">Factura:</span> ${sh(data.invoice?.invoice_number) || "—"}</p>
+          <p style="color:#111827;margin:0;grid-column:1/-1;"><span style="color:#6B7280;">Método de pago:</span> ${methodLabel[data.payment_method] || data.payment_method}${data.bank_account ? ` &mdash; ${sh(data.bank_account.bank_name)}` : ""}</p>
         </div>
       </div>
 
-      ${(data.invoices?.invoice_items || []).length > 0 ? `
+      ${(data.invoice?.invoice_items || []).length > 0 ? `
         <table style="width:100%;font-size:13px;margin-bottom:20px;border-collapse:collapse;">
           <thead>
-            <tr style="background:#F0EBE3;">
-              <th style="padding:10px 12px;text-align:left;font-size:11px;color:#3D2B1F;font-weight:700;">Descripci\u00f3n / Producto</th>
-              <th style="padding:10px 12px;text-align:right;font-size:11px;color:#3D2B1F;font-weight:700;">Cant.</th>
-              <th style="padding:10px 12px;text-align:right;font-size:11px;color:#3D2B1F;font-weight:700;">Precio Unit.</th>
-              <th style="padding:10px 12px;text-align:right;font-size:11px;color:#3D2B1F;font-weight:700;">Total</th>
+            <tr style="background:#F9FAFB;">
+              <th style="padding:10px 12px;text-align:left;font-size:11px;color:#111827;font-weight:700;">Producto</th>
+              <th style="padding:10px 12px;text-align:right;font-size:11px;color:#111827;font-weight:700;">Cant.</th>
+              <th style="padding:10px 12px;text-align:right;font-size:11px;color:#111827;font-weight:700;">Precio Unit.</th>
+              <th style="padding:10px 12px;text-align:right;font-size:11px;color:#111827;font-weight:700;">Total</th>
             </tr>
           </thead>
           <tbody>
-            ${data.invoices.invoice_items.map((item: any) => `
-              <tr style="border-bottom:1px solid #F0EBE3;">
-                <td style="padding:10px 12px;font-size:13px;color:#3D2B1F;">${item.products?.name || item.custom_name || "Producto"}</td>
-                <td style="padding:10px 12px;text-align:right;font-size:13px;color:#3D2B1F;">${item.quantity}</td>
-                <td style="padding:10px 12px;text-align:right;font-size:13px;color:#3D2B1F;">${formatCurrency(Number(item.unit_price))}</td>
-                <td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:500;color:#3D2B1F;">${formatCurrency(Number(item.line_total))}</td>
+              ${data.invoice.invoice_items.map((item: any) => `
+              <tr style="border-bottom:1px solid #F9FAFB;">
+                <td style="padding:10px 12px;font-size:13px;color:#111827;">${sh(item.menu_item?.name || item.custom_name) || "Producto"}</td>
+                <td style="padding:10px 12px;text-align:right;font-size:13px;color:#111827;">${item.quantity}</td>
+                <td style="padding:10px 12px;text-align:right;font-size:13px;color:#111827;">${formatCurrency(Number(item.unit_price))}</td>
+                <td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:500;color:#111827;">${formatCurrency(Number(item.line_total))}</td>
               </tr>
             `).join("")}
           </tbody>
         </table>
       ` : ""}
-      <div style="border-top:1px solid #E8E0D8;padding-top:16px;margin-bottom:20px;">
+      <div style="border-top:1px solid #E5E7EB;padding-top:16px;margin-bottom:20px;">
         <div style="display:flex;justify-content:flex-end;align-items:baseline;gap:16px;">
-          <span style="font-size:14px;color:#9C8A82;">Monto pagado</span>
-          <span style="font-size:24px;font-weight:700;color:#5B9E6B;">${formatCurrency(Number(data.amount))}</span>
+          <span style="font-size:14px;color:#6B7280;">Monto pagado</span>
+          <span style="font-size:24px;font-weight:700;color:#059669;">${formatCurrency(Number(data.amount))}</span>
         </div>
-        ${data.amount_in_words ? `<p style="font-size:11px;color:#9C8A82;font-style:italic;text-align:right;margin:4px 0 0;">Son: ${data.amount_in_words}</p>` : ""}
+        ${data.amount_in_words ? `<p style="font-size:11px;color:#6B7280;font-style:italic;text-align:right;margin:4px 0 0;">Son: ${sh(data.amount_in_words)}</p>` : ""}
       </div>
       ${data.concept ? `
-        <div style="border-top:1px solid #E8E0D8;padding-top:16px;margin-bottom:16px;">
-          <p style="font-size:11px;color:#9C8A82;margin:0 0 4px;">Notas:</p>
-          <p style="font-size:13px;color:#3D2B1F;margin:0;">${data.concept}</p>
+        <div style="border-top:1px solid #E5E7EB;padding-top:16px;margin-bottom:16px;">
+          <p style="font-size:11px;color:#6B7280;margin:0 0 4px;">Notas:</p>
+          <p style="font-size:13px;color:#111827;margin:0;">${sh(data.concept)}</p>
         </div>
       ` : ""}
-      <div style="border-top:1px solid #E8E0D8;padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end;">
-        <p style="font-size:11px;font-style:italic;color:#7C1D2E;margin:0;">\u00a1Gracias por tu pago!</p>
-        <div style="text-align:right;">
-          ${settings?.signature_url ? `<img src="${settings.signature_url}" alt="Firma" style="height:96px;margin-left:auto;" />` : `<p style="font-size:14px;font-style:italic;color:#3D2B1F;font-weight:300;margin:0;font-family:Georgia,serif;">${settings?.business_name || "Doña Nina"}</p>`}
-          <p style="font-size:9px;color:#9C8A82;margin:2px 0 0;">FIRMA AUTORIZADA</p>
+<div style="border-top:1px solid #E5E7EB;padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end;">
+        <div>
+          <p style="font-size:11px;font-style:italic;color:#DC2626;margin:0;line-height:1.4;white-space:nowrap;">¡Gracias por tu pago! Hecho con el amor de mamá.</p>
+        </div>
+        <div style="text-align:right;white-space:nowrap;">
+          ${settings?.signature_url
+            ? `<img src="${sh(settings.signature_url)}" alt="Firma" style="height:96px;margin-left:auto;" />`
+            : `<img src="/firma-yrahisa-mateo.png" alt="Firma" style="height:96px;margin-left:auto;" />`}
+          <p style="font-size:9px;color:#6B7280;margin:2px 0 0;">FIRMA AUTORIZADA</p>
         </div>
       </div>
     `;
@@ -202,7 +209,7 @@ export default function RecibosPage() {
     document.body.appendChild(el);
     await new Promise(r => setTimeout(r, 500));
     const domtoimage = await import("dom-to-image-more");
-    const canvas = await domtoimage.toCanvas(el, { scale: 2, width: 600 });
+    const canvas = await domtoimage.toCanvas(el, { scale: 2, width: 750, ignoreCSSRuleErrors: true, disableEmbedFonts: true });
     document.body.removeChild(el);
     return { canvas, data: full, receipt_number: rec.receipt_number };
   }
@@ -246,7 +253,7 @@ export default function RecibosPage() {
     if (paymentMethod === "TRANSFER" && !bankAccountId) { toast.error("Selecciona una cuenta bancaria"); return; }
     if (amount > balanceDue) {
       const ok = window.confirm(
-        `El monto (${formatCurrency(amount)}) excede el saldo pendiente (${formatCurrency(balanceDue)}). ¿Deseas registrar un excedente como abono a favor?`
+        `El monto (${formatCurrency(amount)}) excede el saldo pendiente (${formatCurrency(balanceDue)}). \u00bfDeseas registrar un excedente como abono a favor?`
       );
       if (!ok) return;
     }
@@ -298,7 +305,7 @@ export default function RecibosPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm("¿Estás segura de eliminar este recibo?")) return;
+    if (!window.confirm("\u00bfEst\u00e1s segura de eliminar este recibo?")) return;
     try {
       await deleteReceipt(id);
       toast.success("Recibo eliminado");
@@ -319,47 +326,45 @@ export default function RecibosPage() {
   }
 
   return (
-    <PageContainer>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-[#3D2B1F]">Recibos</h1>
-          <p className="text-sm text-[#9C8A82] mt-1">Comprobantes de pago emitidos a clientes</p>
-        </div>
+    <PageContainer
+      title="Recibos"
+      subtitle="Comprobantes de pago emitidos a clientes"
+      action={
         <button
           onClick={() => { resetForm(); setShowModal(true); }}
-          className="flex items-center gap-2 bg-[#5B9E6B] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#6DB08A] transition-all shadow-sm"
+          className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm"
         >
           <Plus size={18} />
           Registrar Pago
         </button>
-      </div>
-
+      }
+    >
       <div className="relative mb-6">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
         <input
           type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Buscar recibo por número, factura o cliente..."
-          className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30 focus:border-[#5B9E6B] transition-all"
+          placeholder="Buscar recibo por n\u00famero, factura o cliente..."
+          className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 transition-all"
         />
       </div>
 
       <div className="flex gap-3 mb-6 flex-wrap">
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}
-          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30">
+          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30">
           <option value="all">Todos los estados</option>
           <option value="paid">Pagados</option>
           <option value="pending">Pendientes</option>
         </select>
         <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}
-          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30">
+          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30">
           <option value="">Todos los meses</option>
           {["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].map((m, i) => (
             <option key={i} value={String(i + 1).padStart(2, "0")}>{m}</option>
           ))}
         </select>
         <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}
-          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30">
-          <option value="">Todos los años</option>
+          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30">
+          <option value="">Todos los a\u00f1os</option>
           {[2024, 2025, 2026, 2027].map((y) => (
             <option key={y} value={y}>{y}</option>
           ))}
@@ -370,10 +375,10 @@ export default function RecibosPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#5B9E6B] border-t-transparent rounded-full animate-spin" /></div>
+        <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /></div>
       ) : receiptSearchFiltered.length === 0 ? (
         <div className="text-center py-16 text-[#9C8A82]">
-          <Receipt size={40} className="mx-auto mb-3 opacity-40" />
+          <FileText size={40} className="mx-auto mb-3 opacity-40" />
           <p className="text-sm">No hay recibos registrados</p>
         </div>
       ) : (
@@ -386,26 +391,27 @@ export default function RecibosPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-[#9C8A82] uppercase">Cliente</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-[#9C8A82] uppercase">Factura</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-[#9C8A82] uppercase">Monto</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase">Método</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase">M\u00e9todo</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase">Estado</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {receiptSearchFiltered.map((rec: any) => {
-                const m = methodMap[rec.payment_method] || methodMap.CASH;
                 return (
                   <tr key={rec.id} className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] hover:shadow-md transition-shadow">
                     <td className="px-4 py-3.5 text-sm font-medium text-[#3D2B1F]">{rec.receipt_number}</td>
                     <td className="px-4 py-3.5 text-sm text-[#9C8A82]">{formatDate(rec.receipt_date || rec.created_at)}</td>
-                    <td className="px-4 py-3.5 text-sm text-[#3D2B1F]">{rec.clients?.full_name || rec.invoices?.clients?.full_name || "—"}</td>
-                    <td className="px-4 py-3.5 text-sm text-[#3D2B1F]">{rec.invoices?.invoice_number || "—"}</td>
+                    <td className="px-4 py-3.5 text-sm text-[#3D2B1F]">{rec.client?.full_name || rec.invoices?.clients?.full_name || "\u2014"}</td>
+                    <td className="px-4 py-3.5 text-sm text-[#3D2B1F]">{rec.invoices?.invoice_number || "\u2014"}</td>
                     <td className="px-4 py-3.5 text-sm text-[#3D2B1F] text-right font-medium">{formatCurrency(rec.amount)}</td>
-                    <td className="px-4 py-3.5 text-center"><Badge variant={m.variant}>{m.label}</Badge></td>
                     <td className="px-4 py-3.5 text-center">
-                      <Badge variant={rec.invoices?.status === "PAID" ? "success" : "warning"}>
-                        {rec.invoices?.status === "PAID" ? "Pagado" : "Pendiente"}
-                      </Badge>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${methodColors[rec.payment_method] || "bg-[#FDF8F3] text-[#3D2B1F]"}`}>
+                        {methodLabel[rec.payment_method]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-center">
+                      <Badge status={rec.invoices?.status === "PAID" ? "PAID" : "PENDING"} />
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center justify-center gap-1">
@@ -413,7 +419,7 @@ export default function RecibosPage() {
                         <button onClick={() => openEdit(rec)} className="p-2 text-[#9C8A82] hover:bg-[#FDF8F3] rounded-lg" title="Editar"><Edit2 size={15} /></button>
                         <button onClick={() => handlePrintPdf(rec)} className="p-2 text-[#9C8A82] hover:bg-[#FDF8F3] rounded-lg" title="PDF"><Printer size={15} /></button>
                         <button onClick={() => handlePrintJpg(rec)} className="p-2 text-[#9C8A82] hover:bg-[#FDF8F3] rounded-lg" title="JPG"><Download size={15} /></button>
-                        <button onClick={() => handleDelete(rec.id)} className="p-2 text-[#E07A3A] hover:bg-[#E07A3A]/10 rounded-lg" title="Eliminar"><Trash2 size={15} /></button>
+                        <button onClick={() => handleDelete(rec.id)} className="p-2 text-[#E07A3A] hover:bg-[#7C1D2E]/10 rounded-lg" title="Eliminar"><Trash2 size={15} /></button>
                       </div>
                     </td>
                   </tr>
@@ -425,13 +431,13 @@ export default function RecibosPage() {
       )}
 
       {/* Detail modal */}
-      <Modal isOpen={showDetail} onClose={() => { setShowDetail(false); setSelectedReceipt(null); }} title={selectedReceipt?.receipt_number || "Detalle"} wide>
+      <Modal isOpen={showDetail} onClose={() => { setShowDetail(false); setSelectedReceipt(null); }} title={selectedReceipt?.receipt_number || "Detalle"} size="xl">
         {selectedReceipt && (
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-[#9C8A82]">Cliente</p>
-                <p className="text-sm font-medium text-[#3D2B1F]">{selectedReceipt.clients?.full_name || selectedReceipt.invoices?.clients?.full_name || "—"}</p>
+                <p className="text-sm font-medium text-[#3D2B1F]">{selectedReceipt.clients?.full_name || selectedReceipt.invoices?.clients?.full_name || "\u2014"}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-[#9C8A82]">Fecha</p>
@@ -439,18 +445,18 @@ export default function RecibosPage() {
               </div>
             </div>
 
-            <div className="bg-[#F0FAF4] rounded-xl p-4 space-y-2">
+            <div className="bg-[#5B9E6B]/10 rounded-xl p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-[#6DB08A]">Factura asociada</span>
-                <span className="text-[#3D2B1F] font-medium">{selectedReceipt.invoices?.invoice_number || "—"}</span>
+                <span className="text-green-600">Factura asociada</span>
+                <span className="text-[#3D2B1F] font-medium">{selectedReceipt.invoices?.invoice_number || "\u2014"}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-[#6DB08A]">Método de pago</span>
-                <span className="text-[#3D2B1F]" style={{whiteSpace:"nowrap"}}>{methodLabel[selectedReceipt.payment_method] || selectedReceipt.payment_method}{selectedReceipt.bank_accounts ? ` — ${selectedReceipt.bank_accounts.bank_name}` : ""}</span>
+                <span className="text-green-600">M\u00e9todo de pago</span>
+                <span className="text-[#3D2B1F]">{methodLabel[selectedReceipt.payment_method] || selectedReceipt.payment_method}{selectedReceipt.bank_accounts ? ` \u2014 ${selectedReceipt.bank_accounts.bank_name}` : ""}</span>
               </div>
-              <div className="flex justify-between text-lg font-bold pt-2 border-t border-[#5B9E6B]/30">
+              <div className="flex justify-between text-lg font-bold pt-2 border-t border-green-500/30">
                 <span>Monto pagado</span>
-                <span className="text-[#5B9E6B]">{formatCurrency(selectedReceipt.amount)}</span>
+                <span className="text-green-600">{formatCurrency(selectedReceipt.amount)}</span>
               </div>
             </div>
 
@@ -458,8 +464,8 @@ export default function RecibosPage() {
               <div>
                 <table className="w-full text-sm mb-5">
                   <thead>
-                    <tr className="bg-[#F0EBE3]">
-                      <th className="py-2.5 px-3 text-left text-xs text-[#3D2B1F] font-bold">Descripci\u00f3n / Producto</th>
+                    <tr className="bg-[#FDF8F3]">
+                      <th className="py-2.5 px-3 text-left text-xs text-[#3D2B1F] font-bold">Producto</th>
                       <th className="py-2.5 px-3 text-right text-xs text-[#3D2B1F] font-bold">Cant.</th>
                       <th className="py-2.5 px-3 text-right text-xs text-[#3D2B1F] font-bold">Precio Unit.</th>
                       <th className="py-2.5 px-3 text-right text-xs text-[#3D2B1F] font-bold">Total</th>
@@ -467,8 +473,8 @@ export default function RecibosPage() {
                   </thead>
                   <tbody>
                     {(selectedReceipt.invoices?.invoice_items || []).map((item: any, i: number) => (
-                      <tr key={i} className="border-b border-[#F0EBE3]">
-                        <td className="py-2.5 px-3 text-sm text-[#3D2B1F]">{item.products?.name || item.custom_name || "Producto"}</td>
+                      <tr key={i} className="border-b border-[#E8E0D8]">
+                        <td className="py-2.5 px-3 text-sm text-[#3D2B1F]">{item.menu_item?.name || item.custom_name || "Producto"}</td>
                         <td className="py-2.5 px-3 text-right text-sm text-[#3D2B1F]">{item.quantity}</td>
                         <td className="py-2.5 px-3 text-right text-sm text-[#3D2B1F]">{formatCurrency(Number(item.unit_price))}</td>
                         <td className="py-2.5 px-3 text-right text-sm font-medium text-[#3D2B1F]">{formatCurrency(Number(item.line_total))}</td>
@@ -490,6 +496,19 @@ export default function RecibosPage() {
               </div>
             )}
 
+            <div className="border-t border-[#E8E0D8] pt-4 flex justify-between items-end">
+              <div>
+                <p className="text-xs italic text-[#7C1D2E] whitespace-nowrap">¡Gracias por tu pago! Hecho con el amor de mamá.</p>
+              </div>
+              <div className="text-right">
+                {settings?.signature_url ? (
+                  <Image src={settings.signature_url} alt="Firma" width={96} height={96} className="h-24 w-auto ml-auto" unoptimized />
+                ) : (
+                  <Image src="/firma-yrahisa-mateo.png" alt="Firma" width={96} height={96} className="h-24 w-auto ml-auto" />
+                )}
+                <p className="text-[9px] text-[#9C8A82] mt-0.5">FIRMA AUTORIZADA</p>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-3">
               <button onClick={() => handlePrintPdf(selectedReceipt)} className="flex-1 min-w-[120px] h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all flex items-center justify-center gap-2">
                 <Printer size={18} /> PDF
@@ -533,19 +552,11 @@ export default function RecibosPage() {
           documentNumber={selectedReceipt.receipt_number}
           documentId={selectedReceipt.id}
           total={formatCurrency(selectedReceipt.amount)}
-          businessName={settings?.business_name || "Doña Nina"}
+          businessName={settings?.business_name || "Do\u00f1a Nina"}
           senderEmail={settings?.email || undefined}
           senderName={settings?.sender_name || undefined}
           emailTemplate={(settings as any)?.email_template || undefined}
           whatsappTemplate={(settings as any)?.whatsapp_template || undefined}
-          smtp={(settings as any)?.smtp_host ? {
-            host: (settings as any).smtp_host,
-            port: (settings as any).smtp_port || 587,
-            user: (settings as any).smtp_user,
-            pass: (settings as any).smtp_pass,
-            secure: (settings as any).smtp_secure || false,
-            senderName: (settings as any).sender_name || undefined,
-          } : undefined}
           getAttachment={async () => {
             const { canvas, receipt_number } = await captureReceipt(selectedReceipt);
             const jspdfModule = await import("jspdf");
@@ -559,7 +570,7 @@ export default function RecibosPage() {
       )}
 
       {/* Edit modal */}
-      <Modal isOpen={showEditModal} onClose={() => { setShowEditModal(false); setSelectedReceipt(null); }} title="Editar Recibo" subtitle={selectedReceipt?.receipt_number || ""} wide>
+      <Modal isOpen={showEditModal} onClose={() => { setShowEditModal(false); setSelectedReceipt(null); }} title="Editar Recibo" subtitle={selectedReceipt?.receipt_number || ""} size="xl">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -567,15 +578,15 @@ export default function RecibosPage() {
               <input
                 type="number" step="0.01" value={editForm.amount}
                 onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30 focus:border-[#5B9E6B] transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Método de pago</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">M\u00e9todo de pago</label>
               <select
                 value={editForm.payment_method}
                 onChange={(e) => setEditForm({ ...editForm, payment_method: e.target.value as any, bank_account_id: "" })}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30 focus:border-[#5B9E6B] transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 transition-all"
               >
                 <option value="CASH">Efectivo</option>
                 <option value="TRANSFER">Transferencia</option>
@@ -589,11 +600,11 @@ export default function RecibosPage() {
               <select
                 value={editForm.bank_account_id}
                 onChange={(e) => setEditForm({ ...editForm, bank_account_id: e.target.value })}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30 focus:border-[#5B9E6B] transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 transition-all"
               >
                 <option value="">Seleccionar banco...</option>
                 {bankAccounts.map((b) => (
-                  <option key={b.id} value={b.id}>{b.bank_name} — {b.account_type} — No. {b.account_number}</option>
+                  <option key={b.id} value={b.id}>{b.bank_name} \u2014 {b.account_type} \u2014 No. {b.account_number}</option>
                 ))}
               </select>
             </div>
@@ -604,12 +615,12 @@ export default function RecibosPage() {
               value={editForm.concept} onChange={(e) => setEditForm({ ...editForm, concept: e.target.value })}
               rows={3}
               placeholder="Notas del recibo..."
-              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30 focus:border-[#5B9E6B] transition-all resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 transition-all resize-none"
             />
           </div>
           <div className="flex gap-3 pt-2">
             <button onClick={() => { setShowEditModal(false); setSelectedReceipt(null); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
-            <button onClick={handleEditSave} disabled={saving} className="flex-1 h-12 bg-[#5B9E6B] text-white rounded-xl text-sm font-medium hover:bg-[#6DB08A] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
+            <button onClick={handleEditSave} disabled={saving} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
               <Save size={18} /> {saving ? "Guardando..." : "Guardar Cambios"}
             </button>
           </div>
@@ -617,21 +628,21 @@ export default function RecibosPage() {
       </Modal>
 
       {/* Payment form modal */}
-      <Modal isOpen={showModal} onClose={() => { setShowModal(false); resetForm(); }} title="Registrar Pago" subtitle={selectedInvoiceData?.clients?.full_name ? `Cliente: ${selectedInvoiceData.clients.full_name}` : undefined} wide>
+      <Modal isOpen={showModal} onClose={() => { setShowModal(false); resetForm(); }} title="Registrar Pago" subtitle={selectedInvoiceData?.client?.full_name ? `Cliente: ${selectedInvoiceData.client.full_name}` : undefined} size="xl">
         <div className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Factura</label>
             <select
               value={selectedInvoice}
               onChange={(e) => { setSelectedInvoice(e.target.value); setAmount(0); }}
-              className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30 focus:border-[#5B9E6B] transition-all"
+              className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 transition-all"
             >
               <option value="">Seleccionar factura...</option>
               {pendingInvoices.map((inv: any) => {
                 const due = Number(inv.total) - Number(inv.amount_paid || 0);
                 return (
                   <option key={inv.id} value={inv.id}>
-                    {inv.invoice_number} — {inv.clients?.full_name} — Pend. {formatCurrency(due)}
+                    {inv.invoice_number} \u2014 {inv.client?.full_name} \u2014 Pend. {formatCurrency(due)}
                   </option>
                 );
               })}
@@ -639,10 +650,10 @@ export default function RecibosPage() {
           </div>
 
           {selectedInvoiceData && (
-            <div className="bg-[#F0FAF4] rounded-xl p-4 text-sm space-y-1">
-              <div className="flex justify-between"><span className="text-[#6DB08A]">Total factura</span><span>{formatCurrency(selectedInvoiceData.total)}</span></div>
-              <div className="flex justify-between"><span className="text-[#6DB08A]">Pagado</span><span>{formatCurrency(selectedInvoiceData.amount_paid || 0)}</span></div>
-              <div className="flex justify-between font-bold text-[#3D2B1F] pt-1 border-t border-[#5B9E6B]/30">
+            <div className="bg-[#5B9E6B]/10 rounded-xl p-4 text-sm space-y-1">
+              <div className="flex justify-between"><span className="text-green-600">Total factura</span><span>{formatCurrency(selectedInvoiceData.total)}</span></div>
+              <div className="flex justify-between"><span className="text-green-600">Pagado</span><span>{formatCurrency(selectedInvoiceData.amount_paid || 0)}</span></div>
+              <div className="flex justify-between font-bold text-[#3D2B1F] pt-1 border-t border-green-500/30">
                 <span>Saldo pendiente</span><span>{formatCurrency(balanceDue)}</span>
               </div>
             </div>
@@ -653,7 +664,7 @@ export default function RecibosPage() {
             <input
               type="date" value={receiptDate}
               onChange={(e) => setReceiptDate(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30 focus:border-[#5B9E6B] transition-all"
+              className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 transition-all"
             />
           </div>
 
@@ -663,15 +674,15 @@ export default function RecibosPage() {
               <input
                 type="number" step="0.01" value={amount}
                 onChange={(e) => setAmount(Number(e.target.value))}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30 focus:border-[#5B9E6B] transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Método de pago</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">M\u00e9todo de pago</label>
               <select
                 value={paymentMethod}
                 onChange={(e) => { setPaymentMethod(e.target.value as any); setBankAccountId(""); }}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30 focus:border-[#5B9E6B] transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 transition-all"
               >
                 <option value="CASH">Efectivo</option>
                 <option value="TRANSFER">Transferencia</option>
@@ -686,11 +697,11 @@ export default function RecibosPage() {
               <select
                 value={bankAccountId}
                 onChange={(e) => setBankAccountId(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30 focus:border-[#5B9E6B] transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 transition-all"
               >
                 <option value="">Seleccionar banco...</option>
                 {bankAccounts.map((b) => (
-                  <option key={b.id} value={b.id}>{b.bank_name} — {b.account_type} — No. {b.account_number}</option>
+                  <option key={b.id} value={b.id}>{b.bank_name} \u2014 {b.account_type} \u2014 No. {b.account_number}</option>
                 ))}
               </select>
             </div>
@@ -701,20 +712,18 @@ export default function RecibosPage() {
             <textarea
               value={notes} onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#5B9E6B]/30 focus:border-[#5B9E6B] transition-all resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 transition-all resize-none"
             />
           </div>
 
           <div className="flex gap-3">
             <button onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
-            <button onClick={handleSave} disabled={saving} className="flex-1 h-12 bg-[#5B9E6B] text-white rounded-xl text-sm font-medium hover:bg-[#6DB08A] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
+            <button onClick={handleSave} disabled={saving} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
               <Save size={18} /> {saving ? "Guardando..." : "Registrar Pago"}
             </button>
           </div>
         </div>
       </Modal>
-
-
     </PageContainer>
   );
 }

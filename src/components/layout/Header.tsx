@@ -1,144 +1,78 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { Plus, LogOut, UserPlus, FileText, Receipt, ShoppingCart, ChevronDown } from "lucide-react";
-import Link from "next/link";
-import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
-import CakeIcon from "@/components/ui/CakeIcon";
+import { useState, useRef, useEffect } from 'react'
+import { Menu, LogOut } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { getInitials } from '@/lib/utils'
 
-export default function Header() {
-  const { signOut } = useAuth();
-  const router = useRouter();
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+interface HeaderProps {
+  onMenuClick: () => void
+}
 
-  async function handleLogout() {
-    await signOut();
-    router.push("/login");
-  }
+export function Header({ onMenuClick }: HeaderProps) {
+  const { profile, signOut } = useAuth()
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   return (
-    <header className="bg-white border-b border-[#E8E0D8] px-4 sm:px-6 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-        <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#7C1D2E]/60 flex items-center justify-center flex-shrink-0">
-            <CakeIcon size={28} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-lg sm:text-xl font-bold text-[#3D2B1F] leading-tight tracking-wide">Doña Nina</h1>
-            <p className="text-[10px] sm:text-[11px] text-[#9C8A82] tracking-widest uppercase leading-tight font-medium">
-              Bienestar & Salud
-            </p>
-          </div>
-        </Link>
-
-        {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-3">
-          <Link
-            href="/facturacion?nueva=true"
-            className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all duration-200 shadow-sm"
-          >
-            <Plus size={18} />
-            Nueva Factura
-          </Link>
-          <Link
-            href="/recibos?nuevo=true"
-            className="flex items-center gap-2 bg-[#5B9E6B] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#6DB08A] transition-all duration-200 shadow-sm"
-          >
-            <Plus size={18} />
-            Registrar Pago
-          </Link>
-          <Link
-            href="/inventario?nueva-compra=true"
-            className="flex items-center gap-2 bg-[#2C4A6E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#1B3454] transition-all duration-200 shadow-sm"
-          >
-            <Plus size={18} />
-            Registrar Compra
-          </Link>
-          <Link
-            href="/clientes?nuevo=true"
-            className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all duration-200 shadow-sm"
-          >
-            <UserPlus size={18} />
-            Añadir Cliente
-          </Link>
+    <header className="sticky top-0 z-40 bg-[#7C1D2E] shadow-md">
+      <div className="flex items-center justify-between px-4 h-16">
+        <div className="flex items-center gap-3">
           <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 border border-[#E8E0D8] text-[#9C8A82] px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all duration-200"
-            title="Cerrar sesión"
+            onClick={onMenuClick}
+            aria-label="Abrir menú de navegación"
+            className="lg:hidden p-2 rounded-lg text-white hover:bg-[#7C1D2E]/100 transition-colors"
           >
-            <LogOut size={18} />
+            <Menu className="h-6 w-6" />
           </button>
+          <div>
+            <h1 className="text-xl font-bold text-white tracking-tight">Donde Doña Nina</h1>
+            <p className="text-xs text-red-200">Sistema de Gestión</p>
+          </div>
         </div>
 
-        {/* Mobile Actions */}
-        <div className="md:hidden relative">
+        <div className="relative" ref={dropdownRef}>
           <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="flex items-center gap-1 bg-[#7C1D2E] text-white px-3 py-2 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm"
+            onClick={() => setShowDropdown(!showDropdown)}
+            aria-label="Menú de usuario"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-white hover:bg-[#7C1D2E]/100 transition-colors"
           >
-            <Plus size={18} />
-            <ChevronDown size={14} className={`transition-transform ${showMobileMenu ? "rotate-180" : ""}`} />
+            <div className="h-8 w-8 rounded-full bg-[#D4A017]/100 flex items-center justify-center text-sm font-bold text-red-900">
+              {profile ? getInitials(profile.name) : '?'}
+            </div>
+            <span className="hidden sm:block text-sm font-medium">{profile?.name || 'Usuario'}</span>
           </button>
 
-          {showMobileMenu && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowMobileMenu(false)} />
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-[#E8E0D8] rounded-xl shadow-lg z-50 overflow-hidden">
-                <Link
-                  href="/facturacion?nueva=true"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FDF8F3] transition-colors border-b border-[#E8E0D8]"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[#7C1D2E]/10 flex items-center justify-center">
-                    <FileText size={16} className="text-[#7C1D2E]" />
-                  </div>
-                  <span className="text-sm text-[#3D2B1F] font-medium">Nueva Factura</span>
-                </Link>
-                <Link
-                  href="/recibos?nuevo=true"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FDF8F3] transition-colors border-b border-[#E8E0D8]"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[#5B9E6B]/10 flex items-center justify-center">
-                    <Receipt size={16} className="text-[#5B9E6B]" />
-                  </div>
-                  <span className="text-sm text-[#3D2B1F] font-medium">Registrar Pago</span>
-                </Link>
-                <Link
-                  href="/inventario?nueva-compra=true"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FDF8F3] transition-colors border-b border-[#E8E0D8]"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[#2C4A6E]/10 flex items-center justify-center">
-                    <ShoppingCart size={16} className="text-[#2C4A6E]" />
-                  </div>
-                  <span className="text-sm text-[#3D2B1F] font-medium">Registrar Compra</span>
-                </Link>
-                <Link
-                  href="/clientes?nuevo=true"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#FDF8F3] transition-colors border-b border-[#E8E0D8]"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[#7C1D2E]/10 flex items-center justify-center">
-                    <UserPlus size={16} className="text-[#7C1D2E]" />
-                  </div>
-                  <span className="text-sm text-[#3D2B1F] font-medium">Añadir Cliente</span>
-                </Link>
-                <button
-                  onClick={() => { setShowMobileMenu(false); handleLogout(); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                    <LogOut size={16} className="text-red-500" />
-                  </div>
-                  <span className="text-sm text-red-500 font-medium">Cerrar Sesión</span>
-                </button>
+          {showDropdown && (
+            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-[#E8E0D8] py-1 z-50">
+              <div className="px-4 py-3 border-b border-[#E8E0D8]">
+                <p className="text-sm font-medium text-[#3D2B1F]">{profile?.name}</p>
+                <p className="text-xs text-[#9C8A82]">{profile?.email}</p>
+                <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full capitalize">
+                  {profile?.role}
+                </span>
               </div>
-            </>
+              <button
+                onClick={signOut}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-[#7C1D2E] hover:bg-[#7C1D2E]/10 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Cerrar Sesión
+              </button>
+            </div>
           )}
         </div>
       </div>
     </header>
-  );
+  )
 }

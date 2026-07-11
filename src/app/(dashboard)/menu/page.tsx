@@ -9,11 +9,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import type { ColumnDef } from '@tanstack/react-table'
-import PageContainer from '@/components/layout/PageContainer'
-import DataTable from '@/components/ui/DataTable'
-import Modal from '@/components/ui/Modal'
-import Badge from '@/components/ui/Badge'
-import PrintActions from '@/components/ui/PrintActions'
+import { PageContainer } from '@/components/layout/PageContainer'
+import { DataTable } from '@/components/ui/DataTable'
+import { Modal } from '@/components/ui/Modal'
+import { Badge } from '@/components/ui/Badge'
+import { PrintActions } from '@/components/ui/PrintActions'
 import { formatCurrency } from '@/lib/utils'
 import { getMenuItems, getMenuCategories, createMenuItem, updateMenuItem, deleteMenuItem, createCategory, updateCategory, deleteCategory } from '@/services/menu'
 import type { MenuItem, MenuCategory } from '@/types/database'
@@ -179,7 +179,7 @@ export default function MenuPage() {
       ingredients: item.ingredients ?? '',
       category_id: item.category_id,
       price: item.price,
-      cost: item.cost ?? undefined,
+      cost: item.cost,
       active: item.active,
       available: item.available,
       itbis_enabled: item.itbis_enabled ?? false,
@@ -254,7 +254,7 @@ export default function MenuPage() {
       cell: ({ row }) => {
         const p = (row.original.price || 0) - (row.original.cost || 0)
         return (
-          <span className={p >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+          <span className={p >= 0 ? 'text-green-600 font-medium' : 'text-[#7C1D2E] font-medium'}>
             {formatCurrency(p)}
           </span>
         )
@@ -271,7 +271,7 @@ export default function MenuPage() {
       accessorKey: 'available',
       header: 'Disponible',
       cell: ({ row }) => (
-        <span className={row.original.available ? 'text-green-600' : 'text-red-600'}>
+        <span className={row.original.available ? 'text-green-600' : 'text-[#7C1D2E]'}>
           {row.original.available ? 'Sí' : 'No'}
         </span>
       ),
@@ -283,14 +283,14 @@ export default function MenuPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleOpenItemEdit(row.original)}
-            className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="p-1.5 rounded-lg text-[#9C8A82] hover:bg-[#FDF8F3] hover:text-gray-600 transition-colors"
             aria-label="Editar"
           >
             <IconPencil className="h-4 w-4" />
           </button>
           <button
             onClick={() => handleItemDelete(row.original)}
-            className="p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+            className="p-1.5 rounded-lg text-[#9C8A82] hover:bg-[#7C1D2E]/10 hover:text-[#7C1D2E] transition-colors"
             aria-label="Eliminar"
           >
             <IconTrash2 className="h-4 w-4" />
@@ -314,10 +314,10 @@ export default function MenuPage() {
     return (
       <PageContainer title="Menú" subtitle="Catálogo de productos">
         <div className="text-center py-20">
-          <p className="text-gray-500 mb-4">{error}</p>
+          <p className="text-[#9C8A82] mb-4">{error}</p>
           <button
             onClick={fetchData}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+            className="px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm hover:bg-[#5C1420] transition-colors"
           >
             Reintentar
           </button>
@@ -334,14 +334,14 @@ export default function MenuPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleOpenCategoryCreate}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 border border-[#E8E0D8] text-[#3D2B1F] rounded-lg text-sm font-medium hover:bg-[#FDF8F3] transition-colors"
           >
             <FolderPlus className="h-4 w-4" />
             Nueva Categoría
           </button>
           <button
             onClick={handleOpenItemCreate}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors"
           >
             <Plus className="h-4 w-4" />
             Nuevo Producto
@@ -350,25 +350,25 @@ export default function MenuPage() {
       }
     >
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Categorías</h2>
+        <h2 className="text-lg font-semibold text-[#3D2B1F] mb-3">Categorías</h2>
         <div className="flex flex-wrap gap-2 mb-6">
           {categories.map((cat) => (
             <div
               key={cat.id}
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm"
+              className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E8E0D8] rounded-lg text-sm"
             >
-              <span className="text-gray-700">{cat.name}</span>
-              <span className="text-xs text-gray-400">({cat.sort_order})</span>
+              <span className="text-[#3D2B1F]">{cat.name}</span>
+              <span className="text-xs text-[#9C8A82]">({cat.sort_order})</span>
               <button
                 onClick={() => handleOpenCategoryEdit(cat)}
-                className="p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-0.5 text-[#9C8A82] hover:text-gray-600 transition-colors"
                 aria-label="Editar categoría"
               >
                 <Pencil className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => handleCategoryDelete(cat)}
-                className="p-0.5 text-gray-400 hover:text-red-600 transition-colors"
+                className="p-0.5 text-[#9C8A82] hover:text-[#7C1D2E] transition-colors"
                 aria-label="Eliminar categoría"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -376,7 +376,7 @@ export default function MenuPage() {
             </div>
           ))}
           {categories.length === 0 && (
-            <p className="text-sm text-gray-500">No hay categorías creadas</p>
+            <p className="text-sm text-[#9C8A82]">No hay categorías creadas</p>
           )}
         </div>
       </div>
@@ -390,33 +390,33 @@ export default function MenuPage() {
       >
         <form onSubmit={categoryForm.handleSubmit(handleCategorySubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+              Nombre <span className="text-[#E07A3A]">*</span>
             </label>
             <input
               {...categoryForm.register('name')}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
             />
             {categoryForm.formState.errors.name && (
-              <p className="text-red-500 text-xs mt-1">{categoryForm.formState.errors.name.message}</p>
+              <p className="text-[#E07A3A] text-xs mt-1">{categoryForm.formState.errors.name.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Descripción</label>
             <textarea
               {...categoryForm.register('description')}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Orden</label>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Orden</label>
             <input
               type="number"
               {...categoryForm.register('sort_order', { valueAsNumber: true })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
             />
           </div>
 
@@ -424,13 +424,13 @@ export default function MenuPage() {
             <button
               type="button"
               onClick={() => setCategoryModalOpen(false)}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+              className="px-4 py-2 text-sm text-gray-600 hover:text-[#3D2B1F] transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+              className="px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors"
             >
               {editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}
             </button>
@@ -447,56 +447,56 @@ export default function MenuPage() {
         <form onSubmit={itemForm.handleSubmit(handleItemSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Código <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                Código <span className="text-[#E07A3A]">*</span>
               </label>
               <input
                 {...itemForm.register('code')}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
               />
               {itemForm.formState.errors.code && (
-                <p className="text-red-500 text-xs mt-1">{itemForm.formState.errors.code.message}</p>
+                <p className="text-[#E07A3A] text-xs mt-1">{itemForm.formState.errors.code.message}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                Nombre <span className="text-[#E07A3A]">*</span>
               </label>
               <input
                 {...itemForm.register('name')}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
               />
               {itemForm.formState.errors.name && (
-                <p className="text-red-500 text-xs mt-1">{itemForm.formState.errors.name.message}</p>
+                <p className="text-[#E07A3A] text-xs mt-1">{itemForm.formState.errors.name.message}</p>
               )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Descripción</label>
             <textarea
               {...itemForm.register('description')}
               rows={2}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ingredientes</label>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Ingredientes</label>
             <textarea
               {...itemForm.register('ingredients')}
               rows={2}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Categoría <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+              Categoría <span className="text-[#E07A3A]">*</span>
             </label>
             <select
               {...itemForm.register('category_id')}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
             >
               <option value="">Seleccionar...</option>
               {categories.map((cat) => (
@@ -504,39 +504,39 @@ export default function MenuPage() {
               ))}
             </select>
             {itemForm.formState.errors.category_id && (
-              <p className="text-red-500 text-xs mt-1">{itemForm.formState.errors.category_id.message}</p>
+              <p className="text-[#E07A3A] text-xs mt-1">{itemForm.formState.errors.category_id.message}</p>
             )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Precio <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                Precio <span className="text-[#E07A3A]">*</span>
               </label>
               <input
                 type="number"
                 step="0.01"
                 {...itemForm.register('price', { valueAsNumber: true })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
               />
               {itemForm.formState.errors.price && (
-                <p className="text-red-500 text-xs mt-1">{itemForm.formState.errors.price.message}</p>
+                <p className="text-[#E07A3A] text-xs mt-1">{itemForm.formState.errors.price.message}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Costo</label>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Costo</label>
               <input
                 type="number"
                 step="0.01"
                 {...itemForm.register('cost', { valueAsNumber: true })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
               />
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-sm text-gray-500 mb-1">Ganancia por unidad</div>
-            <div className={`text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className="bg-[#FDF8F3] rounded-lg p-3">
+            <div className="text-sm text-[#9C8A82] mb-1">Ganancia por unidad</div>
+            <div className={`text-xl font-bold ${profit >= 0 ? 'text-green-600' : 'text-[#7C1D2E]'}`}>
               {formatCurrency(profit)}
             </div>
           </div>
@@ -546,20 +546,20 @@ export default function MenuPage() {
               <input
                 type="checkbox"
                 {...itemForm.register('itbis_enabled')}
-                className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                className="w-4 h-4 rounded border-gray-300 text-[#7C1D2E] focus:ring-[#7C1D2E]/30"
               />
-              <span className="text-sm text-gray-700">Aplica ITBIS</span>
+              <span className="text-sm text-[#3D2B1F]">Aplica ITBIS</span>
             </label>
             {watchItbisEnabled && (
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Tasa:</label>
+                <label className="text-sm text-[#3D2B1F]">Tasa:</label>
                 <input
                   type="number"
                   step="0.01"
                   {...itemForm.register('itbis_rate', { valueAsNumber: true })}
-                  className="w-20 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  className="w-20 px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
                 />
-                <span className="text-sm text-gray-500">%</span>
+                <span className="text-sm text-[#9C8A82]">%</span>
               </div>
             )}
           </div>
@@ -569,17 +569,17 @@ export default function MenuPage() {
               <input
                 type="checkbox"
                 {...itemForm.register('active')}
-                className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                className="w-4 h-4 rounded border-gray-300 text-[#7C1D2E] focus:ring-[#7C1D2E]/30"
               />
-              <span className="text-sm text-gray-700">Activo</span>
+              <span className="text-sm text-[#3D2B1F]">Activo</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 {...itemForm.register('available')}
-                className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                className="w-4 h-4 rounded border-gray-300 text-[#7C1D2E] focus:ring-[#7C1D2E]/30"
               />
-              <span className="text-sm text-gray-700">Disponible</span>
+              <span className="text-sm text-[#3D2B1F]">Disponible</span>
             </label>
           </div>
 
@@ -587,13 +587,13 @@ export default function MenuPage() {
             <button
               type="button"
               onClick={() => setItemModalOpen(false)}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+              className="px-4 py-2 text-sm text-gray-600 hover:text-[#3D2B1F] transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+              className="px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors"
             >
               {editingItem ? 'Guardar Cambios' : 'Crear Producto'}
             </button>
@@ -615,45 +615,45 @@ export default function MenuPage() {
             <div id="menu-item-detail" className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Código</label>
-                  <p className="text-gray-900">{detailItem.code}</p>
+                  <label className="block text-sm font-medium text-[#9C8A82]">Código</label>
+                  <p className="text-[#3D2B1F]">{detailItem.code}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Nombre</label>
-                  <p className="text-gray-900">{detailItem.name}</p>
+                  <label className="block text-sm font-medium text-[#9C8A82]">Nombre</label>
+                  <p className="text-[#3D2B1F]">{detailItem.name}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Categoría</label>
-                  <p className="text-gray-900">{detailItem.category?.name || '—'}</p>
+                  <label className="block text-sm font-medium text-[#9C8A82]">Categoría</label>
+                  <p className="text-[#3D2B1F]">{detailItem.category?.name || '—'}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Precio</label>
-                  <p className="text-gray-900">{formatCurrency(detailItem.price)}</p>
+                  <label className="block text-sm font-medium text-[#9C8A82]">Precio</label>
+                  <p className="text-[#3D2B1F]">{formatCurrency(detailItem.price)}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Costo</label>
-                  <p className="text-gray-900">{detailItem.cost ? formatCurrency(detailItem.cost) : '—'}</p>
+                  <label className="block text-sm font-medium text-[#9C8A82]">Costo</label>
+                  <p className="text-[#3D2B1F]">{detailItem.cost ? formatCurrency(detailItem.cost) : '—'}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Ganancia</label>
-                  <p className="text-gray-900 font-medium">{(detailItem.price - (detailItem.cost || 0)) >= 0 ? '' : '-'}{formatCurrency(Math.abs(detailItem.price - (detailItem.cost || 0)))}</p>
+                  <label className="block text-sm font-medium text-[#9C8A82]">Ganancia</label>
+                  <p className="text-[#3D2B1F] font-medium">{(detailItem.price - (detailItem.cost || 0)) >= 0 ? '' : '-'}{formatCurrency(Math.abs(detailItem.price - (detailItem.cost || 0)))}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">ITBIS</label>
-                  <p className="text-gray-900">
+                  <label className="block text-sm font-medium text-[#9C8A82]">ITBIS</label>
+                  <p className="text-[#3D2B1F]">
                     {detailItem.itbis_enabled ? `Sí (${detailItem.itbis_rate}%)` : 'No'}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Estado</label>
-                  <p className="text-gray-900">
+                  <label className="block text-sm font-medium text-[#9C8A82]">Estado</label>
+                  <p className="text-[#3D2B1F]">
                     <Badge status={detailItem.active ? 'AVAILABLE' : 'CANCELLED'} />
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Disponible</label>
-                  <p className="text-gray-900">
-                    <span className={detailItem.available ? 'text-green-600' : 'text-red-600'}>
+                  <label className="block text-sm font-medium text-[#9C8A82]">Disponible</label>
+                  <p className="text-[#3D2B1F]">
+                    <span className={detailItem.available ? 'text-green-600' : 'text-[#7C1D2E]'}>
                       {detailItem.available ? 'Sí' : 'No'}
                     </span>
                   </p>
@@ -661,14 +661,14 @@ export default function MenuPage() {
               </div>
               {detailItem.description && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Descripción</label>
-                  <p className="text-gray-900">{detailItem.description}</p>
+                  <label className="block text-sm font-medium text-[#9C8A82]">Descripción</label>
+                  <p className="text-[#3D2B1F]">{detailItem.description}</p>
                 </div>
               )}
               {detailItem.ingredients && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Ingredientes</label>
-                  <p className="text-gray-900">{detailItem.ingredients}</p>
+                  <label className="block text-sm font-medium text-[#9C8A82]">Ingredientes</label>
+                  <p className="text-[#3D2B1F]">{detailItem.ingredients}</p>
                 </div>
               )}
             </div>

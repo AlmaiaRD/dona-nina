@@ -1,2055 +1,628 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useRef, useMemo, Suspense } from "react";
-import PageContainer from "@/components/layout/PageContainer";
-import Modal from "@/components/ui/Modal";
-import Badge from "@/components/ui/Badge";
-import { getInventory, getInventoryMovements, updateMinimumStock, checkCanDeleteProduct, deleteProduct, forceDeleteProduct, getProductUsage, getLastSalePerProduct, getLastPurchasePerProduct, getFirstPurchasePerProduct } from "@/services/inventory";
-import { getProducts } from "@/services/products";
-import { createPurchase, getPurchases, getPurchase, updatePurchase, deletePurchase, getSoldQuantities, getPurchasedQuantities } from "@/services/purchases";
-import { normalize } from "@/lib/search";
-import { getSuppliers } from "@/services/suppliers";
-import { getBankAccounts } from "@/services/invoices";
-import { getSettings } from "@/services/settings";
-import type { Supplier, BankAccount, Settings } from "@/types/database";
-import { Package, Plus, Search, X, Save, Edit2, Minus, History, ChevronDown, Eye, EyeOff, Trash2, Printer, Download, FileText, BarChart3, Loader, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
-import { formatCurrency, formatDate, getLocalDateString } from "@/lib/utils";
-import toast from "react-hot-toast";
-import jsPDF from "jspdf";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect } from 'react'
+import { ColumnDef } from '@tanstack/react-table'
+import { Plus, Package, Save, X } from 'lucide-react'
+import { IconPencil, IconTrash2, IconAlertTriangle } from '@/components/ui/Icons'
+import toast from 'react-hot-toast'
+import { getInventory, updateInventory, getLowStockItems, deleteInventory, getItemMovements, createMovement } from '@/services/inventory'
+import { getActiveMenuItems } from '@/services/menu'
+import { createPurchase, getSuppliers, createSupplier } from '@/services/purchases'
+import type { Inventory, InventoryMovement, MenuItem } from '@/types/database'
+import { PageContainer } from '@/components/layout/PageContainer'
+import { DataTable } from '@/components/ui/DataTable'
+import { Modal } from '@/components/ui/Modal'
+import { Badge } from '@/components/ui/Badge'
+import { PrintActions } from '@/components/ui/PrintActions'
+import { formatCurrency, formatDateShort, getLocalDateString, cn } from '@/lib/utils'
 
-function getStockStatus(stock: number, minimum: number): { label: string; variant: "success" | "warning" | "danger" } {
-  if (stock <= 0) return { label: "Agotado", variant: "danger" };
-  if (stock <= minimum) return { label: "Bajo Stock", variant: "warning" };
-  return { label: "Suficiente", variant: "success" };
+type InventoryRow = Inventory & { item?: { name: string } }
+
+interface EditForm {
+  stock: number
+  minimum_stock: number
+  unit: string
+  average_cost: number
 }
 
 export default function InventarioPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FCFAF7]"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>}>
-      <InventarioContent />
-    </Suspense>
-  );
-}
+  const [inventory, setInventory] = useState<InventoryRow[]>([])
+  const [lowStockCount, setLowStockCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<InventoryRow | null>(null)
+  const [form, setForm] = useState<EditForm>({ stock: 0, minimum_stock: 0, unit: '', average_cost: 0 })
+  const [saving, setSaving] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [detailItem, setDetailItem] = useState<InventoryRow | null>(null)
+  const [addModalOpen, setAddModalOpen] = useState(false)
+  const [addSaving, setAddSaving] = useState(false)
+  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false)
+  const [purchaseItem, setPurchaseItem] = useState<InventoryRow | null>(null)
+  const [purchaseQty, setPurchaseQty] = useState(0)
+  const [purchaseCost, setPurchaseCost] = useState(0)
+  const [purchaseSaving, setPurchaseSaving] = useState(false)
+  const [movements, setMovements] = useState<InventoryMovement[]>([])
+  const [movementsLoading, setMovementsLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'info' | 'movements'>('info')
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  const [suppliers, setSuppliers] = useState<any[]>([])
+  const [purchaseSupplier, setPurchaseSupplier] = useState('')
+  const [purchaseDate, setPurchaseDate] = useState(getLocalDateString())
+  const [purchaseNotes, setPurchaseNotes] = useState('')
+  const [purchaseItems, setPurchaseItems] = useState<{ menu_item_id: string; name: string; quantity: number; unit_cost: number; itbis: boolean }[]>([])
 
-function InventarioContent() {
-  const [inventory, setInventory] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [purchases, setPurchases] = useState<any[]>([]);
-  const [soldMap, setSoldMap] = useState<Record<string, number>>({});
-  const [purchasedMap, setPurchasedMap] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterMonth, setFilterMonth] = useState("");
-  const [filterYear, setFilterYear] = useState("");
-  const [activeTab, setActiveTab] = useState<"stock" | "history" | "rotation">("stock");
-
-  const [showDetail, setShowDetail] = useState(false);
-  const [detailItem, setDetailItem] = useState<any>(null);
-  const [detailMovements, setDetailMovements] = useState<any[]>([]);
-  const [detailMinStock, setDetailMinStock] = useState(3);
-
-  const [showPurchase, setShowPurchase] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [supplierSearch, setSupplierSearch] = useState("");
-  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
-  const [productSearch, setProductSearch] = useState("");
-  const [showProductSearch, setShowProductSearch] = useState(false);
-  const [showConfirmDelete, setShowConfirmDelete] = useState<string | null>(null);
-  const [openDownloadId, setOpenDownloadId] = useState<string | null>(null);
-  const [showDetailPurchase, setShowDetailPurchase] = useState(false);
-  const [detailPurchase, setDetailPurchase] = useState<any>(null);
-  const [showConfirmDeleteProduct, setShowConfirmDeleteProduct] = useState<string | null>(null);
-  const [deletingProduct, setDeletingProduct] = useState(false);
-  const [productUsage, setProductUsage] = useState<{ movements: number; invoices: number; purchases: number } | null>(null);
-
-  // Rotation state
-  const [rotationData, setRotationData] = useState<any[]>([]);
-  const [rotationLoading, setRotationLoading] = useState(false);
-  const [rotationFilterSubbrand, setRotationFilterSubbrand] = useState("");
-  const [rotationFilterDays, setRotationFilterDays] = useState("");
-  const [rotationFilterStatus, setRotationFilterStatus] = useState("");
-  const [rotationExportOpen, setRotationExportOpen] = useState(false);
-  const [rotationDetailProductId, setRotationDetailProductId] = useState<string | null>(null);
-  const [rotationDetailMovements, setRotationDetailMovements] = useState<any[]>([]);
-  const [rotationDetailLoading, setRotationDetailLoading] = useState(false);
-  const [rotationDetailItem, setRotationDetailItem] = useState<any>(null);
-  const [rotationAiAnalysis, setRotationAiAnalysis] = useState<string | null>(null);
-  const [rotationAiLoading, setRotationAiLoading] = useState(false);
-  const [showHiddenStock, setShowHiddenStock] = useState(false);
-  const [showHiddenRotation, setShowHiddenRotation] = useState(false);
-  const [hiddenStockIds, setHiddenStockIds] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("hiddenStockIds") || "[]"); } catch { return []; }
-  });
-  const [hiddenRotationIds, setHiddenRotationIds] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("hiddenRotationIds") || "[]"); } catch { return []; }
-  });
-
-  function generatePurchasePdfLocal(purchase: any) {
-    const doc = new jsPDF({ unit: "mm", format: "letter" });
-    const pageW = 216;
-    let y = 30;
-    const margin = 20;
-
-    function setTextColor(hex: string) {
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
-      doc.setTextColor(r, g, b);
-    }
-
-    function drawLine(x1: number, y1: number, x2: number, y2: number, color: string) {
-      const r = parseInt(color.slice(1, 3), 16);
-      const g = parseInt(color.slice(3, 5), 16);
-      const b = parseInt(color.slice(5, 7), 16);
-      doc.setDrawColor(r, g, b);
-      doc.line(x1, y1, x2, y2);
-    }
-
-    setTextColor("#3D2B1F");
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text("COMPRA", margin, y);
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    setTextColor("#9C8A82");
-    doc.text(`No. ${purchase.purchase_number}`, margin, y + 7);
-    y += 18;
-    drawLine(margin, y, pageW - margin, y, "#E8E0D8");
-    y += 8;
-
-    doc.setFontSize(10);
-    setTextColor("#3D2B1F");
-    doc.setFont("helvetica", "bold");
-    doc.text("Fecha:", margin, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(formatDate(purchase.purchase_date), margin + 20, y);
-    doc.setFont("helvetica", "bold");
-    doc.text("Proveedor:", margin + 80, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(purchase.supplier_name || "—", margin + 105, y);
-    y += 10;
-
-    if (purchase.notes) {
-      doc.setFont("helvetica", "bold");
-      doc.text("Notas:", margin, y);
-      doc.setFont("helvetica", "normal");
-      doc.text(purchase.notes, margin + 20, y);
-      y += 8;
-    }
-    y += 4;
-    drawLine(margin, y, pageW - margin, y, "#E8E0D8");
-    y += 6;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    setTextColor("#9C8A82");
-    const colW = [55, 25, 25, 25, 25, 25];
-    const colX = [margin];
-    for (let i = 1; i < colW.length; i++) colX.push(colX[i - 1] + colW[i - 1]);
-    doc.text("Producto", colX[0], y);
-    doc.text("Cant.", colX[1], y, { align: "center" });
-    doc.text("Costo U.", colX[2], y, { align: "center" });
-    doc.text("ITBIS", colX[3], y, { align: "center" });
-    doc.text("Subtotal", colX[4], y, { align: "center" });
-    doc.text("Total", colX[5], y, { align: "right" });
-    y += 8;
-    drawLine(colX[0], y, pageW - margin, y, "#E8E0D8");
-    y += 4;
-
-    doc.setFont("helvetica", "normal");
-    setTextColor("#3D2B1F");
-    doc.setFontSize(9);
-
-    (purchase.purchase_items || []).forEach((item: any) => {
-      if (y > 250) { doc.addPage(); y = 30; }
-      const hasItbis = item.itbis !== false;
-      const lineItbis = hasItbis ? item.line_itbis || (item.quantity * item.unit_cost * 0.18) : 0;
-      const lineTotal = item.line_total + lineItbis;
-      doc.text(item.products?.name || "—", colX[0], y);
-      doc.text(String(item.quantity), colX[1], y, { align: "center" });
-      doc.text(formatCurrency(item.unit_cost), colX[2], y, { align: "center" });
-      doc.text(formatCurrency(lineItbis), colX[3], y, { align: "center" });
-      doc.text(formatCurrency(item.line_total), colX[4], y, { align: "center" });
-      doc.text(formatCurrency(lineTotal), colX[5], y, { align: "right" });
-      y += 7;
-    });
-
-    y += 4;
-    drawLine(margin, y, pageW - margin, y, "#E8E0D8");
-    y += 8;
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    setTextColor("#3D2B1F");
-    doc.text("Subtotal:", pageW - margin - 60, y, { align: "right" });
-    doc.setFont("helvetica", "normal");
-    doc.text(formatCurrency(purchase.subtotal), pageW - margin, y, { align: "right" });
-    y += 7;
-    doc.setFont("helvetica", "bold");
-    setTextColor("#3D2B1F");
-    doc.text("Impuesto Recogida:", pageW - margin - 60, y, { align: "right" });
-    doc.setFont("helvetica", "normal");
-    doc.text(formatCurrency(purchase.impuesto_recogida || 0), pageW - margin, y, { align: "right" });
-    y += 7;
-    doc.setFont("helvetica", "bold");
-    setTextColor("#3D2B1F");
-    doc.text("Cargo Admin.:", pageW - margin - 60, y, { align: "right" });
-    doc.setFont("helvetica", "normal");
-    doc.text(formatCurrency(purchase.cargo_administracion || 0), pageW - margin, y, { align: "right" });
-    y += 7;
-    doc.setFont("helvetica", "bold");
-    doc.text("ITBIS (18%):", pageW - margin - 60, y, { align: "right" });
-    doc.setFont("helvetica", "normal");
-    doc.text(formatCurrency(purchase.itbis || 0), pageW - margin, y, { align: "right" });
-    y += 7;
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    setTextColor("#7C1D2E");
-    doc.text("TOTAL:", pageW - margin - 60, y, { align: "right" });
-    doc.text(formatCurrency(purchase.total), pageW - margin, y, { align: "right" });
-
-    y += 20;
-    drawLine(margin, y, pageW - margin, y, "#E8E0D8");
-    y += 8;
-    setTextColor("#9C8A82");
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Documento generado por ${settings?.business_name || "Doña Nina"}`, margin, y);
-    doc.setFontSize(8);
-    setTextColor("#7C1D2E");
-    doc.text(`${settings?.business_name || "Doña Nina"} - ${formatDate(new Date().toISOString())}`, pageW - margin, y, { align: "right" });
-
-    doc.save(`COMPRA-${purchase.purchase_number}.pdf`);
-  }
-
-  async function handleDownloadJpg(purchase: any) {
+  const fetchData = async () => {
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const tmpDiv = document.createElement("div");
-      tmpDiv.style.cssText = "position:fixed;left:-9999px;top:0;background:white;padding:32px;font-family:system-ui;width:600px;";
-      tmpDiv.innerHTML = `
-        <div style="color:#3D2B1F;">
-          <h2 style="font-size:22px;font-weight:bold;margin:0;">COMPRA</h2>
-          <p style="font-size:10px;color:#9C8A82;margin:2px 0 16px;">No. ${purchase.purchase_number}</p>
-          <hr style="border-color:#E8E0D8;margin-bottom:8px;"/>
-          <p style="font-size:10px;"><b>Fecha:</b> ${formatDate(purchase.purchase_date)} &nbsp;&nbsp; <b>Proveedor:</b> ${purchase.supplier_name || "—"}</p>
-          <hr style="border-color:#E8E0D8;margin:8px 0;"/>
-          <table style="width:100%;font-size:9px;border-collapse:collapse;">
-            <thead><tr style="background:#F0EBE3;"><th style="text-align:left;padding:4px;">Producto</th><th style="text-align:center;padding:4px;">Cant.</th><th style="text-align:center;padding:4px;">Costo U.</th><th style="text-align:center;padding:4px;">ITBIS</th><th style="text-align:right;padding:4px;">Total</th></tr></thead>
-            <tbody>${(purchase.purchase_items || []).map((item: any) => {
-              const hasItbis = item.itbis !== false;
-              const lineItbis = hasItbis ? item.line_itbis || (item.quantity * item.unit_cost * 0.18) : 0;
-              const lineTotal = item.line_total + lineItbis;
-              return `<tr><td style="padding:4px;">${item.products?.name || "—"}</td><td style="text-align:center;padding:4px;">${item.quantity}</td><td style="text-align:center;padding:4px;">${formatCurrency(item.unit_cost)}</td><td style="text-align:center;padding:4px;">${formatCurrency(lineItbis)}</td><td style="text-align:right;padding:4px;font-weight:bold;">${formatCurrency(lineTotal)}</td></tr>`;
-            }).join("")}</tbody>
-          </table>
-          <hr style="border-color:#E8E0D8;margin:8px 0;"/>
-          <div style="text-align:right;font-size:10px;">
-            <p>Subtotal: ${formatCurrency(purchase.subtotal)}</p>
-            <p>Impuesto Recogida: ${formatCurrency(purchase.impuesto_recogida || 0)}</p>
-            <p>Cargo Admin.: ${formatCurrency(purchase.cargo_administracion || 0)}</p>
-            <p>ITBIS (18%): ${formatCurrency(purchase.itbis || 0)}</p>
-            <p style="font-size:12px;font-weight:bold;color:#7C1D2E;">TOTAL: ${formatCurrency(purchase.total)}</p>
-          </div>
-        </div>`;
-      document.body.appendChild(tmpDiv);
-      const canvas = await html2canvas(tmpDiv, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-      document.body.removeChild(tmpDiv);
-      const link = document.createElement("a");
-      link.download = `COMPRA-${purchase.purchase_number}.jpg`;
-      link.href = canvas.toDataURL("image/jpeg", 0.95);
-      link.click();
-      toast.success("JPG descargado");
-    } catch {
-      toast.error("Error al generar JPG");
+      const [data, lowStock] = await Promise.all([
+        getInventory(),
+        getLowStockItems(),
+      ])
+      setInventory(data)
+      setLowStockCount(lowStock.length)
+    } catch (err: any) {
+      const msg = err.message || 'Error al cargar inventario'
+      setError(msg)
+      toast.error(msg)
+    } finally {
+      setLoading(false)
     }
-    setOpenDownloadId(null);
   }
-
-  async function handleViewPurchase(id: string) {
-    try {
-      const pur = await getPurchase(id);
-      setDetailPurchase(pur);
-      setShowDetailPurchase(true);
-    } catch {
-      toast.error("Error al cargar la compra");
-    }
-    setOpenDownloadId(null);
-  }
-
-  const [purchaseForm, setPurchaseForm] = useState({
-    supplier_name: "",
-    purchase_date: getLocalDateString(),
-    notes: "",
-    discount_amount: 0,
-    impuesto_recogida: 36,
-    cargo_administracion: 200,
-    payment_method: "Efectivo",
-    bank_account_id: "",
-    items: [] as { product_id: string; name: string; quantity: number; unit_cost: number; itbis?: boolean }[],
-  });
-
-  const productFiltered = useMemo(() =>
-    products.filter(p => p.active && (!productSearch || normalize(p.name).includes(normalize(productSearch)) || (p.code && normalize(p.code).includes(normalize(productSearch))))),
-    [products, productSearch]
-  );
-
-  const purchaseSubtotal = purchaseForm.items.reduce((s, i) => s + i.quantity * i.unit_cost, 0);
-  const purchaseLineItbis = purchaseForm.items.reduce((s, i) => s + ((i.itbis !== false ? 1 : 0) * i.quantity * i.unit_cost * 0.18), 0);
-  const purchaseItbis = Math.round(purchaseLineItbis * 100) / 100;
-  const purchaseRecogida = Number(purchaseForm.impuesto_recogida) || 0;
-  const purchaseAdmin = Number(purchaseForm.cargo_administracion) || 0;
-  const purchaseTotal = purchaseSubtotal + purchaseRecogida + purchaseAdmin + purchaseItbis - purchaseForm.discount_amount;
-
-  function addProductToPurchase(product: any) {
-    if (purchaseForm.items.some(i => i.product_id === product.id)) {
-      toast.error("El producto ya está en la lista");
-      return;
-    }
-    const isNutrilite = product.subbrands?.name === "Nutrilite";
-    const defaultItbis = isNutrilite ? Boolean(settings?.nutrilite_itbis_enabled) : true;
-    setPurchaseForm({
-      ...purchaseForm,
-      items: [...purchaseForm.items, {
-        product_id: product.id,
-        name: product.name,
-        quantity: 1,
-        unit_cost: product.cost || 0,
-        itbis: defaultItbis,
-      }],
-    });
-    setShowProductSearch(false);
-    setProductSearch("");
-  }
-
-  function removePurchaseItem(index: number) {
-    setPurchaseForm({ ...purchaseForm, items: purchaseForm.items.filter((_, i) => i !== index) });
-  }
-
-  function updatePurchaseItem(index: number, field: string, value: any) {
-    const items = [...purchaseForm.items];
-    (items[index] as any)[field] = value;
-    setPurchaseForm({ ...purchaseForm, items });
-  }
-
-  useEffect(() => { load(); }, []);
-
-  const searchParams = useSearchParams();
-  const router = useRouter();
 
   useEffect(() => {
-    if (searchParams.get("nueva-compra") === "true") {
-      resetPurchaseForm();
-      setShowPurchase(true);
-      router.replace("/inventario");
-    }
-  }, [searchParams]);
+    queueMicrotask(() => fetchData())
+  }, [])
 
-  async function load() {
+  const handleEdit = (item: InventoryRow) => {
+    setEditingItem(item)
+    setForm({
+      stock: item.stock,
+      minimum_stock: item.minimum_stock,
+      unit: item.unit,
+      average_cost: item.average_cost,
+    })
+    setEditModalOpen(true)
+  }
+
+  const handleClose = () => {
+    setEditModalOpen(false)
+    setEditingItem(null)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingItem) return
+    setSaving(true)
     try {
-      const [inv, pro, sold, purchased, sup, ba, st] = await Promise.all([
-        getInventory(),
-        getProducts(),
-        getSoldQuantities(),
-        getPurchasedQuantities(),
-        getSuppliers(),
-        getBankAccounts(),
-        getSettings().catch(() => null),
-      ]);
-      setInventory(inv);
-      setProducts(pro);
-      setSoldMap(sold);
-      setPurchasedMap(purchased);
-      setSuppliers(sup);
-      setBankAccounts(ba);
-      setSettings(st);
-    } catch {
-      toast.error("Error al cargar inventario");
+      const stockDiff = Number(form.stock) - Number(editingItem.stock)
+
+      await updateInventory(editingItem.id, form)
+
+      if (stockDiff !== 0) {
+        await createMovement({
+          item_id: editingItem.item_id,
+          ingredient_name: editingItem.ingredient_name,
+          movement_type: 'ADJUSTMENT',
+          quantity: Math.abs(stockDiff),
+          notes: `Ajuste manual: stock ${stockDiff > 0 ? 'incrementado' : 'reducido'} en ${Math.abs(stockDiff)}`,
+        })
+      }
+
+      toast.success('Inventario actualizado correctamente')
+      handleClose()
+      fetchData()
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar inventario')
     } finally {
-      setLoading(false);
+      setSaving(false)
     }
   }
 
-  async function loadRotation() {
-    setRotationLoading(true);
+  const handleViewDetail = async (item: InventoryRow) => {
+    setDetailItem(item)
+    setDetailOpen(true)
+    setMovementsLoading(true)
     try {
-      const [inv, sold, purchased, lastSales, lastPurchases, firstPurchases] = await Promise.all([
-        getInventory(),
-        getSoldQuantities(),
-        getPurchasedQuantities(),
-        getLastSalePerProduct(),
-        getLastPurchasePerProduct(),
-        getFirstPurchasePerProduct(),
-      ]);
-
-      const now = new Date();
-
-      const data = inv.map((item: any) => {
-        const product = item.products;
-        const itemSold = sold[item.product_id] || 0;
-        const itemPurchased = purchased[item.product_id] || 0;
-        const stock = Math.max(0, itemPurchased - itemSold);
-        const cost = product?.cost || 0;
-        const lastSale = lastSales[item.product_id];
-        const lastPurchase = lastPurchases[item.product_id];
-        const firstPurchase = firstPurchases[item.product_id];
-        
-        let diasEnInventario = 0;
-        let ultimaReferencia = "";
-        
-        if (lastSale) {
-          const diff = now.getTime() - new Date(lastSale).getTime();
-          diasEnInventario = Math.floor(diff / (1000 * 60 * 60 * 24));
-          ultimaReferencia = `Venta: ${formatDate(lastSale)}`;
-        } else if (lastPurchase) {
-          const diff = now.getTime() - new Date(lastPurchase).getTime();
-          diasEnInventario = Math.floor(diff / (1000 * 60 * 60 * 24));
-          ultimaReferencia = `Compra: ${formatDate(lastPurchase)}`;
-        } else {
-          diasEnInventario = 999;
-          ultimaReferencia = "Sin movimientos";
-        }
-
-        // Velocidad real: días desde la primera compra / total vendido
-        let diasDesdeAdquisicion = 0;
-        let velocidadDias = 0;
-        if (firstPurchase) {
-          diasDesdeAdquisicion = Math.floor((now.getTime() - new Date(firstPurchase).getTime()) / (1000 * 60 * 60 * 24));
-          if (itemSold > 0 && diasDesdeAdquisicion > 0) {
-            velocidadDias = Math.round(diasDesdeAdquisicion / itemSold);
-          }
-        }
-
-        return {
-          id: item.id,
-          product_id: item.product_id,
-          products: item.products,
-          code: product?.code || "",
-          name: product?.name || "—",
-          subbrand: product?.subbrands?.name || "—",
-          sold: itemSold,
-          purchased: itemPurchased,
-          stock,
-          costoPromedio: cost,
-          cost,
-          firstPurchase,
-          last_purchase: lastPurchase,
-          last_sale: lastSale,
-          diasEnInventario,
-          ultimaReferencia,
-          velocidadDias,
-          inventory_value: item.inventory_value || 0,
-          minimum_stock: item.minimum_stock || 3,
-        };
-      });
-
-      setRotationData(data);
+      const data = await getItemMovements(item.item_id ?? undefined, item.ingredient_name ?? undefined)
+      setMovements(data)
     } catch (err) {
-      console.error("[loadRotation] Error:", err);
-      const msg = err instanceof Error ? err.message : JSON.stringify(err);
-      toast.error(`Error al cargar rotación: ${msg}`);
+      console.error('Error loading movements:', err)
+      setMovements([])
     } finally {
-      setRotationLoading(false);
+      setMovementsLoading(false)
     }
   }
 
-  async function loadPurchases() {
+  const handleDeleteItem = async (item: InventoryRow) => {
+    if (!window.confirm(`¿Estás seguro de eliminar "${item.item?.name || item.ingredient_name}" del inventario?`)) return
     try {
-      const data = await getPurchases();
-      setPurchases(data);
-    } catch {
-      toast.error("Error al cargar compras");
+      await deleteInventory(item.id)
+      toast.success('Producto eliminado del inventario')
+      fetchData()
+    } catch (err: any) {
+      toast.error(err.message || 'Error al eliminar producto')
     }
   }
 
-  useEffect(() => {
-    if (activeTab === "history") loadPurchases();
-    if (activeTab === "rotation") loadRotation();
-  }, [activeTab]);
+  const handleOpenPurchase = (item: InventoryRow) => {
+    setPurchaseItem(item)
+    setPurchaseQty(0)
+    setPurchaseCost(item.average_cost)
+    setPurchaseModalOpen(true)
+  }
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (openDownloadId && !(e.target as Element).closest(".relative")) setOpenDownloadId(null);
+  const handlePurchaseSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!purchaseItem || purchaseQty <= 0) return
+    setPurchaseSaving(true)
+    try {
+      const newStock = Number(purchaseItem.stock) + Number(purchaseQty)
+      await updateInventory(purchaseItem.id, { stock: newStock, average_cost: purchaseCost })
+
+      await createMovement({
+        item_id: purchaseItem.item_id,
+        ingredient_name: purchaseItem.ingredient_name,
+        movement_type: 'PURCHASE',
+        quantity: purchaseQty,
+        notes: `Compra registrada manualmente`,
+      })
+
+      toast.success('Compra registrada correctamente')
+      setPurchaseModalOpen(false)
+      fetchData()
+    } catch (err: any) {
+      toast.error(err.message || 'Error al registrar compra')
+    } finally {
+      setPurchaseSaving(false)
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [openDownloadId]);
+  }
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (showConfirmDeleteProduct && !(e.target as Element).closest(".relative")) setShowConfirmDeleteProduct(null);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showConfirmDeleteProduct]);
-
-  const filtered = inventory.filter((item) => {
-    if (!showHiddenStock && hiddenStockIds.includes(item.product_id)) return false;
-    const fSold = soldMap[item.product_id] || 0;
-    const fPurchased = purchasedMap[item.product_id] || 0;
-    const fStock = Math.max(0, fPurchased - fSold);
-    const fPending = Math.max(0, fSold - fPurchased);
-    if (fStock <= 0 && fPending <= 0) return false;
-    if (!searchQuery) return true;
-    const q = normalize(searchQuery);
+  if (loading) {
     return (
-      normalize(item.products?.name || "").includes(q) ||
-      normalize(item.products?.code || "").includes(q) ||
-      normalize(item.products?.subbrands?.name || "").includes(q)
-    );
-  });
-
-  const totalValue = inventory.reduce((s, i) => s + Number(i.inventory_value || 0), 0);
-  const totalStock = inventory.reduce((s, i) => { const p = purchasedMap[i.product_id]||0; const sd = soldMap[i.product_id]||0; return s + Math.max(0, p - sd); }, 0);
-  const totalPending = inventory.reduce((s, i) => { const p = purchasedMap[i.product_id]||0; const sd = soldMap[i.product_id]||0; return s + Math.max(0, sd - p); }, 0);
-
-  async function openDetail(item: any) {
-    setDetailItem(item);
-    setDetailMinStock(item.minimum_stock);
-    setDetailMovements([]);
-    setShowDetail(true);
-    try {
-      const movs = await getInventoryMovements(item.product_id);
-      setDetailMovements(movs);
-    } catch {
-      // silent
-    }
+      <PageContainer title="Inventario" subtitle="Control de existencias">
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <p className="text-[#9C8A82] text-lg">Cargando...</p>
+        </div>
+      </PageContainer>
+    )
   }
 
-  async function handleSaveMinStock() {
-    if (!detailItem) return;
-    try {
-      await updateMinimumStock(detailItem.product_id, detailMinStock);
-      toast.success("Stock mínimo actualizado");
-      const inv = await getInventory();
-      setInventory(inv);
-      setDetailItem(inv.find((i: any) => i.id === detailItem.id));
-    } catch {
-      toast.error("Error al actualizar");
-    }
+  if (error) {
+    return (
+      <PageContainer title="Inventario" subtitle="Control de existencias">
+        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+          <p className="text-[#7C1D2E] text-lg">{error}</p>
+          <button
+            onClick={fetchData}
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-[#7C1D2E] rounded-lg hover:bg-[#5C1420] transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
+      </PageContainer>
+    )
   }
 
-  async function handleDeleteProduct(productId: string) {
-    setDeletingProduct(true);
-    try {
-      const usage = await getProductUsage(productId);
-      if (usage.movements > 0 || usage.invoices > 0 || usage.purchases > 0) {
-        setProductUsage(usage);
-        setDeletingProduct(false);
-        return;
-      }
-      await deleteProduct(productId);
-      toast.success("Producto eliminado exitosamente");
-      setShowConfirmDeleteProduct(null);
-      await load();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al eliminar el producto");
-      setDeletingProduct(false);
-    }
-  }
-
-  const toggleHideStockProduct = (productId: string) => {
-    const wasHidden = hiddenStockIds.includes(productId);
-    setHiddenStockIds((prev) => {
-      const updated = wasHidden
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId];
-      localStorage.setItem("hiddenStockIds", JSON.stringify(updated));
-      return updated;
-    });
-    toast.success(wasHidden ? "Producto visible en Stock" : "Ocultado de Stock");
-  };
-
-  const toggleHideRotationProduct = (productId: string) => {
-    const wasHidden = hiddenRotationIds.includes(productId);
-    setHiddenRotationIds((prev) => {
-      const updated = wasHidden
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId];
-      localStorage.setItem("hiddenRotationIds", JSON.stringify(updated));
-      return updated;
-    });
-    toast.success(wasHidden ? "Producto visible en Rotación" : "Ocultado de Rotación");
-  };
-
-  async function handleForceDeleteProduct(productId: string) {
-    setDeletingProduct(true);
-    try {
-      await forceDeleteProduct(productId);
-      toast.success("Producto eliminado forzosamente (incluyendo registros relacionados)");
-      setShowConfirmDeleteProduct(null);
-      setProductUsage(null);
-      await load();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al eliminar");
-    } finally {
-      setDeletingProduct(false);
-    }
-  }
-
-  function resetPurchaseForm() {
-    setPurchaseForm({ supplier_name: "", purchase_date: getLocalDateString(), notes: "", discount_amount: 0, impuesto_recogida: 36, cargo_administracion: 200, payment_method: "Efectivo", bank_account_id: "", items: [] });
-    setEditingId(null);
-  }
-
-  function openEditPurchase(pur: any) {
-    setEditingId(pur.id);
-    setPurchaseForm({
-      supplier_name: pur.supplier_name || "",
-      purchase_date: pur.purchase_date,
-      notes: pur.notes || "",
-      discount_amount: pur.discount_amount || 0,
-      impuesto_recogida: pur.impuesto_recogida ?? 36,
-      cargo_administracion: pur.cargo_administracion ?? 200,
-      payment_method: pur.payment_method || "Efectivo",
-      bank_account_id: pur.bank_account_id || "",
-      items: (pur.purchase_items || []).map((i: any) => ({
-        product_id: i.product_id,
-        name: i.products?.name || "—",
-        quantity: i.quantity,
-        unit_cost: i.unit_cost,
-        itbis: i.itbis !== false,
-      })),
-    });
-    setShowPurchase(true);
-  }
-
-  async function handlePurchase() {
-    if (!purchaseForm.purchase_date) { toast.error("Selecciona la fecha"); return; }
-    if (purchaseForm.items.length === 0) { toast.error("Agrega al menos un producto"); return; }
-    setSaving(true);
-    try {
-      const payload = {
-        supplier_name: purchaseForm.supplier_name,
-        purchase_date: purchaseForm.purchase_date,
-        notes: purchaseForm.notes,
-        discount_amount: purchaseForm.discount_amount,
-        impuesto_recogida: Number(purchaseForm.impuesto_recogida) || 36,
-        cargo_administracion: Number(purchaseForm.cargo_administracion) || 200,
-        payment_method: purchaseForm.payment_method,
-        bank_account_id: purchaseForm.bank_account_id || undefined,
-        items: purchaseForm.items.map(i => ({ product_id: i.product_id, quantity: i.quantity, unit_cost: i.unit_cost, itbis: i.itbis })),
-      };
-      if (editingId) {
-        await updatePurchase(editingId, payload);
-        toast.success("Compra actualizada exitosamente");
-      } else {
-        await createPurchase(payload);
-        toast.success("Compra registrada exitosamente");
-      }
-      setShowPurchase(false);
-      resetPurchaseForm();
-      await load();
-      if (activeTab === "history") loadPurchases();
-    } catch (e) {
-      toast.error(`Error: ${(e as any)?.message || "Error al registrar compra"}`);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDeletePurchase(id: string) {
-    try {
-      await deletePurchase(id);
-      toast.success("Compra eliminada");
-      setShowConfirmDelete(null);
-      loadPurchases();
-    } catch {
-      toast.error("Error al eliminar la compra");
-    }
-  }
-
-  const movementLabel: Record<string, string> = {
-    PURCHASE: "Compra",
-    SALE: "Venta",
-    ADJUSTMENT: "Ajuste",
-    RETURN: "Devolución",
-    CANCELLATION: "Cancelación",
-  };
-
-  const movementColor: Record<string, string> = {
-    PURCHASE: "text-green-600",
-    SALE: "text-red-500",
-    ADJUSTMENT: "text-yellow-600",
-    RETURN: "text-blue-500",
-    CANCELLATION: "text-gray-500",
-  };
+  const columns: ColumnDef<InventoryRow>[] = [
+    {
+      id: 'name',
+      header: 'Producto',
+      cell: ({ row }) => (
+        <button
+          onClick={() => handleViewDetail(row.original)}
+          className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
+        >
+          {row.original.item?.name || row.original.ingredient_name || '—'}
+        </button>
+      ),
+    },
+    {
+      accessorKey: 'stock',
+      header: 'Stock',
+      cell: ({ row }) => {
+        const isLow = Number(row.original.stock) <= Number(row.original.minimum_stock)
+        return (
+          <span className={cn(isLow && 'text-[#7C1D2E] font-semibold')}>
+            {row.original.stock}
+            {isLow && <IconAlertTriangle className="inline-block h-3.5 w-3.5 ml-1 text-[#E07A3A]" />}
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: 'minimum_stock',
+      header: 'Stock Mínimo',
+    },
+    {
+      accessorKey: 'unit',
+      header: 'Unidad',
+    },
+    {
+      accessorKey: 'average_cost',
+      header: 'Costo Promedio',
+      cell: ({ row }) => formatCurrency(row.original.average_cost),
+    },
+    {
+      id: 'acciones',
+      header: 'Acciones',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleEdit(row.original)}
+            className="p-1.5 text-blue-600 hover:bg-[#2C4A6E]/10 rounded-lg transition-colors"
+            title="Editar"
+          >
+            <IconPencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleDeleteItem(row.original)}
+            className="p-1.5 text-[#9C8A82] hover:bg-[#7C1D2E]/10 hover:text-[#7C1D2E] rounded-lg transition-colors"
+            aria-label="Eliminar"
+          >
+            <IconTrash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+    },
+  ]
 
   return (
-    <PageContainer>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-[#3D2B1F]">Inventario</h1>
-          <p className="text-sm text-[#9C8A82] mt-1">Control de existencias y stock</p>
-        </div>
-        <button
-          onClick={() => { resetPurchaseForm(); setShowPurchase(true); }}
-          className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm"
-        >
-          <Plus size={18} />
-          Registrar Compra
-        </button>
-      </div>
-
-      {/* KPI mini-cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-          <p className="text-xs text-[#9C8A82] mb-1">Total Productos</p>
-          <p className="text-xl font-bold text-[#3D2B1F]">{inventory.length}</p>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-          <p className="text-xs text-[#9C8A82] mb-1">Valor Inventario</p>
-          <p className="text-xl font-bold text-[#3D2B1F]">{formatCurrency(totalValue)}</p>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-          <p className="text-xs text-[#9C8A82] mb-1">Stock Total</p>
-          <p className="text-xl font-bold text-[#3D2B1F]">{totalStock}</p>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-          <p className="text-xs text-[#9C8A82] mb-1">Pend. Devolución</p>
-          <p className="text-xl font-bold text-[#E07A3A]">{totalPending}</p>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-[#E8E0D8] mb-6">
-        <div className="flex gap-6">
-          <button
-            onClick={() => setActiveTab("stock")}
-            className={`pb-3 text-sm font-medium transition-colors ${
-              activeTab === "stock"
-                ? "text-[#7C1D2E] border-b-2 border-[#7C1D2E]"
-                : "text-[#9C8A82] hover:text-[#3D2B1F]"
-            }`}
-          >
-            Existencias de Stock
-          </button>
-          <button
-            onClick={() => setActiveTab("rotation")}
-            className={`pb-3 text-sm font-medium transition-colors ${
-              activeTab === "rotation"
-                ? "text-[#7C1D2E] border-b-2 border-[#7C1D2E]"
-                : "text-[#9C8A82] hover:text-[#3D2B1F]"
-            }`}
-          >
-            Rotación de Inventario
-          </button>
-          <button
-            onClick={() => setActiveTab("history")}
-            className={`pb-3 text-sm font-medium transition-colors ${
-              activeTab === "history"
-                ? "text-[#7C1D2E] border-b-2 border-[#7C1D2E]"
-                : "text-[#9C8A82] hover:text-[#3D2B1F]"
-            }`}
-          >
-            Compras Registradas
-          </button>
-        </div>
-      </div>
-
-      {/* Search & controls */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por nombre, código o submarca..."
-            className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-          />
-        </div>
-        {activeTab === "stock" && (
-          <button
-            onClick={() => setShowHiddenStock(!showHiddenStock)}
-            className={`flex items-center gap-2 h-12 px-4 rounded-xl text-sm font-medium border transition-all ${
-              showHiddenStock
-                ? "bg-[#7C1D2E]/10 border-[#7C1D2E] text-[#7C1D2E]"
-                : "border-[#E8E0D8] text-[#9C8A82] hover:text-[#3D2B1F]"
-            }`}
-          >
-            <EyeOff size={16} />
-            {showHiddenStock ? "Ocultar ocultos" : `Ver ocultos (${hiddenStockIds.length})`}
-          </button>
-        )}
-        {activeTab === "rotation" && (
-          <button
-            onClick={() => setShowHiddenRotation(!showHiddenRotation)}
-            className={`flex items-center gap-2 h-12 px-4 rounded-xl text-sm font-medium border transition-all ${
-              showHiddenRotation
-                ? "bg-[#7C1D2E]/10 border-[#7C1D2E] text-[#7C1D2E]"
-                : "border-[#E8E0D8] text-[#9C8A82] hover:text-[#3D2B1F]"
-            }`}
-          >
-            <EyeOff size={16} />
-            {showHiddenRotation ? "Ocultar ocultos" : `Ver ocultos (${hiddenRotationIds.length})`}
-          </button>
-        )}
-      </div>
-
-      {activeTab === "history" && (
-        <div className="flex gap-3 mb-6">
-          <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}
-            className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30">
-            <option value="">Todos los meses</option>
-            {["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].map((m, i) => (
-              <option key={i} value={String(i + 1).padStart(2, "0")}>{m}</option>
-            ))}
-          </select>
-          <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}
-            className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30">
-            <option value="">Todos los años</option>
-            {[2024, 2025, 2026, 2027].map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-          {(filterMonth || filterYear) && (
-            <button onClick={() => { setFilterMonth(""); setFilterYear(""); }} className="text-xs text-[#9C8A82] hover:text-[#3D2B1F] px-3">Limpiar filtros</button>
-          )}
-        </div>
-      )}
-
-      {activeTab === "stock" && (
-        <>
-          {loading ? (
-            <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-16 text-[#9C8A82]">
-              <Package size={40} className="mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No hay productos en inventario</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-separate border-spacing-y-2">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Submarca</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Producto</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Compradas</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Vendidas</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Stock</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Pend. Dev.</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Estado</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Mov.</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Ocultar</th>
-                  </tr>
-              </thead>
-              <tbody>
-                {filtered.map((item) => {
-                  const sold = soldMap[item.product_id] || 0;
-                  const purchased = purchasedMap[item.product_id] || 0;
-                  const computedStock = Math.max(0, purchased - sold);
-                  const computedPending = Math.max(0, sold - purchased);
-                  const status = getStockStatus(computedStock, item.minimum_stock);
-                  return (
-                    <tr
-                      key={item.id}
-                      className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => openDetail(item)}
-                    >
-                      <td className="px-4 py-3.5 text-sm text-[#9C8A82]">{item.products?.subbrands?.name || "—"}</td>
-                      <td className="px-4 py-3.5 text-sm text-[#3D2B1F] font-medium">
-                        {item.products?.name || "—"}
-                        <span className="ml-2 text-xs text-[#9C8A82]">{item.products?.code}</span>
-                      </td>
-                      <td className="px-4 py-3.5 text-sm text-[#3D2B1F] text-right">{purchased || "—"}</td>
-                      <td className="px-4 py-3.5 text-sm text-[#3D2B1F] text-right">{sold}</td>
-                      <td className="px-4 py-3.5 text-sm text-[#3D2B1F] text-right font-medium">{computedStock}</td>
-                      <td className="px-4 py-3.5 text-sm text-[#E07A3A] text-right font-medium">{computedPending}</td>
-                      <td className="px-4 py-3.5 text-center">
-                        <Badge variant={status.variant}>{status.label}</Badge>
-                      </td>
-                      <td className="px-4 py-3.5 text-center">
-                        <History size={14} className="text-[#9C8A82] mx-auto" />
-                      </td>
-                      <td className="px-4 py-3.5 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleHideStockProduct(item.product_id);
-                            }}
-                            className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap ${
-                              hiddenStockIds.includes(item.product_id)
-                                ? "bg-[#7C1D2E]/10 text-[#7C1D2E]"
-                                : "text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3]"
-                            }`}
-                          >
-                            <EyeOff size={12} className="inline mr-1" />
-                            {hiddenStockIds.includes(item.product_id) ? "Mostrar" : "Ocultar"}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowConfirmDeleteProduct(item.product_id);
-                            }}
-                            className="p-1.5 text-[#E07A3A] hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                            title="Eliminar producto"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            </div>
-          )}
-        </>
-      )}
-
-      {activeTab === "rotation" && (
-        <div className="space-y-6">
-          {rotationLoading ? (
-            <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>
-          ) : rotationData.length === 0 ? (
-            <div className="text-center py-16 text-[#9C8A82]">
-              <Package size={40} className="mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No hay datos de rotación</p>
-            </div>
-          ) : (
-            <>
-              {/* KPI Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-                  <p className="text-xs text-[#9C8A82] mb-1">Total Productos</p>
-                  <p className="text-xl font-bold text-[#3D2B1F]">{rotationData.length}</p>
-                </div>
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-                  <p className="text-xs text-[#9C8A82] mb-1">Rotación Alta (&lt; 15d)</p>
-                  <p className="text-xl font-bold text-[#5B9E6B]">
-                    {rotationData.filter((d: any) => d.diasEnInventario < 15 && d.diasEnInventario < 999).length}
-                  </p>
-                </div>
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-                  <p className="text-xs text-[#9C8A82] mb-1">Rotación Media (15-60d)</p>
-                  <p className="text-xl font-bold text-[#D4A017]">
-                    {rotationData.filter((d: any) => d.diasEnInventario >= 15 && d.diasEnInventario <= 60).length}
-                  </p>
-                </div>
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-                  <p className="text-xs text-[#9C8A82] mb-1">{'Rotación Baja (> 60d)'}</p>
-                  <p className="text-xl font-bold text-[#E07A3A]">
-                    {rotationData.filter((d: any) => d.diasEnInventario > 60 && d.diasEnInventario < 999).length}
-                  </p>
-                </div>
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-                  <p className="text-xs text-[#9C8A82] mb-1">Próximos a agotarse</p>
-                  <p className="text-xl font-bold text-red-500">
-                    {rotationData.filter((d: any) => {
-                      if (d.sold <= 0 || d.stock <= 0) return false;
-                      return d.velocidadDias > 0 && Math.round(d.velocidadDias * d.stock) < 30;
-                    }).length}
-                  </p>
-                </div>
-              </div>
-
-              {/* Capital Inmovilizado Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-                  <p className="text-xs text-[#9C8A82] mb-1">{'Inmovilizado > 30 días'}</p>
-                  <p className="text-lg font-bold text-[#D4A017]">
-                    {rotationData
-                      .filter((d: any) => d.diasEnInventario > 30 && d.diasEnInventario < 999)
-                      .reduce((s: number, d: any) => s + (d.costoPromedio || 0) * (d.stock || 0), 0)
-                      .toLocaleString()} RD$
-                  </p>
-                </div>
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-                  <p className="text-xs text-[#9C8A82] mb-1">{'Inmovilizado > 60 días'}</p>
-                  <p className="text-lg font-bold text-[#E07A3A]">
-                    {rotationData
-                      .filter((d: any) => d.diasEnInventario > 60 && d.diasEnInventario < 999)
-                      .reduce((s: number, d: any) => s + (d.costoPromedio || 0) * (d.stock || 0), 0)
-                      .toLocaleString()} RD$
-                  </p>
-                </div>
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-                  <p className="text-xs text-[#9C8A82] mb-1">{'Inmovilizado > 90 días'}</p>
-                  <p className="text-lg font-bold text-red-600">
-                    {rotationData
-                      .filter((d: any) => d.diasEnInventario > 90 && d.diasEnInventario < 999)
-                      .reduce((s: number, d: any) => s + (d.costoPromedio || 0) * (d.stock || 0), 0)
-                      .toLocaleString()} RD$
-                  </p>
-                </div>
-              </div>
-
-              {/* Recommendations Card */}
-              {(() => {
-                const staleProducts = rotationData.filter((d: any) => d.diasEnInventario > 90 && d.diasEnInventario < 999);
-                const nearStockout = rotationData.filter((d: any) => {
-                  if (d.sold <= 0 || d.stock <= 0 || !d.velocidadDias) return false;
-                  return Math.round(d.velocidadDias * d.stock) < 30;
-                });
-                if (staleProducts.length === 0 && nearStockout.length === 0) return null;
-                return (
-                  <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8]">
-                    <div className="flex items-center gap-2 mb-4">
-                      <AlertTriangle size={18} className="text-[#D4A017]" />
-                      <h3 className="text-sm font-bold text-[#3D2B1F]">Recomendaciones Automáticas</h3>
-                    </div>
-                    <div className="space-y-2">
-                      {staleProducts.map((d: any) => (
-                        <div key={d.product_id} className="flex items-center justify-between bg-[#FDF8F3] rounded-xl px-4 py-2.5">
-                          <div className="flex items-center gap-3">
-                            <TrendingDown size={16} className="text-[#E07A3A]" />
-                            <span className="text-sm text-[#3D2B1F]">{d.name}</span>
-                            <span className="text-xs text-[#9C8A82]">{d.code}</span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Badge variant="danger">{d.diasEnInventario} días sin vender</Badge>
-                            <span className="text-xs text-[#D4A017] font-medium">Sugerir oferta / liquidar</span>
-                          </div>
-                        </div>
-                      ))}
-                      {nearStockout.map((d: any) => (
-                        <div key={d.product_id} className="flex items-center justify-between bg-[#FDF8F3] rounded-xl px-4 py-2.5">
-                          <div className="flex items-center gap-3">
-                            <TrendingUp size={16} className="text-[#5B9E6B]" />
-                            <span className="text-sm text-[#3D2B1F]">{d.name}</span>
-                            <span className="text-xs text-[#9C8A82]">{d.code}</span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Badge variant="danger">Stock bajo</Badge>
-                            <span className="text-xs text-[#5B9E6B] font-medium">Reponer inventario pronto</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* AI Analysis Button & Result */}
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8]">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <BarChart3 size={18} className="text-[#7C1D2E]" />
-                    <h3 className="text-sm font-bold text-[#3D2B1F]">Análisis de Rotación con IA</h3>
-                  </div>
-                  <button
-                    onClick={async () => {
-                      setRotationAiLoading(true);
-                      setRotationAiAnalysis(null);
-                      try {
-                        const res = await fetch("/api/inventory-analysis", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ rotationData }),
-                        });
-                        const data = await res.json();
-                        setRotationAiAnalysis(data.analysis || "Sin respuesta");
-                      } catch {
-                        toast.error("Error al analizar con IA");
-                      } finally {
-                        setRotationAiLoading(false);
-                      }
-                    }}
-                    disabled={rotationAiLoading}
-                    className="flex items-center gap-2 h-9 px-4 bg-[#7C1D2E] text-white rounded-xl text-xs font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50"
-                  >
-                    {rotationAiLoading ? <Loader size={14} className="animate-spin" /> : <BarChart3 size={14} />}
-                    {rotationAiLoading ? "Analizando..." : "Analizar con IA"}
-                  </button>
-                </div>
-                {rotationAiAnalysis && (
-                  <div className="bg-[#FDF8F3] rounded-xl p-4 text-sm text-[#3D2B1F] whitespace-pre-line leading-relaxed">
-                    {rotationAiAnalysis}
-                  </div>
-                )}
-                {!rotationAiAnalysis && !rotationAiLoading && (
-                  <p className="text-xs text-[#9C8A82]">Haz clic en "Analizar con IA" para obtener recomendaciones inteligentes sobre la rotación de inventario.</p>
-                )}
-              </div>
-
-              {/* Filters & Export */}
-              <div className="flex flex-wrap items-center gap-3">
-                <select
-                  value={rotationFilterSubbrand}
-                  onChange={(e) => setRotationFilterSubbrand(e.target.value)}
-                  className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
-                >
-                  <option value="">Todas las submarcas</option>
-                  {[...new Set(rotationData.map((d: any) => d.subbrand).filter(Boolean))].map((s) => (
-                    <option key={s as string} value={s as string}>{s as string}</option>
-                  ))}
-                </select>
-                <select
-                  value={rotationFilterDays}
-                  onChange={(e) => setRotationFilterDays(e.target.value)}
-                  className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
-                >
-                  <option value="">Todos los días</option>
-                  <option value="0-15">Rotación alta (0-15 días)</option>
-                  <option value="15-60">Rotación media (15-60 días)</option>
-                  <option value="60-999">Rotación baja (60+ días)</option>
-                  <option value="90-999">Crítico (90+ días)</option>
-                </select>
-                <select
-                  value={rotationFilterStatus}
-                  onChange={(e) => setRotationFilterStatus(e.target.value)}
-                  className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
-                >
-                  <option value="">Estado</option>
-                  <option value="success">Rotación alta</option>
-                  <option value="warning">Rotación media</option>
-                  <option value="danger">Rotación baja / Sin mov.</option>
-                </select>
-                {(rotationFilterSubbrand || rotationFilterDays || rotationFilterStatus) && (
-                  <button
-                    onClick={() => { setRotationFilterSubbrand(""); setRotationFilterDays(""); setRotationFilterStatus(""); }}
-                    className="text-xs text-[#9C8A82] hover:text-[#3D2B1F] px-3"
-                  >
-                    Limpiar filtros
-                  </button>
-                )}
-                <div className="ml-auto relative">
-                  <button
-                    onClick={() => setRotationExportOpen(!rotationExportOpen)}
-                    className="flex items-center gap-2 h-10 px-4 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all"
-                  >
-                    <Download size={16} /> Exportar
-                  </button>
-                  {rotationExportOpen && (
-                    <>
-                      <div className="fixed inset-0 z-10" onClick={() => setRotationExportOpen(false)} />
-                      <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-xl shadow-lg border border-[#E8E0D8] py-1 z-20">
-                        <button
-                          onClick={() => {
-                            setRotationExportOpen(false);
-                            const doc = new jsPDF({ unit: "mm", format: "letter" });
-                            const pageW = 216;
-                            let y = 20;
-                            const margin = 15;
-                            doc.setFontSize(16);
-                            doc.setFont("helvetica", "bold");
-                            doc.text("Reporte de Rotación de Inventario", margin, y);
-                            y += 8;
-                            doc.setFontSize(8);
-                            doc.setFont("helvetica", "normal");
-                            doc.text(`Generado: ${new Date().toLocaleDateString()}`, margin, y);
-                            y += 8;
-                            const cols = ["Producto", "Código", "Submarca", "Stock", "Días", "Velocidad", "Proy.Agot.", "Estado", "Capital"];
-                            const widths = [40, 18, 22, 12, 12, 18, 18, 22, 22];
-                            const startX = margin;
-                            doc.setFontSize(7);
-                            doc.setFont("helvetica", "bold");
-                            let cx = startX;
-                            cols.forEach((c, i) => {
-                              doc.text(c, cx + (i > 0 ? widths[i] / 2 : 0), y, i > 0 ? { align: "center" } : undefined);
-                              cx += widths[i];
-                            });
-                            y += 5;
-                            doc.setFont("helvetica", "normal");
-                            rotationData.forEach((item: any) => {
-                              if (y > 270) { doc.addPage(); y = 20; }
-                              const proy = item.velocidadDias > 0 && item.stock > 0 ? Math.round(item.velocidadDias * item.stock) : null;
-                              const el = item.diasEnInventario >= 999 ? "Sin mov." :
-                                item.diasEnInventario <= 15 ? "Alta" :
-                                item.diasEnInventario <= 60 ? "Media" : "Baja";
-                              const cap = ((item.costoPromedio || 0) * (item.stock || 0)).toLocaleString();
-                              const vals = [
-                                item.name?.substring(0, 20) || "—",
-                                item.code || "",
-                                item.subbrand?.substring(0, 15) || "—",
-                                String(item.stock || 0),
-                                item.diasEnInventario >= 999 ? "—" : String(item.diasEnInventario),
-                                item.velocidadDias > 0 ? `${item.velocidadDias}d/v` : "Sin vtas",
-                                proy ? `${proy}d` : "—",
-                                el,
-                                `${cap} RD$`,
-                              ];
-                              cx = startX;
-                              vals.forEach((v, i) => {
-                                doc.text(v, cx + (i > 0 ? widths[i] / 2 : 0), y, i > 0 ? { align: "center" } : undefined);
-                                cx += widths[i];
-                              });
-                              y += 4;
-                            });
-                            doc.save("Reporte-Rotacion-Inventario.pdf");
-                            toast.success("PDF descargado");
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3]"
-                        >
-                          <FileText size={14} /> Exportar PDF
-                        </button>
-                        <button
-                          onClick={() => {
-                            setRotationExportOpen(false);
-                            const headers = ["Producto", "Código", "Submarca", "Stock", "Días en Inv.", "Velocidad", "Proy. Agot.", "Estado", "Capital"];
-                            const rows = rotationData.map((item: any) => {
-                              const proy = item.velocidadDias > 0 && item.stock > 0 ? `${Math.round(item.velocidadDias * item.stock)} días` : "—";
-                              const el = item.diasEnInventario >= 999 ? "Sin movimientos" :
-                                item.diasEnInventario <= 15 ? "Rotación alta" :
-                                item.diasEnInventario <= 60 ? "Rotación media" : "Rotación baja";
-                              const cap = ((item.costoPromedio || 0) * (item.stock || 0)).toLocaleString();
-                              return [
-                                item.name || "—",
-                                item.code || "",
-                                item.subbrand || "—",
-                                String(item.stock || 0),
-                                item.diasEnInventario >= 999 ? "—" : String(item.diasEnInventario),
-                                item.velocidadDias > 0 ? `${item.velocidadDias} días/venta` : "Sin ventas",
-                                proy,
-                                el,
-                                `${cap} RD$`,
-                              ];
-                            });
-                            const csv = [headers.join(","), ...rows.map((r: string[]) => r.map(v => `"${v}"`).join(","))].join("\n");
-                            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-                            const link = document.createElement("a");
-                            link.href = URL.createObjectURL(blob);
-                            link.download = "Reporte-Rotacion-Inventario.csv";
-                            link.click();
-                            toast.success("CSV descargado");
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3]"
-                        >
-                          <FileText size={14} /> Exportar CSV
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Rotation Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full border-separate border-spacing-y-2">
-                  <thead>
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Submarca</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Producto</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Stock</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Días en Inv.</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Velocidad</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Proy. Agot.</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Última Ref.</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Recom.</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Estado</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Capital</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase tracking-wider">Ocultar</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      let filtered = rotationData.filter((d: any) => showHiddenRotation || !hiddenRotationIds.includes(d.product_id));
-                      if (rotationFilterSubbrand) filtered = filtered.filter((d: any) => d.subbrand === rotationFilterSubbrand);
-                      if (rotationFilterDays) {
-                        const [min, max] = rotationFilterDays.split("-").map(Number);
-                        filtered = filtered.filter((d: any) => d.diasEnInventario >= min && d.diasEnInventario <= max);
-                      }
-                      if (rotationFilterStatus) {
-                        filtered = filtered.filter((d: any) => {
-                          if (rotationFilterStatus === "success") return d.diasEnInventario <= 15;
-                          if (rotationFilterStatus === "warning") return d.diasEnInventario > 15 && d.diasEnInventario <= 60;
-                          if (rotationFilterStatus === "danger") return d.diasEnInventario > 60 || d.diasEnInventario >= 999;
-                          return true;
-                        });
-                      }
-                      return filtered
-                        .sort((a: any, b: any) => b.diasEnInventario - a.diasEnInventario)
-                        .map((item: any) => {
-                          const velocidad = item.velocidadDias > 0
-                            ? `${item.velocidadDias} días/venta`
-                            : "Sin ventas";
-                          const proyAgot = item.velocidadDias > 0 && item.stock > 0
-                            ? Math.round(item.velocidadDias * item.stock)
-                            : null;
-                          const proyColor = proyAgot === null ? "text-[#9C8A82]" :
-                            proyAgot < 30 ? "text-red-500" :
-                            proyAgot < 60 ? "text-[#D4A017]" : "text-[#5B9E6B]";
-                          const capital = ((item.costoPromedio || 0) * (item.stock || 0));
-                          const estadoLabel = item.diasEnInventario >= 999 ? "Sin movimientos" :
-                            item.diasEnInventario <= 15 ? "Rotación alta" :
-                            item.diasEnInventario <= 60 ? "Rotación media" : "Rotación baja";
-                          const estadoVariant = item.diasEnInventario >= 999 ? "danger" :
-                            item.diasEnInventario <= 15 ? "success" :
-                            item.diasEnInventario <= 60 ? "warning" : "danger";
-
-                          // Auto-recommendations per row
-                          const recoms: { label: string; variant: "success" | "warning" | "danger" }[] = [];
-                          if (item.diasEnInventario > 90 && item.diasEnInventario < 999) recoms.push({ label: "Liquidar", variant: "danger" });
-                          if (proyAgot !== null && proyAgot < 30) recoms.push({ label: "Reponer", variant: "warning" });
-                          if (item.diasEnInventario >= 999) recoms.push({ label: "Sin mov.", variant: "danger" });
-
-                          return (
-                            <tr
-                              key={item.id}
-                              className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] hover:shadow-md transition-shadow cursor-pointer"
-                              onClick={async () => {
-                                setRotationDetailProductId(item.product_id);
-                                setRotationDetailItem(item);
-                                setRotationDetailLoading(true);
-                                try {
-                                  const movs = await getInventoryMovements(item.product_id);
-                                  setRotationDetailMovements(movs);
-                                } catch {
-                                  setRotationDetailMovements([]);
-                                } finally {
-                                  setRotationDetailLoading(false);
-                                }
-                              }}
-                            >
-                              <td className="px-4 py-3.5 text-sm text-[#9C8A82]">{item.products?.subbrands?.name || "—"}</td>
-                              <td className="px-4 py-3.5 text-sm text-[#3D2B1F] font-medium">
-                                {item.products?.name || "—"}
-                                <span className="ml-2 text-xs text-[#9C8A82]">{item.products?.code}</span>
-                              </td>
-                              <td className="px-4 py-3.5 text-sm text-[#3D2B1F] text-center">{item.stock || 0}</td>
-                              <td className="px-4 py-3.5 text-sm text-[#3D2B1F] text-center font-medium">
-                                {item.diasEnInventario >= 999 ? "—" : item.diasEnInventario}
-                              </td>
-                              <td className="px-4 py-3.5 text-sm text-[#9C8A82] text-center">{velocidad}</td>
-                              <td className={`px-4 py-3.5 text-sm text-center font-medium ${proyColor}`}>
-                                {proyAgot === null ? "—" : `${proyAgot} días`}
-                              </td>
-                              <td className="px-4 py-3.5 text-sm text-[#9C8A82] text-center">{item.ultimaReferencia}</td>
-                              <td className="px-4 py-3.5 text-center">
-                                <div className="flex flex-wrap gap-1 justify-center">
-                                  {recoms.length === 0 ? (
-                                    <span className="text-xs text-[#9C8A82]">—</span>
-                                  ) : recoms.map((r, i) => (
-                                    <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                                      r.variant === "danger" ? "bg-red-50 text-red-600" :
-                                      r.variant === "warning" ? "bg-yellow-50 text-yellow-700" :
-                                      "bg-green-50 text-green-600"
-                                    }`}>{r.label}</span>
-                                  ))}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3.5 text-center">
-                                <Badge variant={estadoVariant}>{estadoLabel}</Badge>
-                              </td>
-                              <td className="px-4 py-3.5 text-sm text-[#3D2B1F] text-right font-medium">{capital.toLocaleString()} RD$</td>
-                              <td className="px-4 py-3.5 text-center">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleHideRotationProduct(item.product_id);
-                                  }}
-                                  className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-all whitespace-nowrap ${
-                                    hiddenRotationIds.includes(item.product_id)
-                                      ? "bg-[#7C1D2E]/10 text-[#7C1D2E]"
-                                      : "text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3]"
-                                  }`}
-                                >
-                                  <EyeOff size={12} className="inline mr-1" />
-                                  {hiddenRotationIds.includes(item.product_id) ? "Mostrar" : "Ocultar"}
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        });
-                    })()}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Rotation detail modal */}
-      <Modal isOpen={!!rotationDetailProductId} onClose={() => { setRotationDetailProductId(null); setRotationDetailItem(null); }} title={rotationDetailItem?.name || "Detalle del Producto"} wide>
-        {rotationDetailLoading ? (
-          <div className="flex justify-center py-8"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>
-        ) : (
-          <div className="space-y-5">
-            {rotationDetailItem && (
-              <>
-                {/* Summary cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                    <p className="text-xs text-[#9C8A82]">Stock actual</p>
-                    <p className="text-xl font-bold text-[#3D2B1F]">{rotationDetailItem.stock || 0}</p>
-                  </div>
-                  <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                    <p className="text-xs text-[#9C8A82]">Días en inventario</p>
-                    <p className="text-xl font-bold text-[#3D2B1F]">
-                      {rotationDetailItem.diasEnInventario >= 999 ? "—" : rotationDetailItem.diasEnInventario}
-                    </p>
-                  </div>
-                  <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                    <p className="text-xs text-[#9C8A82]">Velocidad de venta</p>
-                    <p className="text-xl font-bold text-[#3D2B1F]">
-                      {rotationDetailItem.velocidadDias > 0 ? `${rotationDetailItem.velocidadDias} días` : "—"}
-                    </p>
-                  </div>
-                  <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                    <p className="text-xs text-[#9C8A82]">Proy. agotamiento</p>
-                    <p className={`text-xl font-bold ${
-                      rotationDetailItem.velocidadDias > 0 && rotationDetailItem.stock > 0
-                        ? Math.round(rotationDetailItem.velocidadDias * rotationDetailItem.stock) < 30
-                          ? "text-red-500" : "text-[#5B9E6B]"
-                        : "text-[#9C8A82]"
-                    }`}>
-                      {rotationDetailItem.velocidadDias > 0 && rotationDetailItem.stock > 0
-                        ? `${Math.round(rotationDetailItem.velocidadDias * rotationDetailItem.stock)} días`
-                        : "—"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Timeline info */}
-                <div className="bg-[#FDF8F3] rounded-xl p-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-[#9C8A82]">Última referencia</span>
-                    <span className="text-[#3D2B1F] font-medium">{rotationDetailItem.ultimaReferencia}</span>
-                  </div>
-                  {rotationDetailItem.firstPurchase && (
-                    <div className="flex justify-between">
-                      <span className="text-[#9C8A82]">Primera compra</span>
-                      <span className="text-[#3D2B1F] font-medium">{formatDate(rotationDetailItem.firstPurchase)}</span>
-                    </div>
-                  )}
-                  {rotationDetailItem.last_purchase && (
-                    <div className="flex justify-between">
-                      <span className="text-[#9C8A82]">Última compra</span>
-                      <span className="text-[#3D2B1F] font-medium">{formatDate(rotationDetailItem.last_purchase)}</span>
-                    </div>
-                  )}
-                  {rotationDetailItem.last_sale && (
-                    <div className="flex justify-between">
-                      <span className="text-[#9C8A82]">Última venta</span>
-                      <span className="text-[#3D2B1F] font-medium">{formatDate(rotationDetailItem.last_sale)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-[#9C8A82]">Total vendido</span>
-                    <span className="text-[#3D2B1F] font-medium">{rotationDetailItem.sold || 0} unidades</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[#9C8A82]">Total comprado</span>
-                    <span className="text-[#3D2B1F] font-medium">{rotationDetailItem.purchased || 0} unidades</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[#9C8A82]">Capital inmovilizado</span>
-                    <span className="text-[#3D2B1F] font-medium">{((rotationDetailItem.costoPromedio || 0) * (rotationDetailItem.stock || 0)).toLocaleString()} RD$</span>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Movements */}
-            <div>
-              <h4 className="text-sm font-semibold text-[#3D2B1F] mb-3">Movimientos de inventario</h4>
-              {rotationDetailMovements.length === 0 ? (
-                <p className="text-sm text-[#9C8A82] py-4 text-center">Sin movimientos registrados</p>
-              ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {rotationDetailMovements.map((m: any) => (
-                    <div key={m.id} className="flex items-center justify-between bg-white rounded-xl p-3 border border-[#E8E0D8]">
-                      <div>
-                        <p className={`text-sm font-medium ${movementColor[m.movement_type] || ""}`}>
-                          {movementLabel[m.movement_type] || m.movement_type}
-                        </p>
-                        {m.notes && <p className="text-xs text-[#9C8A82]">{m.notes}</p>}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-[#3D2B1F]">
-                          {m.movement_type === "PURCHASE" ? "+" : m.movement_type === "SALE" ? "-" : ""}
-                          {m.quantity}
-                        </p>
-                        <p className="text-xs text-[#9C8A82]">{formatDate(m.created_at)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      {activeTab === "history" && (
-        <div className="space-y-3">
-          {purchases.length === 0 ? (
-            <div className="text-center py-16 text-[#9C8A82]">
-              <Package size={40} className="mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No hay compras registradas</p>
-            </div>
-          ) : (
-            purchases
-              .filter((pur: any) => {
-                if (filterMonth || filterYear) {
-                  const d = new Date(pur.purchase_date);
-                  if (filterMonth && String(d.getMonth() + 1).padStart(2, "0") !== filterMonth) return false;
-                  if (filterYear && String(d.getFullYear()) !== filterYear) return false;
-                }
-                return true;
-              })
-              .map((pur: any) => (
-              <div key={pur.id} className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8]">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#FDF8F3] flex items-center justify-center text-[#7C1D2E] shrink-0">
-                      <span className="text-xs font-bold">{pur.purchase_number?.replace(settings?.purchase_prefix || "COM-", "")}</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-[#3D2B1F]">{pur.purchase_number}</p>
-                      <p className="text-xs text-[#9C8A82]">{formatDate(pur.purchase_date)} {pur.supplier_name ? `· ${pur.supplier_name}` : ""}</p>
-                    </div>
-                  </div>
-                   <div className="flex items-center gap-3">
-                    <p className="text-sm font-bold text-[#3D2B1F]">{formatCurrency(pur.total)}</p>
-                    <div className="flex items-center gap-1 relative">
-                      <button
-                        onClick={() => openEditPurchase(pur)}
-                        className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-all"
-                        title="Editar"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          generatePurchasePdfLocal(pur);
-                          setOpenDownloadId(null);
-                        }}
-                        className="p-2 text-[#7C1D2E] hover:bg-[#7C1D2E]/10 rounded-lg transition-all"
-                        title="Descargar PDF"
-                      >
-                        <Printer size={14} />
-                      </button>
-                      <div className="relative">
-                        <button
-                          onClick={() => setOpenDownloadId(openDownloadId === pur.id ? null : pur.id)}
-                          className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-all"
-                          title="Más opciones"
-                        >
-                          <Download size={14} />
-                        </button>
-                        {openDownloadId === pur.id && (
-                          <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-xl shadow-lg border border-[#E8E0D8] py-1 z-50">
-                            <button onClick={() => { handleViewPurchase(pur.id); setOpenDownloadId(null); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3]">
-                              <Eye size={14} /> Ver detalle
-                            </button>
-                            <button onClick={() => { generatePurchasePdfLocal(pur); setOpenDownloadId(null); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3]">
-                              <Download size={14} /> Descargar PDF
-                            </button>
-                            <button onClick={() => handleDownloadJpg(pur)}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3]">
-                              <Download size={14} /> Descargar JPG
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => setShowConfirmDelete(pur.id)}
-                        className="p-2 text-[#E07A3A] hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  {pur.purchase_items?.map((pi: any) => (
-                    <div key={pi.id} className="flex items-center justify-between text-sm">
-                      <span className="text-[#3D2B1F]">{pi.products?.name || "Producto"}</span>
-                      <span className="text-[#9C8A82]">{pi.quantity} x {formatCurrency(pi.unit_cost)}</span>
-                    </div>
-                  ))}
-                </div>
-                {(pur.discount_amount > 0 || pur.notes) && (
-                  <div className="mt-2 pt-2 border-t border-[#E8E0D8] space-y-1 text-xs text-[#9C8A82]">
-                    {pur.discount_amount > 0 && <p>Descuento: -{formatCurrency(pur.discount_amount)}</p>}
-                    {pur.notes && <p>Notas: {pur.notes}</p>}
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Product detail modal */}
-      <Modal isOpen={showDetail} onClose={() => setShowDetail(false)} title={detailItem?.products?.name || "Detalle"} wide>
-        {detailItem && (() => {
-          const detSold = soldMap[detailItem.product_id] || 0;
-          const detPurchased = purchasedMap[detailItem.product_id] || 0;
-          const detStock = Math.max(0, detPurchased - detSold);
-          const detPending = Math.max(0, detSold - detPurchased);
-          const detStatus = getStockStatus(detStock, detailMinStock);
-          const detCapital = (detailItem.products?.cost || 0) * detStock;
-          const isHidden = hiddenStockIds.includes(detailItem.product_id);
-          return (
-          <div className="space-y-5">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-[#9C8A82]">{detailItem.products?.subbrands?.name} · {detailItem.products?.code}</p>
-              </div>
-              <Badge variant={detStatus.variant}>{detStatus.label}</Badge>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                <p className="text-xs text-[#9C8A82]">Compradas</p>
-                <p className="text-xl font-bold text-[#3D2B1F]">{detPurchased || "—"}</p>
-              </div>
-              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                <p className="text-xs text-[#9C8A82]">Stock actual</p>
-                <p className="text-xl font-bold text-[#3D2B1F]">{detStock}</p>
-              </div>
-              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                <p className="text-xs text-[#9C8A82]">Pend. Dev.</p>
-                <p className="text-xl font-bold text-[#E07A3A]">{detPending}</p>
-              </div>
-              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                <p className="text-xs text-[#9C8A82]">Vendidas</p>
-                <p className="text-xl font-bold text-[#3D2B1F]">{detSold}</p>
-              </div>
-              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                <p className="text-xs text-[#9C8A82]">Capital</p>
-                <p className="text-xl font-bold text-[#3D2B1F]">{formatCurrency(detCapital)}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <label className="text-sm text-[#3D2B1F] font-medium">Stock mínimo:</label>
-              <input
-                type="number" value={detailMinStock}
-                onChange={(e) => setDetailMinStock(Math.max(0, Number(e.target.value)))}
-                className="w-20 h-9 px-3 rounded-lg border border-[#E8E0D8] text-sm text-center"
-              />
-              <button onClick={handleSaveMinStock} className="h-9 px-3 bg-[#7C1D2E] text-white rounded-lg text-xs font-medium hover:bg-[#5C1420] transition-all">
-                <Save size={14} />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleHideStockProduct(detailItem.product_id);
-                  setShowDetail(false);
-                }}
-                className={`ml-auto flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-medium border transition-all ${
-                  isHidden
-                    ? "bg-[#7C1D2E]/10 border-[#7C1D2E] text-[#7C1D2E]"
-                    : "border-[#E8E0D8] text-[#9C8A82] hover:text-[#3D2B1F]"
-                }`}
-              >
-                <EyeOff size={14} />
-                {isHidden ? "Mostrar en stock" : "Ocultar de stock"}
-              </button>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-semibold text-[#3D2B1F] mb-3">Movimientos</h4>
-              {detailMovements.length === 0 ? (
-                <p className="text-sm text-[#9C8A82] py-4 text-center">Sin movimientos registrados</p>
-              ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {detailMovements.map((m: any) => (
-                    <div key={m.id} className="flex items-center justify-between bg-white rounded-xl p-3 border border-[#E8E0D8]">
-                      <div>
-                        <p className={`text-sm font-medium ${movementColor[m.movement_type] || ""}`}>
-                          {movementLabel[m.movement_type] || m.movement_type}
-                        </p>
-                        {m.notes && <p className="text-xs text-[#9C8A82]">{m.notes}</p>}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-[#3D2B1F]">
-                          {m.movement_type === "PURCHASE" ? "+" : m.movement_type === "SALE" ? "-" : ""}
-                          {m.quantity}
-                        </p>
-                        <p className="text-xs text-[#9C8A82]">{formatDate(m.created_at)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          );
-        })()}
-      </Modal>
-
-      {/* Purchase modal */}
-      <Modal isOpen={showPurchase} onClose={() => { setShowPurchase(false); resetPurchaseForm(); }} title={editingId ? "Editar Compra" : "Registrar Compra"} wide>
-        <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Fecha de la compra</label>
-              <input
-                type="date" value={purchaseForm.purchase_date}
-                onChange={(e) => setPurchaseForm({ ...purchaseForm, purchase_date: e.target.value })}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-              />
-            </div>
-            <div className="relative">
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Proveedor</label>
-              <div className="relative">
-                <input
-                  type="text" value={purchaseForm.supplier_name}
-                  onChange={(e) => { setPurchaseForm({ ...purchaseForm, supplier_name: e.target.value }); setSupplierSearch(e.target.value); setShowSupplierDropdown(true); }}
-                  onFocus={() => setShowSupplierDropdown(true)}
-                  placeholder="Buscar o escribir proveedor..."
-                  className="w-full h-12 pl-4 pr-10 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-                />
-                <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9C8A82] pointer-events-none" />
-              </div>
-              {showSupplierDropdown && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowSupplierDropdown(false)} />
-                  <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-white rounded-xl border border-[#E8E0D8] shadow-lg max-h-48 overflow-y-auto">
-                    {suppliers.filter(s => !supplierSearch || normalize(s.name).includes(normalize(supplierSearch))).map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => { setPurchaseForm({ ...purchaseForm, supplier_name: s.name }); setShowSupplierDropdown(false); setSupplierSearch(""); }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3] transition-colors flex justify-between"
-                      >
-                        <span>{s.name}</span>
-                        {s.city && <span className="text-[#9C8A82] text-xs">{s.city}</span>}
-                      </button>
-                    ))}
-                    {suppliers.filter(s => !supplierSearch || normalize(s.name).includes(normalize(supplierSearch))).length === 0 && (
-                      <p className="px-4 py-3 text-sm text-[#9C8A82]">Sin resultados. Escribe para agregar uno nuevo.</p>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Notas (opcional)</label>
-            <textarea
-              value={purchaseForm.notes}
-              onChange={(e) => setPurchaseForm({ ...purchaseForm, notes: e.target.value })}
-              placeholder="Notas adicionales..."
-              rows={2}
-              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all resize-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Descuento (RD$)</label>
-              <input
-                type="number" step="0.01" min={0} value={purchaseForm.discount_amount}
-                onChange={(e) => setPurchaseForm({ ...purchaseForm, discount_amount: Number(e.target.value) })}
-                placeholder="0"
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Forma de Pago</label>
-              <select
-                value={purchaseForm.payment_method}
-                onChange={(e) => setPurchaseForm({ ...purchaseForm, payment_method: e.target.value })}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-              >
-                <option>Efectivo</option>
-                <option>Transferencia</option>
-                <option>Tarjeta</option>
-                <option>Cheque</option>
-                <option>Otro</option>
-              </select>
-            </div>
-          </div>
-
-          {purchaseForm.payment_method === "Transferencia" && (
-            <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Cuenta Bancaria</label>
-              <select
-                value={purchaseForm.bank_account_id}
-                onChange={(e) => setPurchaseForm({ ...purchaseForm, bank_account_id: e.target.value })}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-              >
-                <option value="">Seleccionar banco...</option>
-                {bankAccounts.map((b) => (
-                  <option key={b.id} value={b.id}>{b.bank_name} — {b.account_type} — No. {b.account_number}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-[#3D2B1F]">Productos</label>
-                <button
-                  onClick={() => setShowProductSearch(!showProductSearch)}
-                  className="text-xs text-[#7C1D2E] hover:underline flex items-center gap-1"
-                >
-                  <Plus size={14} />
-                  Seleccionar productos comprados
-                </button>
-            </div>
-
-            {showProductSearch && (
-              <div className="mb-4 bg-[#FDF8F3] rounded-xl overflow-hidden">
-                <div className="p-2">
-                  <div className="relative">
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
-                    <input
-                      type="text" value={productSearch}
-                      onChange={(e) => setProductSearch(e.target.value)}
-                      placeholder="Buscar producto por nombre o código..."
-                      className="w-full h-10 pl-9 pr-3 rounded-lg border border-[#E8E0D8] bg-white text-sm text-[#3D2B1F] placeholder:text-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-                    />
-                  </div>
-                </div>
-                <div className="max-h-48 overflow-y-auto px-2 pb-2 space-y-0.5">
-                  {productFiltered.length === 0 ? (
-                    <p className="text-sm text-[#9C8A82] py-3 text-center">Sin resultados</p>
-                  ) : productFiltered.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => addProductToPurchase(p)}
-                      className="w-full text-left px-3 py-2 text-sm text-[#3D2B1F] hover:bg-white rounded-lg transition-colors flex justify-between"
-                    >
-                      <span className="truncate">{p.name}</span>
-                      <span className="text-[#9C8A82] shrink-0 ml-2">{formatCurrency(p.cost || 0)}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {purchaseForm.items.length === 0 ? (
-              <p className="text-sm text-[#9C8A82] py-3">No hay productos agregados</p>
-            ) : (
-              <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-                {purchaseForm.items.map((item, i) => {
-                  const lineSubtotal = item.quantity * item.unit_cost;
-                  const hasItbis = item.itbis !== false;
-                  const lineItbis = Math.round((hasItbis ? 1 : 0) * lineSubtotal * 0.18 * 100) / 100;
-                  const lineTotal = lineSubtotal + lineItbis;
-                  return (
-                    <div key={i} className="flex items-center gap-3 bg-[#FDF8F3] rounded-xl p-3">
-                      <div className="flex-1 text-sm text-[#3D2B1F] truncate">{item.name}</div>
-                      <button
-                        type="button"
-                        onClick={() => updatePurchaseItem(i, "itbis", !hasItbis)}
-                        className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${hasItbis ? "bg-[#7C1D2E]" : "bg-gray-300"}`}
-                      >
-                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${hasItbis ? "translate-x-5" : "translate-x-0.5"}`} />
-                      </button>
-                      <input
-                        type="number" min={1} value={item.quantity}
-                        onChange={(e) => updatePurchaseItem(i, "quantity", Math.max(1, Number(e.target.value)))}
-                        className="w-16 h-9 px-2 rounded-lg border border-[#E8E0D8] text-center text-sm"
-                      />
-                      <input
-                        type="number" step="0.01" min={0} value={item.unit_cost}
-                        onChange={(e) => updatePurchaseItem(i, "unit_cost", Number(e.target.value))}
-                        className="w-24 h-9 px-2 rounded-lg border border-[#E8E0D8] text-center text-sm"
-                      />
-                      <span className="text-xs text-[#9C8A82] w-20 text-center">{formatCurrency(lineItbis)}</span>
-                      <span className="text-sm font-medium text-[#3D2B1F] w-24 text-right">{formatCurrency(lineTotal)}</span>
-                      <button onClick={() => removePurchaseItem(i)} className="p-1 text-[#E07A3A] hover:bg-white rounded-lg">
-                        <X size={16} />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <div className="bg-[#FDF8F3] rounded-xl p-4 space-y-1.5">
-            <div className="flex justify-between text-sm">
-              <span className="text-[#9C8A82]">Subtotal</span>
-              <span className="text-[#3D2B1F]">{formatCurrency(purchaseSubtotal)}</span>
-            </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-[#9C8A82]">Impuesto de Recogida</span>
-              <input type="number" step="0.01" value={purchaseForm.impuesto_recogida}
-                onChange={(e) => setPurchaseForm({ ...purchaseForm, impuesto_recogida: Number(e.target.value) })}
-                className="w-24 h-7 px-2 text-right rounded-lg border border-[#E8E0D8] bg-white text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-            </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-[#9C8A82]">Cargo de Administración (Detalle)</span>
-              <input type="number" step="0.01" value={purchaseForm.cargo_administracion}
-                onChange={(e) => setPurchaseForm({ ...purchaseForm, cargo_administracion: Number(e.target.value) })}
-                className="w-24 h-7 px-2 text-right rounded-lg border border-[#E8E0D8] bg-white text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-[#9C8A82]">ITBIS (18%)</span>
-              <span className="text-[#3D2B1F]">{formatCurrency(purchaseItbis)}</span>
-            </div>
-            {purchaseForm.discount_amount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-[#E07A3A]">Descuento</span>
-                <span className="text-[#E07A3A]">-{formatCurrency(purchaseForm.discount_amount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm font-bold border-t border-[#E8E0D8] pt-1.5 mt-1.5">
-              <span>Total</span>
-              <span className="text-[#7C1D2E]">{formatCurrency(purchaseTotal)}</span>
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button onClick={() => { setShowPurchase(false); resetPurchaseForm(); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
-            <button onClick={handlePurchase} disabled={saving} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
-              <Save size={18} /> {saving ? "Guardando..." : "Registrar Compra"}
+    <>
+      <PageContainer
+        title="Inventario"
+        subtitle="Control de existencias"
+        action={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                getActiveMenuItems().then(setMenuItems).catch(() => {})
+                getSuppliers().then(setSuppliers).catch(() => {})
+                setAddModalOpen(true)
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Registrar Compra
             </button>
           </div>
-        </div>
-      </Modal>
-
-      {/* Detail purchase modal */}
-      <Modal isOpen={showDetailPurchase} onClose={() => { setShowDetailPurchase(false); setDetailPurchase(null); }} title={detailPurchase?.purchase_number || "Detalle"} wide>
-        {detailPurchase && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-5 gap-3">
-              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                <p className="text-xs text-[#9C8A82]">Subtotal</p>
-                <p className="text-lg font-bold text-[#3D2B1F]">{formatCurrency(detailPurchase.subtotal)}</p>
-              </div>
-              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                <p className="text-xs text-[#9C8A82]">Recogida</p>
-                <p className="text-lg font-bold text-[#3D2B1F]">{formatCurrency(detailPurchase.impuesto_recogida || 0)}</p>
-              </div>
-              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                <p className="text-xs text-[#9C8A82]">Cargo Admin.</p>
-                <p className="text-lg font-bold text-[#3D2B1F]">{formatCurrency(detailPurchase.cargo_administracion || 0)}</p>
-              </div>
-              <div className="bg-[#FDF8F3] rounded-xl p-3 text-center">
-                <p className="text-xs text-[#9C8A82]">ITBIS (18%)</p>
-                <p className="text-lg font-bold text-[#3D2B1F]">{formatCurrency(detailPurchase.itbis || 0)}</p>
-              </div>
-              <div className="bg-[#7C1D2E]/10 rounded-xl p-3 text-center">
-                <p className="text-xs text-[#9C8A82]">Total</p>
-                <p className="text-lg font-bold text-[#7C1D2E]">{formatCurrency(detailPurchase.total)}</p>
-              </div>
+        }
+      >
+        {lowStockCount > 0 && (
+          <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100">
+              <Package className="h-5 w-5 text-amber-600" />
             </div>
-
-            <div className="bg-[#FDF8F3] rounded-xl p-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-[#9C8A82]">Fecha:</span><span className="text-[#3D2B1F]">{formatDate(detailPurchase.purchase_date)}</span></div>
-              <div className="flex justify-between"><span className="text-[#9C8A82]">Proveedor:</span><span className="text-[#3D2B1F]">{detailPurchase.supplier_name || "—"}</span></div>
-              <div className="flex justify-between"><span className="text-[#9C8A82]">Estado:</span><span className="text-[#3D2B1F]">{detailPurchase.status}</span></div>
-              {detailPurchase.discount_amount > 0 && <div className="flex justify-between"><span className="text-[#E07A3A]">Descuento:</span><span className="text-[#E07A3A]">-{formatCurrency(detailPurchase.discount_amount)}</span></div>}
-              {(detailPurchase.impuesto_recogida || 0) > 0 && <div className="flex justify-between"><span className="text-[#9C8A82]">Impuesto Recogida:</span><span className="text-[#3D2B1F]">{formatCurrency(detailPurchase.impuesto_recogida)}</span></div>}
-              {(detailPurchase.cargo_administracion || 0) > 0 && <div className="flex justify-between"><span className="text-[#9C8A82]">Cargo Admin.:</span><span className="text-[#3D2B1F]">{formatCurrency(detailPurchase.cargo_administracion)}</span></div>}
-              {detailPurchase.notes && <div className="flex justify-between"><span className="text-[#9C8A82]">Notas:</span><span className="text-[#3D2B1F]">{detailPurchase.notes}</span></div>}
-            </div>
-
             <div>
-              <p className="text-xs font-semibold text-[#9C8A82] uppercase mb-2">Productos</p>
-              <div className="space-y-2">
-                {(detailPurchase.purchase_items || []).map((pi: any) => {
-                  const hasItbis = pi.itbis !== false;
-                  const lineItbis = hasItbis ? pi.line_itbis || (pi.quantity * pi.unit_cost * 0.18) : 0;
-                  const lineTotal = pi.line_total + lineItbis;
-                  return (
-                    <div key={pi.id} className="bg-white rounded-xl p-3 border border-[#E8E0D8] flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-[#3D2B1F]">{pi.products?.name || "—"}</p>
-                        <p className="text-xs text-[#9C8A82]">{pi.quantity} x {formatCurrency(pi.unit_cost)}{hasItbis ? ` + ITBIS ${formatCurrency(lineItbis)}` : " (sin ITBIS)"}</p>
-                      </div>
-                      <p className="text-sm font-bold text-[#3D2B1F]">{formatCurrency(lineTotal)}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button onClick={() => { setShowDetailPurchase(false); openEditPurchase(detailPurchase); }}
-                className="flex-1 h-11 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm flex items-center justify-center gap-2">
-                <Edit2 size={16} /> Editar Compra
-              </button>
-              <button onClick={() => generatePurchasePdfLocal(detailPurchase)}
-                className="flex-1 h-11 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all flex items-center justify-center gap-2">
-                <Download size={16} /> Descargar PDF
-              </button>
-              <button onClick={() => handleDownloadJpg(detailPurchase)}
-                className="flex-1 h-11 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all flex items-center justify-center gap-2">
-                <Download size={16} /> Descargar JPG
-              </button>
+              <p className="text-sm font-medium text-amber-800">
+                {lowStockCount} {lowStockCount === 1 ? 'producto tiene' : 'productos tienen'} stock bajo
+              </p>
+              <p className="text-xs text-amber-600">
+                Se recomienda realizar pedidos para reabastecer el inventario.
+              </p>
             </div>
           </div>
         )}
-      </Modal>
 
-      {/* Delete confirmation modal */}
-      <Modal isOpen={!!showConfirmDelete} onClose={() => setShowConfirmDelete(null)} title="Confirmar Eliminación">
-        <div className="space-y-5">
-          <p className="text-sm text-[#3D2B1F]">¿Estás seguro de eliminar esta compra? Esta acción no se puede deshacer.</p>
-          <div className="flex gap-3">
+        <DataTable columns={columns} data={inventory} searchable />
+      </PageContainer>
+
+      <Modal
+        isOpen={editModalOpen}
+        onClose={handleClose}
+        title={`Editar: ${editingItem?.item?.name || editingItem?.ingredient_name || 'Producto'}`}
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                Stock <span className="text-[#E07A3A]">*</span>
+              </label>
+              <input
+                type="number"
+                value={form.stock}
+                onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
+                min={0}
+                step="0.01"
+                className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                Stock Mínimo <span className="text-[#E07A3A]">*</span>
+              </label>
+              <input
+                type="number"
+                value={form.minimum_stock}
+                onChange={(e) => setForm({ ...form, minimum_stock: Number(e.target.value) })}
+                min={0}
+                step="0.01"
+                className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                Unidad <span className="text-[#E07A3A]">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.unit}
+                onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                placeholder="Ej: unidades, kg, litros"
+                className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                Costo Promedio <span className="text-[#E07A3A]">*</span>
+              </label>
+              <input
+                type="number"
+                value={form.average_cost}
+                onChange={(e) => setForm({ ...form, average_cost: Number(e.target.value) })}
+                min={0}
+                step="0.01"
+                className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
             <button
-              onClick={() => setShowConfirmDelete(null)}
-              className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all"
+              type="button"
+              onClick={handleClose}
+              className="px-4 py-2 text-sm font-medium text-[#3D2B1F] bg-[#FDF8F3] rounded-lg hover:bg-gray-200 transition-colors"
             >
               Cancelar
             </button>
             <button
-              onClick={() => showConfirmDelete && handleDeletePurchase(showConfirmDelete)}
-              className="flex-1 h-12 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition-all shadow-sm"
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#7C1D2E] rounded-lg hover:bg-[#5C1420] disabled:opacity-50 transition-colors"
             >
-              Eliminar
+              {saving ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
-        </div>
-       </Modal>
-
-      {/* Delete product confirmation modal */}
-      <Modal isOpen={!!showConfirmDeleteProduct} onClose={() => { setShowConfirmDeleteProduct(null); setProductUsage(null); }} title="Confirmar Eliminación">
-        <div className="space-y-5">
-          {productUsage ? (
-            <>
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                <p className="text-sm font-medium text-red-700 mb-2">Este producto tiene registros asociados</p>
-                <ul className="text-sm text-red-600 space-y-1">
-                  {productUsage.movements > 0 && <li>• {productUsage.movements} movimiento(s) de inventario</li>}
-                  {productUsage.invoices > 0 && <li>• {productUsage.invoices} línea(s) en facturas</li>}
-                  {productUsage.purchases > 0 && <li>• {productUsage.purchases} línea(s) en compras</li>}
-                </ul>
-                <p className="text-xs text-red-500 mt-2">La eliminación normal no está disponible. Usa "Forzar eliminación" para borrar el producto y todos sus registros asociados. Esta acción no se puede deshacer.</p>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { setShowConfirmDeleteProduct(null); setProductUsage(null); }}
-                  className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => showConfirmDeleteProduct && handleForceDeleteProduct(showConfirmDeleteProduct)}
-                  disabled={deletingProduct}
-                  className="flex-1 h-12 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <Trash2 size={16} /> {deletingProduct ? "Eliminando..." : "Forzar eliminación"}
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-[#3D2B1F]">¿Estás seguro de eliminar este producto? Esta acción no se puede deshacer.</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowConfirmDeleteProduct(null)}
-                  className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => showConfirmDeleteProduct && handleDeleteProduct(showConfirmDeleteProduct)}
-                  disabled={deletingProduct}
-                  className="flex-1 h-12 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <Trash2 size={16} /> {deletingProduct ? "Eliminando..." : "Eliminar"}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+        </form>
       </Modal>
-    </PageContainer>
-  );
+
+      <Modal
+        isOpen={detailOpen}
+        onClose={() => { setDetailOpen(false); setDetailItem(null); setMovements([]) }}
+        title={detailItem?.item?.name || detailItem?.ingredient_name || 'Detalle de Inventario'}
+        size="lg"
+      >
+        {detailItem && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => handleOpenPurchase(detailItem)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Registrar Compra
+                </button>
+              </div>
+              <PrintActions elementId="inventory-detail" filename={`inventario-${detailItem.item?.name || detailItem.ingredient_name}`} />
+            </div>
+
+            <div className="border-b border-[#E8E0D8] mb-4">
+              <nav className="flex gap-6">
+                <button
+                  onClick={() => setActiveTab('info')}
+                  className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'info'
+                      ? 'border-red-600 text-[#7C1D2E]'
+                      : 'border-transparent text-[#9C8A82] hover:text-[#3D2B1F]'
+                  }`}
+                >
+                  Información
+                </button>
+                <button
+                  onClick={() => setActiveTab('movements')}
+                  className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'movements'
+                      ? 'border-red-600 text-[#7C1D2E]'
+                      : 'border-transparent text-[#9C8A82] hover:text-[#3D2B1F]'
+                  }`}
+                >
+                  Movimientos
+                </button>
+              </nav>
+            </div>
+
+            {activeTab === 'info' && (
+              <div id="inventory-detail" className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Producto</label>
+                    <p className="text-[#3D2B1F]">{detailItem.item?.name || detailItem.ingredient_name || '—'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Stock</label>
+                    <p className="text-[#3D2B1F]">{detailItem.stock}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Stock Mínimo</label>
+                    <p className="text-[#3D2B1F]">{detailItem.minimum_stock}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Unidad</label>
+                    <p className="text-[#3D2B1F]">{detailItem.unit}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Costo Promedio</label>
+                    <p className="text-[#3D2B1F]">{formatCurrency(detailItem.average_cost)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'movements' && (
+              <div>
+                {movementsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-6 w-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : movements.length === 0 ? (
+                  <p className="text-sm text-[#9C8A82] text-center py-8">Sin movimientos registrados</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-[#FDF8F3]">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-[#9C8A82] uppercase">Fecha</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-[#9C8A82] uppercase">Tipo</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-[#9C8A82] uppercase">Cantidad</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-[#9C8A82] uppercase">Notas</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {movements.map((m) => (
+                          <tr key={m.id} className="hover:bg-[#FDF8F3]">
+                            <td className="px-3 py-2 text-sm text-[#3D2B1F]">{formatDateShort(m.created_at)}</td>
+                            <td className="px-3 py-2">
+                              <Badge status={m.movement_type === 'PURCHASE' ? 'AVAILABLE' : m.movement_type === 'SALE' ? 'CANCELLED' : m.movement_type === 'ADJUSTMENT' ? 'PARTIAL' : 'RETURN'} />
+                            </td>
+                            <td className={`px-3 py-2 text-sm text-right font-medium ${
+                              m.movement_type === 'PURCHASE' || m.movement_type === 'RETURN'
+                                ? 'text-green-600'
+                                : 'text-[#7C1D2E]'
+                            }`}>
+                              {m.movement_type === 'PURCHASE' || m.movement_type === 'RETURN' ? '+' : '-'}{m.quantity}
+                            </td>
+                            <td className="px-3 py-2 text-sm text-[#9C8A82]">{m.notes || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={addModalOpen}
+        onClose={() => { setAddModalOpen(false); setPurchaseItems([]); setPurchaseSupplier(''); setPurchaseNotes(''); setPurchaseDate(getLocalDateString()) }}
+        title="Registrar Compra"
+        size="lg"
+      >
+        <form onSubmit={async (e) => { e.preventDefault(); setAddSaving(true); try { await createPurchase({ supplier_name: purchaseSupplier || undefined, purchase_date: purchaseDate, notes: purchaseNotes || undefined }, purchaseItems); toast.success('Compra registrada correctamente'); setAddModalOpen(false); setPurchaseItems([]); setPurchaseSupplier(''); setPurchaseNotes(''); fetchData(); } catch (err: any) { toast.error(err.message || 'Error al registrar compra'); } finally { setAddSaving(false); } }} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Proveedor</label>
+              <div className="flex gap-2">
+                <input type="text" value={purchaseSupplier} onChange={(e) => setPurchaseSupplier(e.target.value)} placeholder="Nombre del proveedor" list="supplier-list" className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent" />
+                <datalist id="supplier-list">
+                  {suppliers.map((s: any) => <option key={s.id} value={s.name} />)}
+                </datalist>
+                <button type="button" onClick={() => { const n = prompt('Nombre del nuevo proveedor:'); if (n) { createSupplier({ name: n }).then(() => getSuppliers().then(setSuppliers)).catch(() => {}); setPurchaseSupplier(n); } }} className="px-3 py-2 text-sm text-[#7C1D2E] bg-[#7C1D2E]/10 rounded-lg hover:bg-red-100">+</button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Fecha</label>
+              <input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Productos <span className="text-[#E07A3A]">*</span></label>
+            <div className="space-y-2">
+              {purchaseItems.map((pi, idx) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  <select value={pi.menu_item_id} onChange={(e) => { const items = [...purchaseItems]; items[idx].menu_item_id = e.target.value; const mi = menuItems.find(m => m.id === e.target.value); items[idx].name = mi?.name || ''; setPurchaseItems(items); }} className="flex-1 rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm">
+                    <option value="">Seleccionar...</option>
+                    {menuItems.map((mi) => <option key={mi.id} value={mi.id}>{mi.name}</option>)}
+                  </select>
+                  <input type="number" value={pi.quantity || ''} onChange={(e) => { const items = [...purchaseItems]; items[idx].quantity = Number(e.target.value); setPurchaseItems(items); }} placeholder="Cant." min={1} className="w-20 rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm" />
+                  <input type="number" value={pi.unit_cost || ''} onChange={(e) => { const items = [...purchaseItems]; items[idx].unit_cost = Number(e.target.value); setPurchaseItems(items); }} placeholder="Costo" min={0} step="0.01" className="w-24 rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm" />
+                  <button type="button" onClick={() => { if (window.confirm('Eliminar este producto?')) { setPurchaseItems(purchaseItems.filter((_, i) => i !== idx)); } }} className="p-2 text-[#9C8A82] hover:text-[#E07A3A]"><X size={16} /></button>
+                </div>
+              ))}
+              <button type="button" onClick={() => setPurchaseItems([...purchaseItems, { menu_item_id: '', name: '', quantity: 1, unit_cost: 0, itbis: true }])} className="text-sm text-[#7C1D2E] hover:text-[#7C1D2E] font-medium">+ Agregar producto</button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Notas</label>
+            <textarea value={purchaseNotes} onChange={(e) => setPurchaseNotes(e.target.value)} rows={2} className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent" />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={() => { setAddModalOpen(false); setPurchaseItems([]); setPurchaseSupplier(''); setPurchaseNotes(''); }} className="px-4 py-2 text-sm font-medium text-[#3D2B1F] bg-[#FDF8F3] rounded-lg hover:bg-gray-200 transition-colors">Cancelar</button>
+            <button type="submit" disabled={addSaving || purchaseItems.length === 0 || !purchaseItems.some(i => i.menu_item_id && i.quantity > 0)} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#7C1D2E] rounded-lg hover:bg-[#5C1420] disabled:opacity-50 transition-colors"><Save size={16} /> {addSaving ? 'Guardando...' : 'Registrar Compra'}</button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={purchaseModalOpen}
+        onClose={() => { setPurchaseModalOpen(false); setPurchaseItem(null) }}
+        title={`Registrar Compra: ${purchaseItem?.item?.name || purchaseItem?.ingredient_name || ''}`}
+        size="sm"
+      >
+        <form onSubmit={handlePurchaseSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+              Stock Actual
+            </label>
+            <p className="text-lg font-semibold text-[#3D2B1F]">{purchaseItem?.stock}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+              Cantidad a Comprar <span className="text-[#E07A3A]">*</span>
+            </label>
+            <input
+              type="number"
+              value={purchaseQty}
+              onChange={(e) => setPurchaseQty(Number(e.target.value))}
+              min={0}
+              step="0.01"
+              required
+              autoFocus
+              className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+              Nuevo Costo Promedio
+            </label>
+            <input
+              type="number"
+              value={purchaseCost}
+              onChange={(e) => setPurchaseCost(Number(e.target.value))}
+              min={0}
+              step="0.01"
+              className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+            />
+            <p className="text-xs text-[#9C8A82] mt-1">Stock nuevo: {Number(purchaseItem?.stock || 0) + Number(purchaseQty)}</p>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => { setPurchaseModalOpen(false); setPurchaseItem(null) }}
+              className="px-4 py-2 text-sm font-medium text-[#3D2B1F] bg-[#FDF8F3] rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={purchaseSaving || purchaseQty <= 0}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              {purchaseSaving ? 'Guardando...' : 'Registrar Compra'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </>
+  )
 }

@@ -1,46 +1,40 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createTransport } from "nodemailer";
+import { NextResponse } from 'next/server'
+import nodemailer from 'nodemailer'
+import { getAuthUser } from '@/lib/auth'
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const { to, subject, body, smtp, attachment } = await req.json();
-
-    if (!smtp?.host || !smtp?.user || !smtp?.pass) {
-      return NextResponse.json(
-        { error: "SMTP no configurado. Ve a Configuración e ingresa los datos de tu servidor SMTP." },
-        { status: 400 }
-      );
+    const auth = getAuthUser(request)
+    if (!auth) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const transporter = createTransport({
-      host: smtp.host,
-      port: smtp.port || 587,
-      secure: smtp.secure || false,
-      auth: { user: smtp.user, pass: smtp.pass },
-    });
+    const { to, subject, body } = await request.json()
 
-    const mailOptions: any = {
-      from: `"${smtp.senderName || smtp.user}" <${smtp.user}>`,
+    if (!to || !subject || !body) {
+      return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    })
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'noreply@donadenina.com',
       to,
       subject,
-      text: body,
-    };
+      html: body,
+    })
 
-    if (attachment?.base64 && attachment?.filename) {
-      mailOptions.attachments = [
-        {
-          filename: attachment.filename,
-          content: attachment.base64,
-          encoding: "base64",
-        },
-      ];
-    }
-
-    const info = await transporter.sendMail(mailOptions);
-
-    return NextResponse.json({ success: true, messageId: info.messageId });
-  } catch (err: any) {
-    console.error("[send-email]", err);
-    return NextResponse.json({ error: err?.message || "Error al enviar" }, { status: 500 });
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Error sending email:', error)
+    return NextResponse.json({ error: 'Error al enviar el correo' }, { status: 500 })
   }
 }

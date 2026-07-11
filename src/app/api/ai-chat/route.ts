@@ -1,78 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { NextResponse } from 'next/server'
+import { getAuthUser } from '@/lib/auth'
 
-async function callOllama(prompt: string): Promise<string | null> {
+export async function POST(request: Request) {
   try {
-    const res = await fetch("http://localhost:11434/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "llama3.2:1b",
-        prompt,
-        stream: false,
-        options: { temperature: 0.4, num_predict: 600 },
-      }),
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.response || null;
-  } catch {
-    return null;
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const { query } = await req.json();
-    if (!query || typeof query !== "string") {
-      return NextResponse.json({ error: "Consulta requerida" }, { status: 400 });
+    const auth = getAuthUser(request)
+    if (!auth) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const { data: products } = await supabase
-      .from("products")
-      .select(`id, name, code, description, benefits, subbrands (name), categories (name)`)
-      .limit(200);
+    const { message } = await request.json()
 
-    const truncate = (s: string, max: number) => s?.length > max ? s.slice(0, max) + "..." : s || "";
-
-    const catalogList = (products || [])
-      .map(
-        (p) =>
-          `- ${p.name} (${(p.subbrands as any)?.name || "Genérica"}) - ${(p.categories as any)?.name || "Sin categoría"}${p.description ? ` | ${truncate(p.description, 150)}` : ""}${p.benefits ? ` | Beneficios: ${truncate(p.benefits, 150)}` : ""}`
-      )
-      .join("\n");
-
-    const prompt = `Eres un asesor de ventas experto de Doña Nina, distribuidora autorizada Amway en República Dominicana.
-
-Catálogo de productos disponible (con descripción y beneficios):
-${catalogList}
-
-Instrucciones:
-- El cliente describe una situación o necesidad específica.
-- Revisa la DESCRIPCIÓN y BENEFICIOS de cada producto para dar recomendaciones precisas.
-- Recomienda 2-5 productos del catálogo que mejor se ajusten.
-- Para cada producto, explica BREVEMENTE por qué es útil para su caso (máximo 1 oración). Menciona beneficios específicos.
-- Sé amable, cercano y profesional.
-- Si ningún producto del catálogo es relevante, sugiere amablemente consultar la tienda física.
-- Responde ÚNICAMENTE en español.
-
-Cliente: "${query}"
-
-Asesor:`;
-
-    const response = await callOllama(prompt);
-
-    if (!response) {
-      return NextResponse.json({
-        response:
-          "Lo siento, el asistente IA no está disponible en este momento. Intenta de nuevo o usa la búsqueda por palabras clave.",
-        offline: true,
-      });
+    if (!message) {
+      return NextResponse.json({ error: 'Mensaje requerido' }, { status: 400 })
     }
 
-    return NextResponse.json({ response, offline: false });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Error interno" }, { status: 500 });
+    const lower = message.toLowerCase()
+
+    let response = ''
+
+    if (lower.includes('arepa') || lower.includes('menu') || lower.includes('producto')) {
+      response = 'Puedes consultar nuestro menú completo en la sección "Menú" del sistema. Tenemos arepas tradicionales, especiales, empanadas, bebidas y postres.'
+    } else if (lower.includes('cliente') || lower.includes('cliente')) {
+      response = 'Los clientes se gestionan desde la sección "Clientes". Puedes ver su historial de compras, seguimientos y créditos disponibles.'
+    } else if (lower.includes('factura') || lower.includes('facturacion')) {
+      response = 'Las facturas se crean desde la sección "Facturación". Recuerda seleccionar el cliente y los productos del menú.'
+    } else if (lower.includes('entrega') || lower.includes('delivery') || lower.includes('domicilio')) {
+      response = 'El control de entregas está en la sección "Entregas". Puedes ver las pendientes, asignar repartidores y marcar como entregadas.'
+    } else if (lower.includes('inventario') || lower.includes('stock')) {
+      response = 'El inventario se gestiona desde la sección "Inventario". Allí puedes ver el stock actual y registrar movimientos.'
+    } else if (lower.includes('reporte') || lower.includes('report') || lower.includes('ventas')) {
+      response = 'Los reportes de ventas están en la sección "Reportes". Puedes filtrar por rango de fechas y ver el desglose.'
+    } else {
+      response = 'Hola, soy el asistente de Donde Doña Nina. Puedo ayudarte con información sobre el sistema. Pregúntame sobre facturación, clientes, menú, entregas, inventario o reportes.'
+    }
+
+    return NextResponse.json({ response })
+  } catch (error: any) {
+    console.error('AI Chat error:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }

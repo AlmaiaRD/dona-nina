@@ -1,15 +1,12 @@
-export default function Footer() {
+'use client'
+
+export function Footer() {
   return (
-    <footer className="border-t border-[#E8E0D8] bg-white mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 text-center">
-        <p className="text-xs sm:text-sm text-[#9C8A82]">© Doña Nina</p>
-        <p className="text-[11px] sm:text-xs text-[#9C8A82] mt-1">
-          Gestión Comercial de Submarcas Amway
-        </p>
-        <p className="text-[10px] sm:text-[11px] text-[#7C1D2E]/60 mt-1 leading-relaxed">
-          Nutrilite &bull; Artistry &bull; Glister &bull; G&H &bull; Satinique &bull; Amway Home
-        </p>
+    <footer className="border-t border-[#E8E0D8] bg-white px-4 py-3">
+      <div className="flex items-center justify-between text-xs text-[#9C8A82]">
+        <span>&copy; {new Date().getFullYear()} Donde Do&ntilde;a Nina. Todos los derechos reservados.</span>
+        <span>v1.0.0</span>
       </div>
     </footer>
-  );
+  )
 }

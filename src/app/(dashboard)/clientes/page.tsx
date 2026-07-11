@@ -1,531 +1,612 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
-import PageContainer from "@/components/layout/PageContainer";
-import Modal from "@/components/ui/Modal";
-import Badge from "@/components/ui/Badge";
-import { getClients, getClientsWithBalances, createClient, updateClient, deleteClient, searchClients } from "@/services/clients";
-import { getClientAllInvoices, getClientReceipts } from "@/services/receipts";
-import { getClientCredits } from "@/services/credits";
-import { getClientFollowups, createFollowup, updateFollowupStatus } from "@/services/followups";
-import type { Client } from "@/types/database";
-import { formatCurrency, formatDate, getLocalDateString } from "@/lib/utils";
-import {
-  Users, Plus, Search, Edit2, Trash2, X, Save, Eye, FileText, Phone, Mail, User, MessageSquare, Wallet, Briefcase,
-} from "lucide-react";
-import toast from "react-hot-toast";
-import { SALES_STAGES, RECRUITMENT_STAGES, getStagesForType } from "@/lib/pipeline-constants";
-import { updateClientStage } from "@/services/clients";
-import type { ClientType } from "@/types/database";
+import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Plus } from 'lucide-react'
+import { IconPencil, IconTrash2 } from '@/components/ui/Icons'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import toast from 'react-hot-toast'
+import type { ColumnDef } from '@tanstack/react-table'
+import { PageContainer } from '@/components/layout/PageContainer'
+import { DataTable } from '@/components/ui/DataTable'
+import { Modal } from '@/components/ui/Modal'
+import { Badge } from '@/components/ui/Badge'
+import { PrintActions } from '@/components/ui/PrintActions'
+import { formatCurrency, formatDate, formatDateShort } from '@/lib/utils'
+import { createClient, updateClient, deleteClient } from '@/services/clients'
+import { getClientInvoices } from '@/services/invoices'
+import { getClientReceipts } from '@/services/receipts'
+import { getClientFollowups } from '@/services/followups'
+import type { Client, Invoice, Receipt, Followup } from '@/types/database'
 
-type DetailTab = "info" | "facturas" | "pagos" | "creditos" | "seguimiento";
+const clientSchema = z.object({
+  full_name: z.string().min(1, 'El nombre es requerido'),
+  phone: z.string().optional().or(z.literal('')),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  address: z.string().optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
+  birthday: z.string().optional().or(z.literal('')),
+  lead_source: z.string().optional().or(z.literal('')),
+  stage: z.string().optional().or(z.literal('')),
+  interest: z.string().optional().or(z.literal('')),
+  first_contact_date: z.string().optional().or(z.literal('')),
+  next_followup_date: z.string().optional().or(z.literal('')),
+})
 
-const statusLabel: Record<string, string> = {
-  PENDING: "Pendiente", PARTIAL: "Parcial", PAID: "Pagada", CANCELLED: "Anulada",
-};
+type ClientFormData = z.infer<typeof clientSchema>
 
-const statusColor: Record<string, "warning" | "info" | "success" | "danger"> = {
-  PENDING: "warning", PARTIAL: "info", PAID: "success", CANCELLED: "danger",
-};
+const stages = ['Prospecto', 'Activo', 'Inactivo', 'VIP']
 
-export default function ClientesPage() {
-  const searchParams = useSearchParams();
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [showDetail, setShowDetail] = useState(false);
-  const [detailClient, setDetailClient] = useState<Client | null>(null);
-  const [detailTab, setDetailTab] = useState<DetailTab>("info");
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [form, setForm] = useState({ full_name: "", phone: "", email: "", ibo_number: "", notes: "", client_type: "comprador" as ClientType, birthday: "" });
-  const [saving, setSaving] = useState(false);
+export default function ClientsPage() {
+  const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingClient, setEditingClient] = useState<Client | null>(null)
+  const [detailClient, setDetailClient] = useState<Client | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'info' | 'invoices' | 'receipts' | 'history'>('info')
+  const [clientInvoices, setClientInvoices] = useState<Invoice[]>([])
+  const [clientReceipts, setClientReceipts] = useState<Receipt[]>([])
+  const [clientFollowups, setClientFollowups] = useState<Followup[]>([])
+  const [clientDataLoading, setClientDataLoading] = useState(false)
 
-  const [detailInvoices, setDetailInvoices] = useState<any[]>([]);
-  const [detailReceipts, setDetailReceipts] = useState<any[]>([]);
-  const [detailCredits, setDetailCredits] = useState<any[]>([]);
-  const [detailFollowups, setDetailFollowups] = useState<any[]>([]);
-  const [newFollowup, setNewFollowup] = useState("");
+  const searchParams = useSearchParams()
 
-  const load = useCallback(async () => {
-    try {
-      const data = searchQuery ? await searchClients(searchQuery) : await getClientsWithBalances();
-      setClients(data);
-    } catch (e: any) {
-      console.error("Error al cargar clientes:", e);
-      toast.error("Error al cargar clientes");
-    } finally {
-      setLoading(false);
-    }
-  }, [searchQuery]);
-
-  useEffect(() => { load(); }, [load]);
+  const form = useForm<ClientFormData>({
+    resolver: zodResolver(clientSchema),
+    defaultValues: {
+      full_name: '',
+      phone: '',
+      email: '',
+      address: '',
+      notes: '',
+      birthday: '',
+      lead_source: '',
+      stage: '',
+      interest: '',
+      first_contact_date: '',
+      next_followup_date: '',
+    },
+  })
 
   useEffect(() => {
-    if (searchParams.get("nuevo") === "true") {
-      resetForm();
-      setShowModal(true);
-    }
-  }, [searchParams]);
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/clients')
+        const { data } = await res.json()
+        if (!cancelled) setClients(data || [])
+      } catch (err) { console.error('[ClientesPage] Error:', err); if (!cancelled) setError('Error al cargar los clientes') }
+      finally { if (!cancelled) setLoading(false) }
+    })()
+    return () => { cancelled = true }
+  }, [])
 
-  function resetForm() {
-    setForm({ full_name: "", phone: "", email: "", ibo_number: "", notes: "", client_type: "comprador", birthday: "" });
-    setEditingClient(null);
-  }
-
-  function openNew() {
-    resetForm();
-    setShowModal(true);
-  }
-
-  function openEdit(client: Client) {
-    setEditingClient(client);
-    setForm({
-      full_name: client.full_name,
-      phone: client.phone || "",
-      email: client.email || "",
-      ibo_number: client.ibo_number || "",
-      notes: client.notes || "",
-      client_type: (client.client_type as ClientType) || "comprador",
-      birthday: client.birthday || "",
-    });
-    setShowModal(true);
-  }
-
-  async function openDetail(client: Client) {
-    setDetailClient(client);
-    setDetailTab("info");
-    setShowDetail(true);
-    setDetailLoading(true);
+  async function fetchClients() {
     try {
-      const [inv, rec, crd, fol] = await Promise.all([
-        getClientAllInvoices(client.id),
-        getClientReceipts(client.id),
-        getClientCredits(client.id),
-        getClientFollowups(client.id),
-      ]);
-      setDetailInvoices(inv);
-      setDetailReceipts(rec);
-      setDetailCredits(crd);
-      setDetailFollowups(fol);
-    } catch {
-      toast.error("Error al cargar detalle del cliente");
-    } finally {
-      setDetailLoading(false);
-    }
+      const res = await fetch('/api/clients')
+      const { data } = await res.json()
+      setClients(data || [])
+    } catch (err) { console.error('[ClientesPage] Error:', err); setError('Error al cargar los clientes') }
   }
 
-  async function handleSave() {
-    if (!form.full_name.trim()) { toast.error("El nombre del cliente es requerido"); return; }
-    setSaving(true);
+  const handleOpenCreate = useCallback(() => {
+    setEditingClient(null)
+    form.reset({
+      full_name: '',
+      phone: '',
+      email: '',
+      address: '',
+      notes: '',
+      birthday: '',
+      lead_source: '',
+      stage: '',
+      interest: '',
+      first_contact_date: new Date().toISOString().split('T')[0],
+      next_followup_date: '',
+    })
+    setModalOpen(true)
+  }, [form])
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'new') {
+      queueMicrotask(() => handleOpenCreate())
+    }
+  }, [searchParams, handleOpenCreate])
+
+  function handleOpenEdit(client: Client) {
+    setEditingClient(client)
+    form.reset({
+      full_name: client.full_name,
+      phone: client.phone ?? '',
+      email: client.email ?? '',
+      address: client.address ?? '',
+      notes: client.notes ?? '',
+      birthday: client.birthday ?? '',
+      lead_source: client.lead_source ?? '',
+      stage: client.stage ?? '',
+      interest: client.interest ?? '',
+      first_contact_date: client.first_contact_date ?? '',
+      next_followup_date: client.next_followup_date ?? '',
+    })
+    setModalOpen(true)
+  }
+
+  async function handleSubmit(data: ClientFormData) {
     try {
       if (editingClient) {
-        await updateClient(editingClient.id, form);
-        toast.success("Cliente actualizado exitosamente");
+        await updateClient(editingClient.id, data)
+        toast.success('Cliente actualizado correctamente')
       } else {
-        await createClient(form);
-        toast.success("Cliente creado exitosamente");
+        await createClient(data)
+        toast.success('Cliente creado correctamente')
       }
-      setShowModal(false);
-      resetForm();
-      load();
-    } catch (e: any) {
-      const clientId = editingClient?.id || "N/A";
-      const msg = e?.message || e?.error?.message || e?.error_description || (typeof e === 'object' ? JSON.stringify(e) : String(e));
-      toast.error(`Error (${clientId}): ${msg}`);
-      console.error("[handleSave]", e);
+      setModalOpen(false)
+      await fetchClients()
+    } catch (err) { console.error('[ClientesPage] Error:', err); toast.error('Error al guardar el cliente') }
+  }
+
+  async function handleViewDetail(client: Client) {
+    setDetailClient(client)
+    setActiveTab('info')
+    setDetailOpen(true)
+    setClientDataLoading(true)
+    try {
+      const [invoices, receipts, followups] = await Promise.all([
+        getClientInvoices(client.id),
+        getClientReceipts(client.id),
+        getClientFollowups(client.id),
+      ])
+      setClientInvoices(invoices)
+      setClientReceipts(receipts)
+      setClientFollowups(followups)
+    } catch (err) {
+      console.error('Error loading client data:', err)
     } finally {
-      setSaving(false);
+      setClientDataLoading(false)
     }
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (!window.confirm(`¿Estás segura de eliminar a ${name}?`)) return;
+  async function handleDelete(client: Client) {
+    if (!window.confirm(`¿Estás seguro de eliminar a ${client.full_name}?`)) return
     try {
-      await deleteClient(id);
-      toast.success("Cliente eliminado");
-      load();
-    } catch {
-      toast.error("Error al eliminar cliente");
-    }
+      await deleteClient(client.id)
+      toast.success('Cliente eliminado correctamente')
+      await fetchClients()
+    } catch (err) { console.error('[ClientesPage] Error:', err); toast.error('Error al eliminar el cliente') }
   }
 
-  async function handleAddFollowup() {
-    if (!detailClient || !newFollowup.trim()) return;
-    try {
-      await createFollowup({
-        client_id: detailClient.id,
-        contact_date: getLocalDateString(),
-        comments: newFollowup,
-        status: "PENDING",
-      });
-      const fol = await getClientFollowups(detailClient.id);
-      setDetailFollowups(fol);
-      setNewFollowup("");
-      toast.success("Actividad registrada");
-    } catch {
-      toast.error("Error al registrar actividad");
-    }
+  const columns: ColumnDef<Client>[] = [
+    {
+      accessorKey: 'full_name',
+      header: 'Nombre',
+      cell: ({ row }) => (
+        <button
+          onClick={() => handleViewDetail(row.original)}
+          className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
+        >
+          {row.original.full_name}
+        </button>
+      ),
+    },
+    {
+      accessorKey: 'phone',
+      header: 'Teléfono',
+    },
+    {
+      accessorKey: 'email',
+      header: 'Email',
+    },
+    {
+      accessorKey: 'credit_balance',
+      header: 'Balance',
+      cell: ({ row }) => formatCurrency(row.original.credit_balance),
+    },
+    {
+      accessorKey: 'stage',
+      header: 'Estado',
+      cell: ({ row }) => <Badge status={row.original.stage} />,
+    },
+    {
+      id: 'acciones',
+      header: '',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleOpenEdit(row.original)}
+            className="p-1.5 rounded-lg text-[#9C8A82] hover:bg-[#FDF8F3] hover:text-gray-600 transition-colors"
+            aria-label="Editar"
+          >
+            <IconPencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(row.original)}
+            className="p-1.5 rounded-lg text-[#9C8A82] hover:bg-[#7C1D2E]/10 hover:text-[#7C1D2E] transition-colors"
+            aria-label="Eliminar"
+          >
+            <IconTrash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+    },
+  ]
+
+  if (loading) {
+    return (
+      <PageContainer title="Clientes" subtitle="Gestión de clientes">
+        <div className="flex items-center justify-center py-20">
+          <div className="h-8 w-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </PageContainer>
+    )
   }
 
-  async function handleToggleFollowup(id: string, current: string) {
-    try {
-      await updateFollowupStatus(id, current === "COMPLETED" ? "PENDING" : "COMPLETED");
-      if (detailClient) {
-        const fol = await getClientFollowups(detailClient.id);
-        setDetailFollowups(fol);
-      }
-    } catch {
-      toast.error("Error al actualizar seguimiento");
-    }
+  if (error) {
+    return (
+      <PageContainer title="Clientes" subtitle="Gestión de clientes">
+        <div className="text-center py-20">
+          <p className="text-[#9C8A82] mb-4">{error}</p>
+          <button
+            onClick={fetchClients}
+            className="px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm hover:bg-[#5C1420] transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
+      </PageContainer>
+    )
   }
-
-  async function handleConvertClientType(client: Client, newType: ClientType) {
-    const label = newType === "negocio" ? "Prospecto de Negocio" : "Cliente Comprador";
-    if (!window.confirm(`¿Convertir a ${client.full_name} como ${label}?`)) return;
-    
-    try {
-      await updateClient(client.id, {
-        client_type: newType,
-        stage: newType === "negocio" ? "prospecto" : "lead",
-        stage_entered_at: new Date().toISOString(),
-        client_type_changed_at: new Date().toISOString(),
-        previous_client_type: client.client_type,
-      });
-      toast.success(`Cliente convertido a ${label}`);
-      load();
-      setDetailClient(null);
-    } catch (e: any) {
-      toast.error("Error al convertir cliente");
-    }
-  }
-
-  const totalPortfolio = clients.reduce((sum: number, c: any) => sum + Number(c.pending_balance || 0), 0);
-  const totalCreditBalance = clients.reduce((sum: number, c: any) => sum + Number(c.credit_balance || 0), 0);
-  const totalInvoiced = detailInvoices.reduce((s, i) => s + Number(i.total), 0);
-  const totalPaid = detailReceipts.reduce((s, r) => s + Number(r.amount), 0);
 
   return (
-    <PageContainer>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
+    <PageContainer
+      title="Clientes"
+      subtitle="Gestión de clientes"
+      action={
+        <button
+          onClick={handleOpenCreate}
+          className="flex items-center gap-2 px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Nuevo Cliente
+        </button>
+      }
+    >
+      <DataTable columns={columns} data={clients} searchable pageSize={20} />
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}
+        size="lg"
+      >
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+              Nombre <span className="text-[#E07A3A]">*</span>
+            </label>
+            <input
+              {...form.register('full_name')}
+              className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+            />
+            {form.formState.errors.full_name && (
+              <p className="text-[#E07A3A] text-xs mt-1">{form.formState.errors.full_name.message}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <h1 className="text-xl font-bold text-[#3D2B1F]">Clientes y Deudas</h1>
-              <p className="text-sm text-[#9C8A82] mt-1">Directorio de clientes</p>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Teléfono</label>
+              <input
+                {...form.register('phone')}
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+              />
             </div>
-            <button onClick={openNew} className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm">
-              <Plus size={18} /> Añadir
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Email</label>
+              <input
+                {...form.register('email')}
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+              />
+              {form.formState.errors.email && (
+                <p className="text-[#E07A3A] text-xs mt-1">{form.formState.errors.email.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Dirección</label>
+            <input
+              {...form.register('address')}
+              className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Notas</label>
+            <textarea
+              {...form.register('notes')}
+              rows={3}
+              className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Cumpleaños</label>
+              <input
+                type="date"
+                {...form.register('birthday')}
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Etapa</label>
+              <select
+                {...form.register('stage')}
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+              >
+                <option value="">Seleccionar...</option>
+                {stages.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Fuente</label>
+              <input
+                {...form.register('lead_source')}
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                placeholder="Ej: Referido, Redes, Whatsapp"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Interés</label>
+              <input
+                {...form.register('interest')}
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                placeholder="Ej: Pasteles, Postres, Salados"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Fecha 1er Contacto</label>
+              <input
+                type="date"
+                {...form.register('first_contact_date')}
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Próximo Seguimiento</label>
+              <input
+                type="date"
+                {...form.register('next_followup_date')}
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="px-4 py-2 text-sm text-gray-600 hover:text-[#3D2B1F] transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors"
+            >
+              {editingClient ? 'Guardar Cambios' : 'Crear Cliente'}
             </button>
           </div>
+        </form>
+      </Modal>
 
-          <div className="relative mb-4">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Buscar cliente por nombre, teléfono o correo..." className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
-          </div>
-
-          {loading ? (
-            <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" /></div>
-          ) : clients.length === 0 ? (
-            <div className="text-center py-16 text-[#9C8A82]">
-              <Users size={40} className="mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No hay clientes registrados</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {clients.map((client: any) => {
-                const pending = Number(client.pending_balance || 0);
-                const credit = Number(client.credit_balance);
-                const stage = getStagesForType((client.client_type as ClientType) || "comprador").find(s => s.key === client.stage);
-                return (
-                  <div key={client.id} className="bg-white rounded-2xl p-4 shadow-sm border border-[#E8E0D8] hover:shadow-md transition-all">
-                    <div className="flex items-start justify-between">
-                      <button onClick={() => openDetail(client)} className="flex-1 text-left">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium text-[#3D2B1F] hover:text-[#7C1D2E] transition-colors">{client.full_name}</h3>
-                          {stage && (
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${stage.bg} ${stage.color}`}>
-                              {stage.label}
-                            </span>
-                          )}
-                          {client.client_type === "negocio" && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 font-medium">Negocio</span>
-                          )}
-                        </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-[#9C8A82]">
-                          {client.phone && <span className="flex items-center gap-1"><Phone size={12} />{client.phone}</span>}
-                          {client.email && <span className="flex items-center gap-1"><Mail size={12} />{client.email}</span>}
-                        </div>
-                        <div className="flex items-center gap-4 mt-2">
-                          {pending > 0 ? (
-                            <>
-                              <span className="text-sm text-[#3D2B1F]">Pendiente: <strong>{formatCurrency(pending)}</strong></span>
-                              <Badge variant="danger">DEBE {formatCurrency(pending)}</Badge>
-                            </>
-                          ) : credit > 0 ? (
-                            <>
-                              <span className="text-sm text-[#3D2B1F]">A favor: <strong>{formatCurrency(credit)}</strong></span>
-                              <Badge variant="success">A FAVOR {formatCurrency(credit)}</Badge>
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-sm text-[#3D2B1F]">Saldo: <strong>{formatCurrency(0)}</strong></span>
-                              <Badge variant="neutral">SALDADO</Badge>
-                            </>
-                          )}
-                        </div>
-                      </button>
-                      <div className="flex items-center gap-2 ml-4">
-                        <select
-                          value={client.stage || ""}
-                          onChange={async e => {
-                            e.stopPropagation();
-                            try {
-                              await updateClientStage(client.id, e.target.value);
-                              load();
-                              toast.success("Etapa actualizada");
-                            } catch { toast.error("Error al actualizar"); }
-                          }}
-                          className="h-8 px-2 rounded-lg border border-[#E8E0D8] bg-white text-xs text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
-                        >
-                          <option value="">Sin etapa</option>
-                          {getStagesForType((client.client_type as ClientType) || "comprador").map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-                        </select>
-                        <button onClick={() => openEdit(client)} className="p-2 text-[#9C8A82] hover:bg-[#FDF8F3] rounded-lg"><Edit2 size={16} /></button>
-                        <button onClick={() => handleDelete(client.id, client.full_name)} className="p-2 text-[#E07A3A] hover:bg-[#E07A3A]/10 rounded-lg"><Trash2 size={16} /></button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8] h-fit">
-          <h3 className="text-sm font-semibold text-[#3D2B1F] mb-4">Estado de Cuenta Doña Nina</h3>
-          <div className="space-y-3 mb-6">
-            <div className="flex justify-between text-sm py-2 border-b border-[#E8E0D8]/50">
-              <span className="text-[#9C8A82]">Cartera total (pendiente)</span>
-              <span className="font-medium">{formatCurrency(totalPortfolio)}</span>
-            </div>
-            <div className="flex justify-between text-sm py-2 border-b border-[#E8E0D8]/50">
-              <span className="text-[#9C8A82]">Saldos a favor</span>
-              <span className="font-medium text-[#5B9E6B]">{formatCurrency(totalCreditBalance)}</span>
-            </div>
-          </div>
-
-          <h4 className="text-xs font-semibold text-[#9C8A82] uppercase tracking-wider mb-3">Accesos rápidos</h4>
-          <div className="space-y-2">
-            <a href="/creditos" className="flex items-center gap-2 text-sm text-[#5B9E6B] hover:underline">
-              <Wallet size={14} /> Ver Saldos a Favor
-            </a>
-            <a href="/crm" className="flex items-center gap-2 text-sm text-[#7C1D2E] hover:underline">
-              <MessageSquare size={14} /> Ver Seguimiento
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Detail modal */}
-      <Modal isOpen={showDetail} onClose={() => { setShowDetail(false); setDetailClient(null); }} title={detailClient?.full_name || "Detalle"} wide>
+      <Modal
+        isOpen={detailOpen}
+        onClose={() => { setDetailOpen(false); setDetailClient(null) }}
+        title={detailClient?.full_name ?? 'Detalle del Cliente'}
+        size="lg"
+      >
         {detailClient && (
-          <div className="space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-[#7C1D2E]/10 flex items-center justify-center">
-                  <User size={22} className="text-[#7C1D2E]" />
-                </div>
-                <div>
-                  <p className="text-sm text-[#9C8A82]">
-                    {detailClient.phone && `Tel: ${detailClient.phone}`}
-                    {detailClient.phone && detailClient.email && " · "}
-                    {detailClient.email && detailClient.email}
-                  </p>
-                  {detailClient.ibo_number && <p className="text-xs text-[#9C8A82]">IBO: {detailClient.ibo_number}</p>}
-                </div>
-              </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                {detailClient.client_type === "comprador" ? (
-                  <button 
-                    onClick={() => handleConvertClientType(detailClient, "negocio")} 
-                    className="flex items-center gap-1.5 text-sm text-[#5B9E6B] hover:underline"
-                  >
-                    <Briefcase size={14} /> <span className="hidden sm:inline">Convertir a Prospecto</span><span className="sm:hidden">Prospecto</span>
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => handleConvertClientType(detailClient, "comprador")} 
-                    className="flex items-center gap-1.5 text-sm text-[#7C1D2E] hover:underline"
-                  >
-                    <User size={14} /> <span className="hidden sm:inline">Convertir a Comprador</span><span className="sm:hidden">Comprador</span>
-                  </button>
-                )}
-                <button onClick={() => openEdit(detailClient)} className="flex items-center gap-1.5 text-sm text-[#7C1D2E] hover:underline"><Edit2 size={14} /> Editar</button>
-              </div>
+          <div>
+            <div className="flex justify-end mb-4">
+              <PrintActions elementId="client-detail" filename={`cliente-${detailClient.full_name}`} />
             </div>
 
-            {detailClient.previous_client_type && detailClient.client_type_changed_at && (
-              <div className="bg-[#FDF8F3] rounded-xl p-3 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#7C1D2E]/10 flex items-center justify-center">
-                  <Briefcase size={14} className="text-[#7C1D2E]" />
+            <div className="border-b border-[#E8E0D8] mb-4">
+              <nav className="flex gap-6">
+                {(['info', 'invoices', 'receipts', 'history'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+                      activeTab === tab
+                        ? 'border-red-600 text-[#7C1D2E]'
+                        : 'border-transparent text-[#9C8A82] hover:text-[#3D2B1F]'
+                    }`}
+                  >
+                    {tab === 'info' ? 'Información' : tab === 'invoices' ? 'Facturas' : tab === 'receipts' ? 'Recibos' : 'Historial'}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {activeTab === 'info' && (
+              <div id="client-detail" className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Nombre</label>
+                    <p className="text-[#3D2B1F]">{detailClient.full_name}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Teléfono</label>
+                    <p className="text-[#3D2B1F]">{detailClient.phone || '—'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Email</label>
+                    <p className="text-[#3D2B1F]">{detailClient.email || '—'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Dirección</label>
+                    <p className="text-[#3D2B1F]">{detailClient.address || '—'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Cumpleaños</label>
+                    <p className="text-[#3D2B1F]">{detailClient.birthday ? formatDateShort(detailClient.birthday) : '—'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Fuente</label>
+                    <p className="text-[#3D2B1F]">{detailClient.lead_source || '—'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Etapa</label>
+                    <p className="text-[#3D2B1F]">
+                      {detailClient.stage ? <Badge status={detailClient.stage} /> : '—'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Interés</label>
+                    <p className="text-[#3D2B1F]">{detailClient.interest || '—'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Fecha 1er Contacto</label>
+                    <p className="text-[#3D2B1F]">{detailClient.first_contact_date ? formatDateShort(detailClient.first_contact_date) : '—'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Próximo Seguimiento</label>
+                    <p className="text-[#3D2B1F]">{detailClient.next_followup_date ? formatDateShort(detailClient.next_followup_date) : '—'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Último Contacto</label>
+                    <p className="text-[#3D2B1F]">{detailClient.last_contact_date ? formatDateShort(detailClient.last_contact_date) : '—'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Balance de Crédito</label>
+                    <p className="text-[#3D2B1F]">{formatCurrency(detailClient.credit_balance)}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-[#9C8A82]">
-                    Fue {detailClient.previous_client_type === "comprador" ? "Cliente Comprador" : "Prospecto de Negocio"} por{" "}
-                    {Math.floor((new Date(detailClient.client_type_changed_at).getTime() - new Date(detailClient.created_at).getTime()) / (1000 * 60 * 60 * 24))} días
-                  </p>
-                  <p className="text-xs text-[#9C8A82]">
-                    Convertido el {formatDate(detailClient.client_type_changed_at)}
-                  </p>
-                </div>
+                {detailClient.notes && (
+                  <div>
+                    <label className="block text-sm font-medium text-[#9C8A82]">Notas</label>
+                    <p className="text-[#3D2B1F] whitespace-pre-wrap">{detailClient.notes}</p>
+                  </div>
+                )}
+                {detailClient.created_at && (
+                  <p className="text-xs text-[#9C8A82]">Creado: {formatDate(detailClient.created_at)}</p>
+                )}
               </div>
             )}
 
-            <div className="flex gap-1 border-b border-[#E8E0D8] overflow-x-auto">
-              {(["info", "facturas", "pagos", "creditos", "seguimiento"] as DetailTab[]).map((tab) => (
-                <button key={tab} onClick={() => setDetailTab(tab)}
-                  className={`pb-2.5 px-3 text-xs font-medium whitespace-nowrap transition-colors border-b-2 ${
-                    detailTab === tab ? "text-[#7C1D2E] border-[#7C1D2E]" : "text-[#9C8A82] border-transparent hover:text-[#3D2B1F]"
-                  }`}
-                >
-                  {tab === "info" && "Información"}
-                  {tab === "facturas" && `Facturas (${detailInvoices.length})`}
-                  {tab === "pagos" && `Pagos (${detailReceipts.length})`}
-                  {tab === "creditos" && `Créditos (${detailCredits.length})`}
-                  {tab === "seguimiento" && `Seguimiento (${detailFollowups.length})`}
-                </button>
-              ))}
-            </div>
+            {activeTab === 'invoices' && (
+              <div>
+                {clientDataLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-6 w-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : clientInvoices.length === 0 ? (
+                  <p className="text-sm text-[#9C8A82] text-center py-8">Sin facturas registradas</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-[#FDF8F3]">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-[#9C8A82] uppercase">No.</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-[#9C8A82] uppercase">Fecha</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-[#9C8A82] uppercase">Total</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-[#9C8A82] uppercase">Pagado</th>
+                          <th className="px-3 py-2 text-center text-xs font-semibold text-[#9C8A82] uppercase">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {clientInvoices.map((inv) => (
+                          <tr key={inv.id} className="hover:bg-[#FDF8F3]">
+                            <td className="px-3 py-2 text-sm text-[#3D2B1F]">{inv.invoice_number}</td>
+                            <td className="px-3 py-2 text-sm text-[#3D2B1F]">{formatDateShort(inv.invoice_date)}</td>
+                            <td className="px-3 py-2 text-sm text-[#3D2B1F] text-right">{formatCurrency(inv.total)}</td>
+                            <td className="px-3 py-2 text-sm text-[#3D2B1F] text-right">{formatCurrency(inv.amount_paid)}</td>
+                            <td className="px-3 py-2 text-center"><Badge status={inv.status} /></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
 
-            {detailLoading ? (
-              <div className="flex justify-center py-10">
-                <div className="w-6 h-6 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : detailTab === "info" ? (
-              <div className="space-y-3">
-                {detailClient.notes && (
-                  <div className="bg-[#FDF8F3] rounded-xl p-4">
-                    <p className="text-xs text-[#9C8A82] mb-1">Notas</p>
-                    <p className="text-sm text-[#3D2B1F]">{detailClient.notes}</p>
+            {activeTab === 'receipts' && (
+              <div>
+                {clientDataLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-6 w-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : clientReceipts.length === 0 ? (
+                  <p className="text-sm text-[#9C8A82] text-center py-8">Sin recibos registrados</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-[#FDF8F3]">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-[#9C8A82] uppercase">No.</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-[#9C8A82] uppercase">Fecha</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-[#9C8A82] uppercase">Monto</th>
+                          <th className="px-3 py-2 text-center text-xs font-semibold text-[#9C8A82] uppercase">Método</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {clientReceipts.map((rec) => (
+                          <tr key={rec.id} className="hover:bg-[#FDF8F3]">
+                            <td className="px-3 py-2 text-sm text-[#3D2B1F]">{rec.receipt_number}</td>
+                            <td className="px-3 py-2 text-sm text-[#3D2B1F]">{formatDateShort(rec.receipt_date)}</td>
+                            <td className="px-3 py-2 text-sm text-[#3D2B1F] text-right">{formatCurrency(rec.amount)}</td>
+                            <td className="px-3 py-2 text-center text-sm text-[#3D2B1F]">{rec.payment_method}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white rounded-xl p-4 border border-[#E8E0D8]">
-                    <p className="text-xs text-[#9C8A82]">Total facturado</p>
-                    <p className="text-lg font-bold text-[#3D2B1F]">{formatCurrency(totalInvoiced)}</p>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 border border-[#E8E0D8]">
-                    <p className="text-xs text-[#9C8A82]">Total pagado</p>
-                    <p className="text-lg font-bold text-[#5B9E6B]">{formatCurrency(totalPaid)}</p>
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl p-4 border border-[#E8E0D8]">
-                  <p className="text-xs text-[#9C8A82]">Saldo pendiente</p>
-                  <p className="text-lg font-bold text-[#7C1D2E]">{formatCurrency(Math.max(0, totalInvoiced - totalPaid))}</p>
-                </div>
               </div>
-            ) : detailTab === "facturas" ? (
-              <div className="space-y-2">
-                {detailInvoices.length === 0 ? (
-                  <div className="text-center py-10 text-[#9C8A82] text-sm">Sin facturas registradas</div>
-                ) : (
-                  detailInvoices.map((inv: any) => (
-                    <div key={inv.id} className="flex items-center justify-between bg-white rounded-xl p-3 border border-[#E8E0D8]">
-                      <div>
-                        <p className="text-sm font-medium text-[#3D2B1F]">{inv.invoice_number}</p>
-                        <p className="text-xs text-[#9C8A82]">{formatDate(inv.invoice_date)}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-[#3D2B1F]">{formatCurrency(inv.total)}</p>
-                        <Badge variant={statusColor[inv.status]}>{statusLabel[inv.status]}</Badge>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            ) : detailTab === "pagos" ? (
-              <div className="space-y-2">
-                {detailReceipts.length === 0 ? (
-                  <div className="text-center py-10 text-[#9C8A82] text-sm">Sin pagos registrados</div>
-                ) : (
-                  detailReceipts.map((rec: any) => (
-                    <div key={rec.id} className="flex items-center justify-between bg-white rounded-xl p-3 border border-[#E8E0D8]">
-                      <div>
-                        <p className="text-sm font-medium text-[#3D2B1F]">{rec.receipt_number}</p>
-                        <p className="text-xs text-[#9C8A82]">
-                          {formatDate(rec.created_at)} · {rec.payment_method === "CASH" ? "Efectivo" : rec.payment_method === "TRANSFER" ? "Transferencia" : "Tarjeta"}
-                          {rec.invoices?.invoice_number && ` · ${rec.invoices.invoice_number}`}
-                        </p>
-                      </div>
-                      <p className="text-sm font-medium text-[#5B9E6B]">{formatCurrency(rec.amount)}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            ) : detailTab === "creditos" ? (
-              <div className="space-y-2">
-                {detailCredits.length === 0 ? (
-                  <div className="text-center py-10 text-[#9C8A82] text-sm">Sin créditos disponibles</div>
-                ) : (
-                  detailCredits.map((c: any) => (
-                    <div key={c.id} className="flex items-center justify-between bg-white rounded-xl p-3 border border-[#E8E0D8]">
-                      <div>
-                        <p className="text-sm text-[#3D2B1F]">Recibo {c.receipts?.receipt_number || "—"}</p>
-                        <p className="text-xs text-[#9C8A82]">Monto: {formatCurrency(c.amount)}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                          c.status === "AVAILABLE" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                        }`}>
-                          {c.status === "AVAILABLE" ? "Disponible" : c.status === "USED" ? "Usado" : "Vencido"}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <input
-                    type="text" value={newFollowup} onChange={(e) => setNewFollowup(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAddFollowup()}
-                    placeholder="Nueva actividad de seguimiento..."
-                    className="flex-1 h-10 px-4 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30"
-                  />
-                  <button onClick={handleAddFollowup} className="h-10 px-4 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all">
-                    <Plus size={16} />
-                  </button>
-                </div>
+            )}
 
-                {detailFollowups.length === 0 ? (
-                  <div className="text-center py-10 text-[#9C8A82] text-sm">Sin actividades de seguimiento</div>
+            {activeTab === 'history' && (
+              <div>
+                {clientDataLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-6 w-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : clientFollowups.length === 0 ? (
+                  <p className="text-sm text-[#9C8A82] text-center py-8">Sin seguimientos registrados</p>
                 ) : (
-                  <div className="space-y-2">
-                    {detailFollowups.map((f) => (
-                      <div key={f.id} className="flex items-start gap-3 bg-white rounded-xl p-3 border border-[#E8E0D8]">
-                        <div className="w-8 h-8 rounded-full bg-[#FDF8F3] flex items-center justify-center flex-shrink-0">
-                          <MessageSquare size={14} className="text-[#7C1D2E]" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-[#3D2B1F]">Seguimiento</p>
-                            <button
-                              onClick={() => handleToggleFollowup(f.id, f.status)}
-                              className={`text-xs font-medium px-2 py-0.5 rounded-full transition-colors ${
-                                f.status === "COMPLETED"
-                                  ? "bg-green-100 text-green-700 hover:bg-yellow-100 hover:text-yellow-700"
-                                  : "bg-yellow-100 text-yellow-700 hover:bg-green-100 hover:text-green-700"
-                              }`}
-                            >
-                              {f.status === "COMPLETED" ? "Completada" : "Pendiente"}
-                            </button>
+                  <div className="space-y-3">
+                    {clientFollowups.map((f) => (
+                      <div key={f.id} className="flex items-start gap-3 p-3 bg-[#FDF8F3] rounded-lg">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-[#3D2B1F]">
+                              {formatDateShort(f.contact_date)}
+                            </span>
+                            <Badge status={f.status} />
                           </div>
-                          <p className="text-sm text-[#3D2B1F] mt-1">{f.comments}</p>
-                          <p className="text-xs text-[#9C8A82] mt-1">{formatDate(f.contact_date)}</p>
+                          {f.comments && (
+                            <p className="text-sm text-gray-600 mt-1">{f.comments}</p>
+                          )}
+                          {f.next_followup && (
+                            <p className="text-xs text-[#9C8A82] mt-1">
+                              Próximo: {formatDateShort(f.next_followup)}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -536,55 +617,6 @@ export default function ClientesPage() {
           </div>
         )}
       </Modal>
-
-      <Modal isOpen={showModal} onClose={() => { setShowModal(false); resetForm(); }} title={editingClient ? "Editar Cliente" : "Nuevo Cliente"} subtitle="Registra la información del cliente">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Tipo de cliente *</label>
-            <div className="flex gap-3">
-              {([["comprador", "Cliente Comprador", "Compra productos"], ["negocio", "Prospecto de Negocio", "Posible IBO / Demo"]] as const).map(([value, label, desc]) => (
-                <button key={value} type="button" onClick={() => setForm({ ...form, client_type: value as ClientType })}
-                  className={`flex-1 p-3 rounded-xl border text-left transition-all ${form.client_type === value ? "border-[#7C1D2E] bg-[#7C1D2E]/5" : "border-[#E8E0D8] bg-white hover:bg-[#FDF8F3]"}`}>
-                  <p className="text-sm font-medium text-[#3D2B1F]">{label}</p>
-                  <p className="text-xs text-[#9C8A82] mt-0.5">{desc}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Nombre completo *</label>
-            <input type="text" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Nombre y apellidos" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Teléfono</label>
-              <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="809-000-0000" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Correo electrónico</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="correo@ejemplo.com" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Fecha de cumpleaños</label>
-            <input type="date" value={form.birthday} onChange={(e) => setForm({ ...form, birthday: e.target.value })} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Número IBO (opcional)</label>
-            <input type="text" value={form.ibo_number} onChange={(e) => setForm({ ...form, ibo_number: e.target.value })} placeholder="IBO" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Notas</label>
-            <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Información adicional del cliente..." rows={3} className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all resize-none" />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
-            <button onClick={handleSave} disabled={saving} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
-              <Save size={18} /> {saving ? "Guardando..." : "Guardar"}
-            </button>
-          </div>
-        </div>
-      </Modal>
     </PageContainer>
-  );
+  )
 }

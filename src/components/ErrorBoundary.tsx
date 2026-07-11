@@ -21,7 +21,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen flex items-center justify-center bg-[#FCFAF7] p-8">
           <div className="max-w-md text-center">
-            <h2 className="text-xl font-bold text-red-600 mb-4">Error en la aplicación</h2>
+            <h2 className="text-xl font-bold text-[#7C1D2E] mb-4">Error en la aplicación</h2>
             <p className="text-sm text-[#3D2B1F] mb-4 font-mono bg-[#FDF8F3] p-4 rounded-xl border border-[#E8E0D8] text-left overflow-auto">
               {this.state.error.message}
             </p>

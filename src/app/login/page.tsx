@@ -1,154 +1,156 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { LogIn, Mail, Lock, Eye, EyeOff, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useAuth } from "@/hooks/useAuth";
-import toast from "react-hot-toast";
-import CakeIcon from "@/components/ui/CakeIcon";
+import { Suspense, useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import CakeIcon from '@/components/ui/CakeIcon'
+import toast from 'react-hot-toast'
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loggingIn, setLoggingIn] = useState(false);
-  const [pendingRedirect, setPendingRedirect] = useState(false);
-  const { user, signIn } = useAuth();
-  const router = useRouter();
+const ERROR_MESSAGES: Record<string, string> = {
+  'credenciales': 'Credenciales inválidas',
+  'requeridas': 'Todos los campos son requeridos',
+  'servidor': 'Error del servidor',
+  'expired': 'Tu sesión ha expirado. Inicia sesión nuevamente.',
+}
+
+function LoginError() {
+  const searchParams = useSearchParams()
+  const errorCode = searchParams.get('error')
+  const errorMessage = errorCode ? (ERROR_MESSAGES[errorCode.toLowerCase()] || errorCode) : null
 
   useEffect(() => {
-    if (pendingRedirect && user) {
-      router.replace("/dashboard");
-    }
-  }, [pendingRedirect, user, router]);
+    if (errorMessage) toast.error(errorMessage)
+  }, [errorMessage])
+
+  if (!errorMessage) return null
+
+  return (
+    <div className="mb-4 p-3 bg-[#7C1D2E]/10 border border-[#7C1D2E]/20 rounded-lg text-[#7C1D2E] text-sm text-center">
+      {errorMessage}
+    </div>
+  )
+}
+
+function LoginForm() {
+  const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const { signIn } = useAuth()
+
+  function validate() {
+    const e: Record<string, string> = {}
+    if (!email.trim()) e.email = 'Correo requerido'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Correo inválido'
+    if (!password) e.password = 'Contraseña requerida'
+    else if (password.length < 6) e.password = 'Mínimo 6 caracteres'
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email || !password) {
-      setError("Por favor ingresa tu correo y contraseña");
-      return;
-    }
-    setError(null);
-    setLoggingIn(true);
-    const { error: signInError } = await signIn(email, password);
-    if (signInError) {
-      setError(signInError);
-      setLoggingIn(false);
-      toast.error(signInError);
-    } else {
-      setLoggingIn(false);
-      setPendingRedirect(true);
+    e.preventDefault()
+    if (submitting || !validate()) return
+    setSubmitting(true)
+    try {
+      const { error } = await signIn(email, password)
+      if (error) { toast.error(error); return }
+      window.location.href = '/dashboard'
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al iniciar sesión')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#FCFAF7] flex flex-col">
-      <header className="px-6 py-4 border-b border-[#E8E0D8] bg-white">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 rounded-full bg-[#7C1D2E]/60 flex items-center justify-center">
-              <CakeIcon size={22} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-[#3D2B1F] leading-tight">Doña Nina</h1>
-              <p className="text-[10px] text-[#9C8A82] tracking-widest uppercase leading-tight">Bienestar & Salud</p>
-            </div>
-          </Link>
-          <Link
-            href="/"
-            className="h-9 px-4 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all flex items-center gap-2"
-          >
-            <ArrowLeft size={15} /> Volver
-          </Link>
+    <>
+      <Suspense fallback={null}>
+        <LoginError />
+      </Suspense>
+
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Correo electrónico</label>
+          <input
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setErrors((p) => { const n = { ...p }; delete n.email; return n }) }}
+            type="email"
+            className="w-full px-4 py-2.5 border border-[#E8E0D8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+            placeholder="correo@ejemplo.com"
+            autoComplete="email"
+            autoCapitalize="off"
+            autoCorrect="off"
+            inputMode="email"
+            required
+          />
+          {errors.email && <p className="text-[#E07A3A] text-xs mt-1">{errors.email}</p>}
         </div>
-      </header>
 
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm">
-          <div className="bg-white rounded-3xl shadow-sm border border-[#E8E0D8] p-8">
-            <div className="text-center mb-8">
-              <div className="w-14 h-14 rounded-full bg-[#7C1D2E]/10 flex items-center justify-center mx-auto mb-4">
-                <LogIn size={26} className="text-[#7C1D2E]" />
-              </div>
-              <h2 className="text-xl font-bold text-[#3D2B1F]">Inicia Sesión</h2>
-              <p className="text-sm text-[#9C8A82] mt-1">Accede al sistema de gestión</p>
+        <div>
+          <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Contraseña</label>
+          <div className="relative">
+            <input
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setErrors((p) => { const n = { ...p }; delete n.password; return n }) }}
+              type={showPassword ? 'text' : 'password'}
+              className="w-full px-4 py-2.5 border border-[#E8E0D8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent pr-10"
+              placeholder="••••••••"
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9C8A82] hover:text-gray-600"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {errors.password && <p className="text-[#E07A3A] text-xs mt-1">{errors.password}</p>}
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-2.5 bg-[#7C1D2E] text-white rounded-lg font-medium hover:bg-[#5C1420] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        >
+          {submitting ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Cargando...</>
+          ) : (
+            'Iniciar Sesión'
+          )}
+        </button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-[#9C8A82]">
+        Solo administradores pueden crear cuentas
+      </p>
+    </>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen bg-[#FCFAF7] flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-[#E8E0D8]">
+          <div className="text-center mb-8">
+            <div className="inline-flex h-16 w-16 rounded-full bg-[#7C1D2E]/60 items-center justify-center mb-4">
+              <CakeIcon size={32} className="text-white" />
             </div>
-
-            {error && (
-              <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-6">
-                <AlertCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Correo Electrónico</label>
-                <div className="relative">
-                  <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@donanina.com"
-                    className="w-full h-12 pl-11 pr-4 rounded-xl border border-[#E8E0D8] bg-[#FAF8F6] text-[#3D2B1F] placeholder:text-[#BFB0A8] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all text-sm"
-                    disabled={loggingIn}
-                    autoComplete="email"
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Contraseña</label>
-                <div className="relative">
-                  <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full h-12 pl-11 pr-12 rounded-xl border border-[#E8E0D8] bg-[#FAF8F6] text-[#3D2B1F] placeholder:text-[#BFB0A8] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all text-sm"
-                    disabled={loggingIn}
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9C8A82] hover:text-[#3D2B1F] transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loggingIn}
-                className="w-full h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-semibold hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loggingIn ? (
-                  <><Loader2 size={18} className="animate-spin" /> Ingresando...</>
-                ) : (
-                  <><LogIn size={18} /> Ingresar</>
-                )}
-              </button>
-            </form>
-
-            <div className="mt-6 pt-6 border-t border-[#E8E0D8] text-center">
-              <p className="text-xs text-[#9C8A82]">
-                ¿No tienes cuenta? <button className="text-[#7C1D2E] font-medium hover:underline">Solicitar Acceso</button>
-              </p>
-            </div>
+            <h1 className="text-2xl font-bold text-[#3D2B1F]">Donde Doña Nina</h1>
+            <p className="text-[#9C8A82] text-sm mt-1">Sistema de Gestión</p>
           </div>
 
-          <p className="text-center text-xs text-[#BFB0A8] mt-6">
-            &copy; {new Date().getFullYear()} Doña Nina
-          </p>
+          <Suspense fallback={null}>
+            <LoginForm />
+          </Suspense>
         </div>
-      </main>
+      </div>
     </div>
-  );
+  )
 }

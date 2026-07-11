@@ -1,130 +1,142 @@
-"use client";
+'use client'
 
-import { useState, useMemo } from "react";
-import { cn } from "@/lib/utils";
 import {
-  flexRender,
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
+  flexRender,
   type ColumnDef,
-  type Table as TanStackTable,
   type SortingState,
-} from "@tanstack/react-table";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+  type ColumnFiltersState,
+} from '@tanstack/react-table'
+import { useState } from 'react'
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-interface DataTableProps<TData> {
-  table?: TanStackTable<TData>;
-  columns?: ColumnDef<TData>[];
-  data?: TData[];
-  searchable?: boolean;
-  searchPlaceholder?: string;
-  pageSize?: number;
-  className?: string;
+interface DataTableProps<TData, TValue> {
+  columns: ColumnDef<TData, TValue>[]
+  data: TData[]
+  searchable?: boolean
+  searchPlaceholder?: string
+  pageSize?: number
+  className?: string
 }
 
-export default function DataTable<TData>({ table: tableProp, columns, data, searchable, searchPlaceholder, pageSize = 10, className }: DataTableProps<TData>) {
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [sorting, setSorting] = useState<SortingState>([]);
+export function DataTable<TData, TValue>({
+  columns,
+  data,
+  searchable = false,
+  searchPlaceholder = 'Buscar...',
+  pageSize = 10,
+  className,
+}: DataTableProps<TData, TValue>) {
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [globalFilter, setGlobalFilter] = useState('')
 
-  const defaultTable = useReactTable<TData>({
-    data: data || [],
-    columns: columns || [],
-    state: {
-      globalFilter,
-      sorting,
-    },
-    onGlobalFilterChange: setGlobalFilter,
-    onSortingChange: setSorting,
+  const table = useReactTable({
+    data,
+    columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize,
-      },
-    },
-  });
-
-  const table = tableProp || defaultTable;
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    state: { sorting, columnFilters, globalFilter },
+    initialState: { pagination: { pageSize } },
+  })
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       {searchable && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9C8A82]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9C8A82]" />
           <input
-            type="text"
-            value={globalFilter ?? ""}
+            value={globalFilter ?? ''}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder={searchPlaceholder || "Buscar..."}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E8E0D8] rounded-xl text-sm text-[#3D2B1F] placeholder-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/20 focus:border-[#7C1D2E] transition-all"
+            placeholder={searchPlaceholder}
+            className="w-full pl-10 pr-4 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
           />
         </div>
       )}
-      <div className="overflow-x-auto">
-        <table className="w-full border-separate border-spacing-y-2">
-          <thead>
+
+      <div className="overflow-x-auto rounded-lg border border-[#E8E0D8]">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-[#FDF8F3]">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-xs font-semibold text-[#9C8A82] uppercase tracking-wider"
+                    onClick={header.column.getToggleSortingHandler()}
+                    className="px-4 py-3 text-left text-xs font-semibold text-[#9C8A82] uppercase tracking-wider cursor-pointer hover:bg-[#FDF8F3]"
                   >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                    <div className="flex items-center gap-1">
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      {{
+                        asc: <ChevronUp className="h-3 w-3" />,
+                        desc: <ChevronDown className="h-3 w-3" />,
+                      }[header.column.getIsSorted() as string] ?? null}
+                    </div>
                   </th>
                 ))}
               </tr>
             ))}
           </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] hover:shadow-md transition-shadow duration-200"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-3.5 text-sm text-[#3D2B1F]">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
+          <tbody className="bg-white divide-y divide-gray-100">
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#9C8A82]">
+                  No se encontraron resultados
+                </td>
               </tr>
-            ))}
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="hover:bg-[#FDF8F3] transition-colors"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-4 py-3 text-sm text-[#3D2B1F] whitespace-nowrap">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
-        {table.getRowModel().rows.length === 0 && (
-          <div className="text-center py-12 text-[#9C8A82]">No se encontraron registros</div>
-        )}
       </div>
-      {!tableProp && data && data.length > pageSize && (
-        <div className="flex items-center justify-between pt-2">
+
+      {table.getPageCount() > 1 && (
+        <div className="flex items-center justify-between">
           <span className="text-sm text-[#9C8A82]">
             Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] disabled:opacity-30 transition-colors"
+              aria-label="Página anterior"
+              className="p-1.5 rounded hover:bg-[#FDF8F3] disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] disabled:opacity-30 transition-colors"
+              aria-label="Página siguiente"
+              className="p-1.5 rounded hover:bg-[#FDF8F3] disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <ChevronRight size={18} />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
       )}
     </div>
-  );
+  )
 }

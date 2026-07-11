@@ -1,50 +1,51 @@
-import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Great_Vibes } from "next/font/google";
-import "./globals.css";
-import { AuthProvider } from "@/hooks/useAuth";
-import KillServiceWorker from "@/components/KillServiceWorker";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import ToastProvider from "@/components/ui/ToastProvider";
+import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { AuthProvider } from '@/contexts/AuthProvider'
+import { ToastProvider } from '@/components/ui/ToastProvider'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 
-
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
-
-const greatVibes = Great_Vibes({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-signature",
-  display: "swap",
-});
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: "Doña Nina - Gestión Comercial",
-  description: "Sistema de gestión de comidas, pedidos y entregas a domicilio",
-  icons: {
-    apple: "/icons/icon-192x192.png",
+  title: 'Donde Doña Nina - Sistema de Gestión',
+  description: 'Sistema de gestión comercial para Donde Doña Nina',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Doña Nina',
   },
-};
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
+}
 
-export const viewport = {
-  themeColor: "#7C1D2E",
-};
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#800020',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html
-      lang="es"
-      className={`${jakarta.variable} ${greatVibes.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-[#FCFAF7] text-[#3D2B1F]">
-        <KillServiceWorker />
+    <html lang="es" className={`${inter.variable}`}>
+      <head>
+        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <script
+          src="/register-sw.js"
+          defer
+        />
+      </head>
+      <body className="antialiased">
         <ErrorBoundary>
           <AuthProvider>
             <ToastProvider />
@@ -53,5 +54,5 @@ export default function RootLayout({
         </ErrorBoundary>
       </body>
     </html>
-  );
+  )
 }

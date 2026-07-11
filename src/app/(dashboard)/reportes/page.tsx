@@ -1,257 +1,269 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import PageContainer from "@/components/layout/PageContainer";
-import { exportToExcel } from "@/lib/excel";
-import { formatCurrency } from "@/lib/utils";
+import { useState } from 'react'
+import { FileDown, Search } from 'lucide-react'
+import toast from 'react-hot-toast'
 import {
-  getVentasReport, getCobrosReport, getInventarioReport,
-  getClientesReport, getPvReport, getGastosReport,
-} from "@/services/reports";
-import { FileText, BarChart3, Download, TrendingUp, DollarSign, ShoppingCart, Users, Eye, ArrowLeft } from "lucide-react";
-import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
+import * as XLSX from 'xlsx'
+import { getSalesReport, type SalesReport } from '@/services/reports'
+import { PageContainer } from '@/components/layout/PageContainer'
+import { KpiCard } from '@/components/ui/KpiCard'
+import { DollarSign, Receipt, TrendingUp } from 'lucide-react'
+import { formatCurrency } from '@/lib/utils'
 
-interface ReportConfig {
-  id: string;
-  icon: React.ElementType;
-  label: string;
-  desc: string;
-  color: string;
-  fetchData: (from?: string, to?: string) => Promise<{ columns: { header: string; key: string }[]; rows: Record<string, any>[]; filename: string }>;
+function getDefaultRange() {
+  const today = new Date()
+  const from = new Date(today)
+  from.setDate(from.getDate() - 30)
+  return {
+    from: from.toISOString().split('T')[0],
+    to: today.toISOString().split('T')[0],
+  }
 }
 
-const REPORTS: ReportConfig[] = [
-  {
-    id: "ventas", icon: TrendingUp, label: "Ventas", desc: "Facturación por período", color: "bg-blue-50 text-blue-600",
-    fetchData: async (from, to) => {
-      const data = await getVentasReport(from, to);
-      return {
-        columns: [
-          { header: "No. Factura", key: "factura" },
-          { header: "Fecha", key: "fecha" },
-          { header: "Cliente", key: "cliente" },
-          { header: "Total", key: "total" },
-          { header: "Estado", key: "estado" },
-        ],
-        rows: data.map((r) => ({ ...r, total: formatCurrency(r.total) })),
-        filename: "reporte-ventas",
-      };
-    },
-  },
-  {
-    id: "cobros", icon: DollarSign, label: "Cobros", desc: "Recibos y métodos de pago", color: "bg-green-50 text-green-600",
-    fetchData: async (from, to) => {
-      const data = await getCobrosReport(from, to);
-      return {
-        columns: [
-          { header: "No. Recibo", key: "recibo" },
-          { header: "Fecha", key: "fecha" },
-          { header: "Factura", key: "factura" },
-          { header: "Cliente", key: "cliente" },
-          { header: "Monto", key: "monto" },
-          { header: "Método", key: "metodo" },
-        ],
-        rows: data.map((r) => ({ ...r, monto: formatCurrency(r.monto) })),
-        filename: "reporte-cobros",
-      };
-    },
-  },
-  {
-    id: "inventario", icon: ShoppingCart, label: "Inventario", desc: "Existencias y alertas de stock", color: "bg-amber-50 text-amber-600",
-    fetchData: async () => {
-      const data = await getInventarioReport();
-      return {
-        columns: [
-          { header: "Producto", key: "producto" },
-          { header: "Submarca", key: "submarca" },
-          { header: "Stock", key: "stock" },
-          { header: "Mínimo", key: "minimo" },
-          { header: "Estado", key: "estado" },
-        ],
-        rows: data,
-        filename: "reporte-inventario",
-      };
-    },
-  },
-  {
-    id: "clientes", icon: Users, label: "Clientes", desc: "Compras y saldos pendientes", color: "bg-purple-50 text-purple-600",
-    fetchData: async () => {
-      const data = await getClientesReport();
-      return {
-        columns: [
-          { header: "Cliente", key: "cliente" },
-          { header: "Total Comprado", key: "total_comprado" },
-          { header: "Total Pagado", key: "total_pagado" },
-          { header: "Saldo Pendiente", key: "saldo_pendiente" },
-          { header: "Estado", key: "estado" },
-        ],
-        rows: data.map((r) => ({
-          ...r,
-          total_comprado: formatCurrency(r.total_comprado),
-          total_pagado: formatCurrency(r.total_pagado),
-          saldo_pendiente: formatCurrency(r.saldo_pendiente),
-        })),
-        filename: "reporte-clientes",
-      };
-    },
-  },
-  {
-    id: "pv", icon: BarChart3, label: "PV", desc: "Puntos de volumen por cliente", color: "bg-rose-50 text-rose-600",
-    fetchData: async (from, to) => {
-      const data = await getPvReport(from, to);
-      return {
-        columns: [
-          { header: "Cliente", key: "cliente" },
-          { header: "PV Generado", key: "pv_generado" },
-          { header: "Comisión", key: "comision" },
-        ],
-        rows: data.map((r) => ({ ...r, comision: formatCurrency(r.comision) })),
-        filename: "reporte-pv",
-      };
-    },
-  },
-  {
-    id: "gastos", icon: FileText, label: "Gastos", desc: "Gastos operativos por categoría", color: "bg-orange-50 text-orange-600",
-    fetchData: async (from, to) => {
-      const data = await getGastosReport(from, to);
-      return {
-        columns: [
-          { header: "Fecha", key: "fecha" },
-          { header: "Descripción", key: "descripcion" },
-          { header: "Categoría", key: "categoria" },
-          { header: "Subcategoría", key: "subcategoria" },
-          { header: "Monto", key: "monto" },
-        ],
-        rows: data.map((r) => ({ ...r, monto: formatCurrency(r.monto) })),
-        filename: "reporte-gastos",
-      };
-    },
-  },
-];
-
 export default function ReportesPage() {
-  const router = useRouter();
-  const [selectedReport, setSelectedReport] = useState<string | null>(null);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [generating, setGenerating] = useState(false);
-  const [previewData, setPreviewData] = useState<{ columns: string[]; rows: Record<string, any>[] } | null>(null);
+  const defaultRange = getDefaultRange()
+  const [from, setFrom] = useState(defaultRange.from)
+  const [to, setTo] = useState(defaultRange.to)
+  const [reportData, setReportData] = useState<SalesReport | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const activeReport = REPORTS.find((r) => r.id === selectedReport);
-
-  async function handlePreview() {
-    if (!activeReport) return;
-    setGenerating(true);
+  const generateReport = async () => {
+    if (!from || !to) {
+      toast.error('Seleccione el rango de fechas')
+      return
+    }
+    setLoading(true)
+    setError(null)
     try {
-      const data = await activeReport.fetchData(dateFrom || undefined, dateTo || undefined);
-      setPreviewData({
-        columns: data.columns.map((c) => c.header),
-        rows: data.rows,
-      });
-    } catch {
-      toast.error("Error al generar vista previa");
+      const data = await getSalesReport(from, to)
+      setReportData(data)
+    } catch (err: any) {
+      const msg = err?.message || 'Error al generar el reporte'
+      setError(msg)
+      toast.error(msg)
     } finally {
-      setGenerating(false);
+      setLoading(false)
     }
   }
 
-  async function handleDownload() {
-    if (!activeReport) return;
-    setGenerating(true);
-    try {
-      const data = await activeReport.fetchData(dateFrom || undefined, dateTo || undefined);
-      exportToExcel(data.rows, data.columns, data.filename);
-      toast.success(`${activeReport.label} descargado`);
-    } catch {
-      toast.error("Error al generar reporte");
-    } finally {
-      setGenerating(false);
+  const handleExport = () => {
+    if (!reportData) {
+      toast.error('No hay datos para exportar')
+      return
     }
+    try {
+      const wb = XLSX.utils.book_new()
+
+      const dailySheet = XLSX.utils.json_to_sheet(
+        reportData.by_day.map((d) => ({
+          Fecha: d.date,
+          Total: d.total,
+          Cantidad: d.count,
+        }))
+      )
+      XLSX.utils.book_append_sheet(wb, dailySheet, 'Ventas Diarias')
+
+      const pmSheet = XLSX.utils.json_to_sheet(
+        reportData.by_payment_method.map((p) => ({
+          Método: p.method,
+          Total: p.total,
+        }))
+      )
+      XLSX.utils.book_append_sheet(wb, pmSheet, 'Métodos de Pago')
+
+      const summarySheet = XLSX.utils.json_to_sheet([
+        { Indicador: 'Total Ventas', Valor: reportData.total_sales },
+        { Indicador: 'Total Facturas', Valor: reportData.total_invoices },
+        { Indicador: 'Ticket Promedio', Valor: reportData.average_ticket },
+      ])
+      XLSX.utils.book_append_sheet(wb, summarySheet, 'Resumen')
+
+      XLSX.writeFile(wb, `reporte-ventas-${from}-${to}.xlsx`)
+      toast.success('Reporte exportado correctamente')
+    } catch (err) { console.error('[ReportesPage] Error:', err); toast.error('Error al exportar el reporte') }
   }
+
+  const inputClass =
+    'px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent'
 
   return (
-    <PageContainer>
-      <div className="mb-6">
-        <button onClick={() => router.push("/dashboard")} className="flex items-center gap-2 text-sm text-[#9C8A82] hover:text-[#3D2B1F] mb-3 transition-colors">
-          <ArrowLeft size={16} /> Volver al Dashboard
+    <PageContainer
+      title="Reportes"
+      subtitle="Reportes de ventas"
+    >
+      <div className="flex flex-wrap items-end gap-3 p-4 bg-white rounded-xl border border-[#E8E0D8] shadow-sm">
+        <div className="space-y-1">
+          <label className="block text-xs font-medium text-[#9C8A82]">Desde</label>
+          <input
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="block text-xs font-medium text-[#9C8A82]">Hasta</label>
+          <input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <button
+          onClick={generateReport}
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#7C1D2E] rounded-lg hover:bg-[#5C1420] disabled:opacity-50 transition-colors"
+        >
+          <Search className="h-4 w-4" />
+          Generar Reporte
         </button>
-        <h1 className="text-xl font-bold text-[#3D2B1F]">Reportes</h1>
-        <p className="text-sm text-[#9C8A82] mt-1">Informes comerciales y financieros</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {REPORTS.map((r) => (
+      {loading && (
+        <div className="flex items-center justify-center min-h-[30vh]">
+          <p className="text-[#9C8A82] text-lg">Generando reporte...</p>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="flex flex-col items-center justify-center min-h-[30vh] gap-4">
+          <p className="text-[#7C1D2E] text-lg">{error}</p>
           <button
-            key={r.id}
-            onClick={() => { setSelectedReport(r.id); setPreviewData(null); }}
-            className={`bg-white rounded-2xl p-5 shadow-sm border text-left transition-all hover:shadow-md ${
-              selectedReport === r.id ? "border-[#7C1D2E] ring-2 ring-[#7C1D2E]/20" : "border-[#E8E0D8]"
-            }`}
+            onClick={generateReport}
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-[#7C1D2E] rounded-lg hover:bg-[#5C1420] transition-colors"
           >
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${r.color}`}>
-              <r.icon size={20} />
-            </div>
-            <h3 className="text-sm font-semibold text-[#3D2B1F]">{r.label}</h3>
-            <p className="text-xs text-[#9C8A82] mt-1">{r.desc}</p>
+            Reintentar
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
-      {activeReport && (
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8]">
-          <h3 className="text-sm font-semibold text-[#3D2B1F] mb-4">{activeReport.label}</h3>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-xs font-medium text-[#9C8A82] mb-1">Desde</label>
-              <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPreviewData(null); }}
-                className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[#9C8A82] mb-1">Hasta</label>
-              <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPreviewData(null); }}
-                className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] text-sm text-[#3D2B1F] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-            </div>
-          </div>
-          <div className="flex gap-3 mb-4">
-            <button onClick={handlePreview} disabled={generating}
-              className="flex items-center gap-2 border border-[#7C1D2E] text-[#7C1D2E] px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#7C1D2E]/5 transition-all disabled:opacity-50">
-              <Eye size={16} /> {generating ? "Cargando..." : "Vista Previa"}
-            </button>
-            <button onClick={handleDownload} disabled={generating}
-              className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50">
-              <Download size={16} /> Descargar Excel
-            </button>
+      {reportData && !loading && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <KpiCard
+              title="Total Ventas"
+              value={formatCurrency(reportData.total_sales)}
+              icon={DollarSign}
+            />
+            <KpiCard
+              title="Total Facturas"
+              value={reportData.total_invoices.toLocaleString()}
+              icon={Receipt}
+            />
+            <KpiCard
+              title="Ticket Promedio"
+              value={formatCurrency(reportData.average_ticket)}
+              icon={TrendingUp}
+            />
           </div>
 
-          {previewData && (
-            <div className="overflow-x-auto border-t border-[#F0EBE3] pt-4">
-              {previewData.rows.length === 0 ? (
-                <p className="text-center text-sm text-[#9C8A82] py-8">Sin datos para el período seleccionado</p>
-              ) : (
+          {reportData.by_day.length > 0 && (
+            <div className="rounded-xl bg-white p-6 shadow-sm border border-[#E8E0D8]">
+              <h3 className="text-sm font-semibold text-[#3D2B1F] mb-4">Ventas Diarias</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={reportData.by_day}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(value: any) => formatCurrency(value)} />
+                  <Bar dataKey="total" fill="#800020" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="rounded-xl bg-white p-6 shadow-sm border border-[#E8E0D8]">
+              <h3 className="text-sm font-semibold text-[#3D2B1F] mb-4">Métodos de Pago</h3>
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr>
-                      {previewData.columns.map((col) => (
-                        <th key={col} className="px-3 py-2 text-left text-xs font-semibold text-[#9C8A82] uppercase border-b border-[#F0EBE3]">{col}</th>
-                      ))}
+                    <tr className="border-b border-[#E8E0D8]">
+                      <th className="text-left py-3 px-2 font-medium text-[#9C8A82]">Método</th>
+                      <th className="text-right py-3 px-2 font-medium text-[#9C8A82]">Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {previewData.rows.map((row, i) => (
-                      <tr key={i} className="border-b border-[#F0EBE3] last:border-0">
-                        {Object.values(row).map((val, j) => (
-                          <td key={j} className="px-3 py-2 text-[#3D2B1F]">{String(val)}</td>
-                        ))}
+                    {reportData.by_payment_method.length === 0 ? (
+                      <tr>
+                        <td colSpan={2} className="py-6 text-center text-[#9C8A82]">
+                          Sin datos
+                        </td>
                       </tr>
-                    ))}
+                    ) : (
+                      reportData.by_payment_method.map((pm) => (
+                        <tr key={pm.method} className="border-b border-gray-50 hover:bg-[#FDF8F3]">
+                          <td className="py-3 px-2 text-[#3D2B1F]">{pm.method}</td>
+                          <td className="py-3 px-2 text-right text-[#3D2B1F] font-medium">
+                            {formatCurrency(pm.total)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
-              )}
+              </div>
             </div>
-          )}
+
+            <div className="rounded-xl bg-white p-6 shadow-sm border border-[#E8E0D8]">
+              <h3 className="text-sm font-semibold text-[#3D2B1F] mb-4">Ventas por Día</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#E8E0D8]">
+                      <th className="text-left py-3 px-2 font-medium text-[#9C8A82]">Fecha</th>
+                      <th className="text-right py-3 px-2 font-medium text-[#9C8A82]">Total</th>
+                      <th className="text-right py-3 px-2 font-medium text-[#9C8A82]">Facturas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportData.by_day.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="py-6 text-center text-[#9C8A82]">
+                          Sin datos
+                        </td>
+                      </tr>
+                    ) : (
+                      reportData.by_day.map((d) => (
+                        <tr key={d.date} className="border-b border-gray-50 hover:bg-[#FDF8F3]">
+                          <td className="py-3 px-2 text-[#3D2B1F]">{d.date}</td>
+                          <td className="py-3 px-2 text-right text-[#3D2B1F] font-medium">
+                            {formatCurrency(d.total)}
+                          </td>
+                          <td className="py-3 px-2 text-right text-[#3D2B1F]">{d.count}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              onClick={handleExport}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <FileDown className="h-4 w-4" />
+              Exportar a Excel
+            </button>
+          </div>
+        </>
+      )}
+
+      {!reportData && !loading && !error && (
+        <div className="flex flex-col items-center justify-center min-h-[30vh] gap-2 text-[#9C8A82]">
+          <Search className="h-12 w-12" />
+          <p className="text-lg">Seleccione un rango de fechas y genere un reporte</p>
         </div>
       )}
     </PageContainer>
-  );
+  )
 }

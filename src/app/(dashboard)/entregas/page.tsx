@@ -15,11 +15,11 @@ import {
 } from '@/services/deliveries'
 import { getClients } from '@/services/clients'
 import type { Delivery, Client } from '@/types/database'
-import PageContainer from '@/components/layout/PageContainer'
-import DataTable from '@/components/ui/DataTable'
-import Modal from '@/components/ui/Modal'
-import Badge from '@/components/ui/Badge'
-import PrintActions from '@/components/ui/PrintActions'
+import { PageContainer } from '@/components/layout/PageContainer'
+import { DataTable } from '@/components/ui/DataTable'
+import { Modal } from '@/components/ui/Modal'
+import { Badge } from '@/components/ui/Badge'
+import { PrintActions } from '@/components/ui/PrintActions'
 import { formatDateShort } from '@/lib/utils'
 
 interface DeliveryForm {
@@ -202,7 +202,7 @@ export default function EntregasPage() {
               setForm(defaultForm)
               setModalOpen(true)
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#7C1D2E] rounded-lg hover:bg-[#5C1420] transition-colors"
           >
             <Plus className="h-4 w-4" />
             Nueva Entrega
@@ -210,7 +210,7 @@ export default function EntregasPage() {
         }
       >
         <div className="flex items-center justify-center min-h-[40vh]">
-          <p className="text-gray-500 text-lg">Cargando...</p>
+          <p className="text-[#9C8A82] text-lg">Cargando...</p>
         </div>
       </PageContainer>
     )
@@ -228,7 +228,7 @@ export default function EntregasPage() {
               setForm(defaultForm)
               setModalOpen(true)
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#7C1D2E] rounded-lg hover:bg-[#5C1420] transition-colors"
           >
             <Plus className="h-4 w-4" />
             Nueva Entrega
@@ -236,10 +236,10 @@ export default function EntregasPage() {
         }
       >
         <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
-          <p className="text-red-600 text-lg">{error}</p>
+          <p className="text-[#7C1D2E] text-lg">{error}</p>
           <button
             onClick={fetchData}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-[#7C1D2E] rounded-lg hover:bg-[#5C1420] transition-colors"
           >
             Reintentar
           </button>
@@ -255,7 +255,7 @@ export default function EntregasPage() {
       cell: ({ row }) => (
         <button
           onClick={() => handleViewDetail(row.original)}
-          className="text-red-600 hover:text-red-700 font-medium hover:underline"
+          className="text-[#7C1D2E] hover:text-[#7C1D2E] font-medium hover:underline"
         >
           {row.original.invoice?.invoice_number || '—'}
         </button>
@@ -292,7 +292,7 @@ export default function EntregasPage() {
           {row.original.status !== 'DELIVERED' && row.original.status !== 'CANCELLED' && (
             <button
               onClick={() => handleMarkDelivered(row.original)}
-              className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+              className="p-1.5 text-green-600 hover:bg-[#5B9E6B]/10 rounded-lg transition-colors"
               title="Marcar como entregado"
             >
               <IconCheckCircle className="h-4 w-4" />
@@ -300,14 +300,14 @@ export default function EntregasPage() {
           )}
           <button
             onClick={() => handleEdit(row.original)}
-            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            className="p-1.5 text-blue-600 hover:bg-[#2C4A6E]/10 rounded-lg transition-colors"
             title="Editar"
           >
             <IconPencil className="h-4 w-4" />
           </button>
           <button
             onClick={() => handleDelete(row.original)}
-            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-1.5 text-[#7C1D2E] hover:bg-[#7C1D2E]/10 rounded-lg transition-colors"
             title="Eliminar"
           >
             <IconTrash2 className="h-4 w-4" />
@@ -329,7 +329,7 @@ export default function EntregasPage() {
               setForm(defaultForm)
               setModalOpen(true)
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#7C1D2E] rounded-lg hover:bg-[#5C1420] transition-colors"
           >
             <Plus className="h-4 w-4" />
             Nueva Entrega
@@ -347,13 +347,13 @@ export default function EntregasPage() {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cliente <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+              Cliente <span className="text-[#E07A3A]">*</span>
             </label>
             <select
               value={form.client_id}
               onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
             >
               <option value="">Seleccione un cliente</option>
               {clients.map((c) => (
@@ -365,31 +365,31 @@ export default function EntregasPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Dirección de Entrega <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+              Dirección de Entrega <span className="text-[#E07A3A]">*</span>
             </label>
             <textarea
               value={form.delivery_address}
               onChange={(e) => setForm({ ...form, delivery_address: e.target.value })}
               rows={3}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
                 Repartidor
               </label>
               <input
                 type="text"
                 value={form.delivery_person}
                 onChange={(e) => setForm({ ...form, delivery_person: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
                 Tiempo Estimado
               </label>
               <input
@@ -397,19 +397,19 @@ export default function EntregasPage() {
                 value={form.estimated_time}
                 onChange={(e) => setForm({ ...form, estimated_time: e.target.value })}
                 placeholder="Ej: 30 min, 1 hora"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
               Estado
             </label>
             <select
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value as Delivery['status'] })}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
             >
               <option value="PENDING">PENDIENTE</option>
               <option value="IN_PROGRESS">EN PROCESO</option>
@@ -419,14 +419,14 @@ export default function EntregasPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
               Notas
             </label>
             <textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={2}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full rounded-lg border border-[#E8E0D8] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
             />
           </div>
 
@@ -434,14 +434,14 @@ export default function EntregasPage() {
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-[#3D2B1F] bg-[#FDF8F3] rounded-lg hover:bg-gray-200 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#7C1D2E] rounded-lg hover:bg-[#5C1420] disabled:opacity-50 transition-colors"
             >
               {saving ? 'Guardando...' : editingDelivery ? 'Actualizar' : 'Crear'}
             </button>
@@ -463,37 +463,37 @@ export default function EntregasPage() {
             <div id="delivery-detail" className="space-y-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-gray-500">Cliente</p>
+                  <p className="text-[#9C8A82]">Cliente</p>
                   <p className="font-medium">{detailDelivery.client?.full_name}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Estado</p>
+                  <p className="text-[#9C8A82]">Estado</p>
                   <Badge status={detailDelivery.status} />
                 </div>
                 <div>
-                  <p className="text-gray-500">Dirección</p>
+                  <p className="text-[#9C8A82]">Dirección</p>
                   <p className="font-medium">{detailDelivery.delivery_address}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Repartidor</p>
+                  <p className="text-[#9C8A82]">Repartidor</p>
                   <p className="font-medium">{detailDelivery.delivery_person || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Tiempo Estimado</p>
+                  <p className="text-[#9C8A82]">Tiempo Estimado</p>
                   <p className="font-medium">{detailDelivery.estimated_time || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Factura</p>
+                  <p className="text-[#9C8A82]">Factura</p>
                   <p className="font-medium">{detailDelivery.invoice?.invoice_number || '—'}</p>
                 </div>
               </div>
               {detailDelivery.notes && (
                 <div className="text-sm">
-                  <p className="text-gray-500">Notas</p>
+                  <p className="text-[#9C8A82]">Notas</p>
                   <p className="font-medium">{detailDelivery.notes}</p>
                 </div>
               )}
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-[#9C8A82]">
                 <p>Creada: {formatDateShort(detailDelivery.created_at)}</p>
                 {detailDelivery.delivered_at && <p>Entregada: {formatDateShort(detailDelivery.delivered_at)}</p>}
               </div>

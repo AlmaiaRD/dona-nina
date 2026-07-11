@@ -1,37 +1,34 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import PageContainer from "@/components/layout/PageContainer";
-import Modal from "@/components/ui/Modal";
-import Badge from "@/components/ui/Badge";
-import { getInvoices, createInvoice, deleteInvoice, searchInvoices, getInvoice, updateInvoice, getBankAccounts } from "@/services/invoices";
-import { normalize } from "@/lib/search";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { Modal } from "@/components/ui/Modal";
+import { Badge } from "@/components/ui/Badge";
+import { InvoiceFilters } from "@/components/invoices/InvoiceFilters";
+import { InvoiceTable } from "@/components/invoices/InvoiceTable";
+import { InvoiceForm } from "@/components/invoices/InvoiceForm";
+import { createInvoice, deleteInvoice, getInvoice, updateInvoice, getBankAccounts } from "@/services/invoices";
+import { createClient } from "@/services/clients";
 import CommunicationDraftModal from "@/components/communications/CommunicationDraftModal";
-import { getClients, createClient } from "@/services/clients";
-import { getProducts } from "@/services/products";
+import { getActiveMenuItems } from "@/services/menu";
 import { getSettings } from "@/services/settings";
-import type { Client, BankAccount, Settings } from "@/types/database";
-import { formatCurrency, formatDate, getLocalDateString } from "@/lib/utils";
-import { FileText, Plus, Search, Eye, Printer, Edit2, Trash2, X, Save, DollarSign, Download, ChevronDown, Mail, MessageCircle } from "lucide-react";
-import CakeIcon from "@/components/ui/CakeIcon";
+import type { Client, BankAccount, Setting } from "@/types/database";
+import { formatCurrency, formatDate, getLocalDateString, sanitizeHtml } from "@/lib/utils";
+import { FileText, Plus, Save, DollarSign, Download, Mail, MessageCircle } from "lucide-react";
+import Image from "next/image";
 import toast from "react-hot-toast";
 
-const statusMap: Record<string, { label: string; variant: "success" | "warning" | "danger" | "neutral" | "info" }> = {
-  PENDING: { label: "Pendiente", variant: "warning" },
-  PARTIAL: { label: "Parcial", variant: "info" },
-  PAID: { label: "Pagada", variant: "success" },
-  CANCELLED: { label: "Anulada", variant: "danger" },
-};
+
 
 export default function FacturacionPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [settings, setSettings] = useState<Setting | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
@@ -45,39 +42,37 @@ export default function FacturacionPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(getLocalDateString());
-  const [margin, setMargin] = useState(30);
-  const [items, setItems] = useState<Array<{ product_id: string; name: string; quantity: number; unit_price: number; price_30?: number; price_35?: number; pv: number; itbis: boolean }>>([]);
+  const [items, setItems] = useState<Array<{ menu_item_id: string; name: string; quantity: number; unit_price: number; pv: number; itbis: boolean; itbis_rate?: number }>>([]);
   const [discountPercent, setDiscountPercent] = useState(0);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [notes, setNotes] = useState("");
   const [bankAccountId, setBankAccountId] = useState("");
-  const [showProducts, setShowProducts] = useState(false);
-  const [productSearch, setProductSearch] = useState("");
   const [openPrintId, setOpenPrintId] = useState<string | null>(null);
-  const [jpgData, setJpgData] = useState<any>(null);
+  const [jpgData] = useState<any>(null);
   const [showNewClient, setShowNewClient] = useState(false);
-  const [newClientForm, setNewClientForm] = useState({ full_name: "", phone: "", email: "", ibo_number: "", notes: "" });
+  const [newClientForm, setNewClientForm] = useState({ full_name: "", phone: "", email: "", address: "", notes: "", birthday: "", stage: "Prospecto", lead_source: "", interest: "", first_contact_date: getLocalDateString(), next_followup_date: "" });
   const [draftModal, setDraftModal] = useState<{ type: "email" | "whatsapp" } | null>(null);
-  const [showManualProduct, setShowManualProduct] = useState(false);
-  const [manualProduct, setManualProduct] = useState({ name: "", quantity: 1, unit_price: 0, itbis: false });
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const jpgRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef("");
 
-  const productFiltered = products.filter(p => p.active && (!productSearch || normalize(p.name).includes(normalize(productSearch))));
-
-  const load = useCallback(async (query: string) => {
+  const load = useCallback(async () => {
     try {
-      const [inv, cl, pr, ba, st] = await Promise.all([
-        query ? searchInvoices(query) : getInvoices(),
-        getClients(),
-        getProducts(),
-        getBankAccounts(),
+      const params = new URLSearchParams()
+      if (searchRef.current) params.set('search', searchRef.current)
+      if (filterStatus) params.set('status', filterStatus)
+      if (filterClient) params.set('client_id', filterClient)
+      if (filterMonth) params.set('month', filterMonth)
+      if (filterYear) params.set('year', filterYear)
+
+      const [invRes, mi, ba, st] = await Promise.all([
+        fetch(`/api/invoices?${params}`).then(r => r.json()),
+        getActiveMenuItems().catch(() => []),
+        getBankAccounts().catch(() => []),
         getSettings().catch(() => null),
       ]);
-      setInvoices(inv);
-      setClients(cl);
-      setProducts(pr);
+      setInvoices(invRes.data || []);
+      setMenuItems(mi);
       setBankAccounts(ba);
       setSettings(st);
     } catch {
@@ -85,35 +80,26 @@ export default function FacturacionPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filterStatus, filterClient, filterMonth, filterYear]);
 
-  useEffect(() => { load(searchRef.current); }, [load]);
-
-  useEffect(() => {
-    if (settings?.default_margin) setMargin(settings.default_margin);
-  }, [settings]);
+  useEffect(() => { queueMicrotask(() => load()); }, [load]);
 
   useEffect(() => {
     if (searchParams.get("nueva") === "true") {
-      resetForm();
-      setShowModal(true);
+      queueMicrotask(() => {
+        resetForm();
+        setShowModal(true);
+      });
     }
   }, [searchParams]);
 
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
-      load(searchRef.current);
+      load();
     }, 300);
     return () => { if (searchTimeout.current) clearTimeout(searchTimeout.current); };
   }, [searchQuery, load]);
-
-  function effectivePrice(item: { unit_price: number; price_30?: number; price_35?: number }) {
-    if (item.price_30 != null && item.price_35 != null) {
-      return margin === 30 ? item.price_30 : item.price_35;
-    }
-    return item.unit_price;
-  }
 
   function handleSearch(val: string) {
     searchRef.current = val;
@@ -125,11 +111,11 @@ export default function FacturacionPage() {
     setSaving(true);
     try {
       const created = await createClient(newClientForm);
-      const fresh = await getClients();
-      setClients(fresh);
+      const fresh = await fetch('/api/clients').then(r => r.json());
+      setClients(fresh.data || []);
       setSelectedClient(created.id);
       setShowNewClient(false);
-      setNewClientForm({ full_name: "", phone: "", email: "", ibo_number: "", notes: "" });
+      setNewClientForm({ full_name: "", phone: "", email: "", address: "", notes: "", birthday: "", stage: "Prospecto", lead_source: "", interest: "", first_contact_date: getLocalDateString(), next_followup_date: "" });
       toast.success("Cliente agregado");
     } catch (e) {
       console.error("Error creating client:", e);
@@ -144,161 +130,129 @@ export default function FacturacionPage() {
     setItems([]);
     setDiscountPercent(0);
     setDiscountAmount(0);
-    setMargin(30);
     setInvoiceDate(getLocalDateString());
     setNotes("");
     setBankAccountId("");
     setEditingId(null);
   }
 
-  function addProduct(product: any) {
-    const price_30_ = product.price_30 ?? 0;
-    const price_35_ = product.price_35 ?? 0;
-    setItems([...items, {
-      product_id: product.id,
-      name: product.name,
-      quantity: 1,
-      unit_price: margin === 30 ? price_30_ : price_35_,
-      price_30: price_30_,
-      price_35: price_35_,
-      pv: product.pv,
-      itbis: product.apply_itbis !== false,
-    }]);
-  }
 
-  function addManualProduct() {
-    if (!manualProduct.name.trim()) { toast.error("El nombre del producto es requerido"); return; }
-    if (manualProduct.unit_price <= 0) { toast.error("El precio debe ser mayor a 0"); return; }
-    setItems([...items, {
-      product_id: "",
-      name: manualProduct.name,
-      quantity: manualProduct.quantity,
-      unit_price: manualProduct.unit_price,
-      pv: 0,
-      itbis: manualProduct.itbis,
-    }]);
-    setManualProduct({ name: "", quantity: 1, unit_price: 0, itbis: false });
-    setShowManualProduct(false);
-  }
 
-  function removeItem(index: number) {
-    setItems(items.filter((_, i) => i !== index));
-  }
-
-  const subtotal = items.reduce((s, i) => s + i.quantity * effectivePrice(i), 0);
-  const itbisTotal = items.reduce((s, i) => s + (i.itbis ? i.quantity * effectivePrice(i) * 0.18 : 0), 0);
+  const subtotal = items.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+  const itbisTotal = items.reduce((s, i) => s + (i.itbis ? i.quantity * i.unit_price * ((i as any).itbis_rate || 18) / 100 : 0), 0);
   const discountValue = discountAmount > 0 ? discountAmount : (subtotal * discountPercent / 100);
   const total = subtotal + itbisTotal - discountValue;
 
   async function buildPreviewEl(data: any, settings: any) {
     const el = document.createElement("div");
-    el.style.cssText = "position:fixed;top:0;left:0;z-index:9999;background:#fff;width:800px;padding:32px;font-family:system-ui,sans-serif;font-size:16px;";
+    const sh = sanitizeHtml;
+    el.style.cssText = "position:fixed;top:0;left:0;z-index:9999;background:#fff;width:900px;padding:32px;font-family:Inter,system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-wrap:normal; word-break:normal; hyphens:none; white-space:nowrap; text-wrap:stable; text-align:justify;";
     el.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
-        <div style="display:flex;align-items:flex-start;gap:8px;">
-          <div style="width:56px;height:56px;border-radius:50%;background:rgba(184,131,126,0.1);display:flex;align-items:center;justify-content:center;margin-top:4px;">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7C1D2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18" /><rect x="4" y="13" width="16" height="8" rx="1.5" /><rect x="6" y="8" width="12" height="6" rx="1.5" /><circle cx="12" cy="7" r="2" fill="#7C1D2E" /><path d="M12 5v-1" /></svg>
+        <div style="display:flex;align-items:flex-start;gap:8px;flex-shrink:0;">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(220,38,38,0.1);display:flex;align-items:center;justify-content:center;margin-top:4px;font-size:28px;flex-shrink:0;">
+            🍰
           </div>
-          <div>
-            <h2 style="font-size:24px;font-weight:700;color:#3D2B1F;margin:0;">${settings?.business_name || "Doña Nina"}</h2>
-            <p style="font-size:12px;letter-spacing:0.1em;color:#7C1D2E;text-transform:uppercase;margin:2px 0 0;">Bienestar & Salud</p>
-            <p style="font-size:14px;font-weight:700;color:#3D2B1F;margin:8px 0 0;">Distribuidor Independiente Amway</p>
-            <p style="font-size:12px;color:#9C8A82;margin:2px 0 0;">Suplementos, cosmética y bienestar para toda la familia</p>
-            <p style="font-size:12px;color:#9C8A82;margin:0;">Rep\u00fablica Dominicana</p>
+          <div style="white-space:nowrap;">
+            <h2 style="font-size:26px;font-weight:800;color:#111827;margin:0;line-height:1.1;letter-spacing:-0.02em;">Donde Doña Nina</h2>
+            <p style="font-size:11px;letter-spacing:0.08em;color:#dc2626;text-transform:uppercase;margin:2px 0 0;line-height:1.4;font-weight:600;">Hechas con el amor de mamá</p>
+            <p style="font-size:10px;color:#6b7280;margin:2px 0 0;line-height:1.4;font-weight:500;">Sabor Dominicano</p>
           </div>
         </div>
-        <div style="text-align:right;">
-          <span style="display:inline-block;background:#F0EBE3;color:#7C1D2E;font-size:12px;font-weight:700;padding:8px 16px;border-radius:999px;white-space:nowrap;">FACTURA DE VENTA</span>
-          <p style="font-size:18px;font-weight:700;color:#3D2B1F;margin:12px 0 0;">${data.invoice_number}</p>
-          <p style="font-size:12px;color:#9C8A82;margin:2px 0 0;">Fecha: ${formatDate(data.invoice_date)}</p>
+        <div style="text-align:right;white-space:nowrap;">
+          <span style="display:inline-block;background:#f9fafb;color:#dc2626;font-size:12px;font-weight:700;padding:8px 16px;border-radius:999px;">FACTURA DE VENTA</span>
+          <p style="font-size:18px;font-weight:700;color:#111827;margin:12px 0 0;line-height:1.2;white-space:nowrap;">${sh(data.invoice_number)}</p>
+          <p style="font-size:12px;color:#6b7280;margin:2px 0 0;line-height:1.4;">Fecha: ${formatDate(data.invoice_date)}</p>
         </div>
       </div>
-      <div style="border-top:1px solid #E8E0D8;margin-bottom:20px;"></div>
-      <div style="border:1px solid #E8E0D8;background:#FCFAF7;border-radius:12px;padding:16px;margin-bottom:20px;">
-        <p style="font-size:11px;font-weight:700;color:#7C1D2E;margin:0 0 12px;">CLIENTE / ADQUIRIENTE</p>
+      <div style="border-top:1px solid #e5e7eb;margin-bottom:20px;"></div>
+      <div style="border:1px solid #e5e7eb;background:#f9fafb;border-radius:12px;padding:16px;margin-bottom:20px;">
+        <p style="font-size:11px;font-weight:700;color:#dc2626;margin:0 0 12px;">CLIENTE / ADQUIRIENTE</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:13px;">
-          <p style="color:#3D2B1F;margin:0;"><span style="color:#9C8A82;">Nombre:</span> ${data.clients?.full_name || ""}</p>
-          <p style="color:#3D2B1F;margin:0;"><span style="color:#9C8A82;">Tel\u00e9fono:</span> ${data.clients?.phone || "\u2014"}</p>
-          <p style="color:#3D2B1F;margin:0;"><span style="color:#9C8A82;">Email:</span> ${data.clients?.email || "N/D"}</p>
+          <p style="color:#111827;margin:0;"><span style="color:#6b7280;">Nombre:</span> ${sh(data.client?.full_name) || "—"}</p>
+          <p style="color:#111827;margin:0;"><span style="color:#6b7280;">Teléfono:</span> ${sh(data.client?.phone) || "—"}</p>
+          <p style="color:#111827;margin:0;"><span style="color:#6b7280;">Email:</span> ${sh(data.client?.email) || "N/D"}</p>
         </div>
       </div>
       <table style="width:100%;font-size:13px;margin-bottom:20px;border-collapse:collapse;">
         <thead>
-          <tr style="background:#F0EBE3;">
-            <th style="padding:10px 12px;text-align:left;font-size:11px;color:#3D2B1F;font-weight:700;">Submarca</th>
-            <th style="padding:10px 12px;text-align:left;font-size:11px;color:#3D2B1F;font-weight:700;">Descripci\u00f3n / Producto</th>
-            <th style="padding:10px 12px;text-align:right;font-size:11px;color:#3D2B1F;font-weight:700;">Cant.</th>
-            <th style="padding:10px 12px;text-align:right;font-size:11px;color:#3D2B1F;font-weight:700;">Precio Unit.</th>
-            <th style="padding:10px 12px;text-align:right;font-size:11px;color:#3D2B1F;font-weight:700;">Total</th>
+          <tr style="background:#f9fafb;">
+            <th style="padding:10px 12px;text-align:left;font-size:11px;color:#111827;font-weight:700;">Categoría</th>
+            <th style="padding:10px 12px;text-align:left;font-size:11px;color:#111827;font-weight:700;">Descripción / Producto</th>
+            <th style="padding:10px 12px;text-align:right;font-size:11px;color:#111827;font-weight:700;">Cant.</th>
+            <th style="padding:10px 12px;text-align:right;font-size:11px;color:#111827;font-weight:700;">Precio Unit.</th>
+            <th style="padding:10px 12px;text-align:right;font-size:11px;color:#111827;font-weight:700;">Total</th>
           </tr>
         </thead>
         <tbody>
-          ${(data.invoice_items || []).map((item: any) => `
-            <tr style="border-bottom:1px solid #F0EBE3;">
-              <td style="padding:10px 12px;font-size:11px;color:#9C8A82;">${item.products?.subbrands?.name || "\u2014"}</td>
-              <td style="padding:10px 12px;font-size:13px;color:#3D2B1F;">${item.products?.name || item.custom_name || "Producto"}</td>
-              <td style="padding:10px 12px;text-align:right;font-size:13px;color:#3D2B1F;">${item.quantity}</td>
-              <td style="padding:10px 12px;text-align:right;font-size:13px;color:#3D2B1F;">${formatCurrency(Number(item.unit_price))}</td>
-              <td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:500;color:#3D2B1F;">${formatCurrency(Number(item.line_total))}</td>
+          ${(data.items || []).map((item: any) => `
+            <tr style="border-bottom:1px solid #f9fafb;">
+              <td style="padding:10px 12px;font-size:11px;color:#6b7280;">${sh(item.menu_item?.category?.name) || "—"}</td>
+              <td style="padding:10px 12px;font-size:13px;color:#111827;">${sh(item.menu_item?.name || item.custom_name) || "Producto"}</td>
+              <td style="padding:10px 12px;text-align:right;font-size:13px;color:#111827;">${item.quantity}</td>
+              <td style="padding:10px 12px;text-align:right;font-size:13px;color:#111827;">${formatCurrency(Number(item.unit_price))}</td>
+              <td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:500;color:#111827;">${formatCurrency(Number(item.line_total))}</td>
             </tr>
           `).join("")}
         </tbody>
       </table>
-      ${data.bank_accounts ? `
-        <div style="border:1px solid #E8E0D8;background:#FCFAF7;border-radius:12px;padding:16px;margin-bottom:20px;">
-          <p style="font-size:11px;font-weight:700;color:#7C1D2E;margin:0 0 12px;">DATOS DE PAGO POR TRANSFERENCIA</p>
+      ${data.bank_account ? `
+        <div style="border:1px solid #e5e7eb;background:#f9fafb;border-radius:12px;padding:16px;margin-bottom:20px;">
+          <p style="font-size:11px;font-weight:700;color:#dc2626;margin:0 0 12px;">DATOS DE TRANSFERENCIA</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:13px;">
-            <p style="color:#3D2B1F;margin:0;"><span style="color:#9C8A82;">Beneficiario:</span> ${data.bank_accounts.holder_name}</p>
-            ${data.bank_accounts.id_number ? `<p style="color:#3D2B1F;margin:0;"><span style="color:#9C8A82;">C\u00e9dula/RNC:</span> ${data.bank_accounts.id_number}</p>` : ""}
-            <p style="color:#3D2B1F;margin:0;"><span style="color:#9C8A82;">Banco:</span> ${data.bank_accounts.bank_name}</p>
-            <p style="color:#3D2B1F;margin:0;"><span style="color:#9C8A82;">Tipo de Cuenta:</span> ${data.bank_accounts.account_type}</p>
-            <p style="color:#3D2B1F;margin:0;"><span style="color:#9C8A82;">No. de Cuenta:</span> ${data.bank_accounts.account_number}</p>
-            ${data.bank_accounts.email ? `<p style="color:#3D2B1F;margin:0;"><span style="color:#9C8A82;">Correo:</span> ${data.bank_accounts.email}</p>` : ""}
+            <p style="color:#111827;margin:0;"><span style="color:#6b7280;">Beneficiario:</span> ${sh(data.bank_account.holder_name)}</p>
+            ${data.bank_account.id_number ? `<p style="color:#111827;margin:0;"><span style="color:#6b7280;">Cédula/RNC:</span> ${sh(data.bank_account.id_number)}</p>` : ""}
+            <p style="color:#111827;margin:0;"><span style="color:#6b7280;">Banco:</span> ${sh(data.bank_account.bank_name)}</p>
+            <p style="color:#111827;margin:0;"><span style="color:#6b7280;">Tipo de Cuenta:</span> ${sh(data.bank_account.account_type)}</p>
+            <p style="color:#111827;margin:0;"><span style="color:#6b7280;">No. de Cuenta:</span> ${sh(data.bank_account.account_number)}</p>
+            ${data.bank_account.email ? `<p style="color:#111827;margin:0;"><span style="color:#6b7280;">Correo:</span> ${sh(data.bank_account.email)}</p>` : ""}
           </div>
         </div>
       ` : ""}
-      <div style="border-top:1px solid #E8E0D8;padding-top:12px;margin-bottom:20px;">
-        <div style="display:flex;justify-content:space-between;font-size:13px;color:#9C8A82;margin-bottom:4px;">
+      <div style="border-top:1px solid #e5e7eb;padding-top:12px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b7280;margin-bottom:4px;">
           <span>Subtotal</span>
           <span>${formatCurrency(Number(data.subtotal))}</span>
         </div>
         ${Number(data.itbis_total) > 0 ? `
-          <div style="display:flex;justify-content:space-between;font-size:13px;color:#9C8A82;margin-bottom:4px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b7280;margin-bottom:4px;">
             <span>ITBIS (18%)</span>
             <span>${formatCurrency(Number(data.itbis_total))}</span>
           </div>
         ` : ""}
         ${Number(data.discount_amount) > 0 ? `
-          <div style="display:flex;justify-content:space-between;font-size:13px;color:#E07A3A;margin-bottom:4px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:#f87171;margin-bottom:4px;">
             <span>Descuento</span>
             <span>-${formatCurrency(Number(data.discount_amount))}</span>
           </div>
         ` : ""}
-        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:#3D2B1F;padding-top:4px;border-top:1px solid #E8E0D8;margin-bottom:4px;">
+        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:#111827;padding-top:4px;border-top:1px solid #e5e7eb;margin-bottom:4px;">
           <span>Total General</span>
           <span>${formatCurrency(Number(data.total))}</span>
         </div>
         ${Number(data.amount_paid) > 0 ? `
-          <div style="display:flex;justify-content:space-between;font-size:13px;color:#5B9E6B;margin-bottom:4px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:#22c55e;margin-bottom:4px;">
             <span>Monto Cobrado</span>
             <span>${formatCurrency(Number(data.amount_paid))}</span>
           </div>
         ` : ""}
         ${(Number(data.total) - Number(data.amount_paid || 0)) > 0 ? `
-          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#7C1D2E;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#dc2626;">
             <span>Saldo Pendiente</span>
             <span>${formatCurrency(Number(data.total) - Number(data.amount_paid || 0))}</span>
           </div>
         ` : ""}
       </div>
-      <div style="border-top:1px solid #E8E0D8;padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end;">
+      <div style="border-top:1px solid #e5e7eb;padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end;">
         <div>
-          <p style="font-size:11px;font-style:italic;color:#7C1D2E;margin:0;">\u00a1Gracias por tu compra y por apoyar a ${settings?.business_name || "Doña Nina"}, aliados a tu bienestar!</p>
-          <p style="font-size:11px;color:#9C8A82;margin:6px 0 0;">Nutrilite \u00b7 Artistry \u00b7 Glister \u00b7 G&H \u00b7 Satinique \u00b7 Amway Home</p>
+          <p style="font-size:11px;font-style:italic;color:#dc2626;margin:0;line-height:1.4;white-space:nowrap;">¡Gracias por tu compra! Hecho con el amor de mamá.</p>
+          <p style="font-size:10px;color:#6b7280;margin:6px 0 0;line-height:1.4;white-space:nowrap;">Donde Doña Nina · Hechas con el amor de mamá · Sabor Dominicano</p>
         </div>
-        <div style="text-align:right;">
-          ${settings?.signature_url ? `<img src="${settings.signature_url}" alt="Firma" style="height:96px;margin-left:auto;" />` : `<p style="font-size:16px;font-style:italic;color:#3D2B1F;font-weight:300;margin:0;font-family:Georgia,serif;">${settings?.business_name || "Doña Nina"}</p>`}
-          <p style="font-size:9px;color:#9C8A82;margin:2px 0 0;">FIRMA AUTORIZADA</p>
+        <div style="text-align:right;white-space:nowrap;">
+          ${settings?.signature_url
+            ? `<img src="${sh(settings.signature_url)}" alt="Firma" style="height:96px;margin-left:auto;" />`
+            : `<img src="/firma-yrahisa-mateo.png" alt="Firma" style="height:96px;margin-left:auto;" />`}
+          <p style="font-size:9px;color:#6b7280;margin:2px 0 0;line-height:1.4;">FIRMA AUTORIZADA</p>
         </div>
       </div>
     `;
@@ -311,7 +265,7 @@ export default function FacturacionPage() {
     document.body.appendChild(el);
     await new Promise(r => setTimeout(r, 500));
     const domtoimage = await import("dom-to-image-more");
-    const canvas = await domtoimage.toCanvas(el, { scale: 2, width: 800 });
+    const canvas = await domtoimage.toCanvas(el, { scale: 2, width: 900, ignoreCSSRuleErrors: true, disableEmbedFonts: true });
     document.body.removeChild(el);
     return { canvas, data: full, invoice_number: inv.invoice_number };
   }
@@ -323,7 +277,7 @@ export default function FacturacionPage() {
       const jspdfModule = await import("jspdf");
       const pdf = new jspdfModule.default({ unit: "px", format: [canvas.width, canvas.height] });
       pdf.addImage(imgData, "JPEG", 0, 0, canvas.width, canvas.height);
-      const clientName = inv.clients?.full_name?.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, '').replace(/\s+/g, '-') || 'cliente';
+      const clientName = inv.client?.full_name?.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, '').replace(/\s+/g, '-') || 'cliente';
       pdf.save(`factura-${invoice_number}-${clientName}.pdf`);
       toast.success("PDF descargado");
     } catch (e) {
@@ -336,7 +290,7 @@ export default function FacturacionPage() {
     try {
       const { canvas, invoice_number } = await captureInvoice(inv);
       const link = document.createElement("a");
-      const clientName = inv.clients?.full_name?.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, '').replace(/\s+/g, '-') || 'cliente';
+      const clientName = inv.client?.full_name?.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, '').replace(/\s+/g, '-') || 'cliente';
       link.download = `factura-${invoice_number}-${clientName}.jpg`;
       link.href = canvas.toDataURL("image/jpeg", 0.95);
       link.click();
@@ -364,9 +318,9 @@ export default function FacturacionPage() {
       const full = await getInvoice(inv.id);
       setEditingId(full.id);
       setSelectedClient(full.client_id);
-      setItems(full.invoice_items?.map((item: any) => ({
-        product_id: item.product_id,
-        name: item.products?.name || "Producto",
+      setItems(full.items?.map((item: any) => ({
+        menu_item_id: item.menu_item_id,
+        name: item.menu_item?.name || item.custom_name || 'Producto',
         quantity: item.quantity,
         unit_price: Number(item.unit_price),
         pv: Number(item.pv || 0),
@@ -376,7 +330,6 @@ export default function FacturacionPage() {
       setDiscountAmount(Number(full.discount_amount));
       setNotes(full.notes || "");
       setBankAccountId(full.bank_account_id || "");
-      setMargin(full.margin || 30);
       setInvoiceDate(full.invoice_date || getLocalDateString());
       setShowModal(true);
     } catch {
@@ -394,19 +347,18 @@ export default function FacturacionPage() {
         invoice_date: invoiceDate,
         discount_amount: discountValue,
         status: "PENDING" as const,
-        margin,
         notes: notes || undefined,
         bank_account_id: bankAccountId || undefined,
       };
       const invoiceItems = items.map((i) => ({
-        product_id: i.product_id || undefined,
+        menu_item_id: i.menu_item_id || undefined,
         quantity: i.quantity,
-        unit_price: effectivePrice(i),
-        line_total: i.quantity * effectivePrice(i),
+        unit_price: i.unit_price,
+        line_total: i.quantity * i.unit_price,
         pv: i.pv * i.quantity,
         unit_cost: 0,
         itbis: i.itbis,
-        custom_name: i.product_id ? undefined : i.name,
+        custom_name: i.menu_item_id ? undefined : i.name,
       }));
 
       if (editingId) {
@@ -418,7 +370,7 @@ export default function FacturacionPage() {
       }
       setShowModal(false);
       resetForm();
-      await load(searchRef.current);
+      load();
     } catch (e: any) {
       toast.error(e?.message || "Error al guardar factura");
     } finally {
@@ -431,19 +383,17 @@ export default function FacturacionPage() {
     try {
       await deleteInvoice(id);
       toast.success("Factura eliminada");
-      await load(searchRef.current);
+      load();
     } catch {
       toast.error("Error al eliminar factura");
     }
   }
 
   return (
-    <PageContainer>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-[#3D2B1F]">Facturación</h1>
-          <p className="text-sm text-[#9C8A82] mt-1">Gestión de facturas y ventas</p>
-        </div>
+    <PageContainer
+      title="Facturación"
+      subtitle="Gestión de facturas y ventas"
+      action={
         <button
           onClick={() => { resetForm(); setShowModal(true); }}
           className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all duration-200 shadow-sm"
@@ -451,159 +401,66 @@ export default function FacturacionPage() {
           <Plus size={18} />
           Nueva Factura
         </button>
-      </div>
+      }
+    >
+      <InvoiceFilters
+        searchQuery={searchQuery}
+        filterMonth={filterMonth}
+        filterYear={filterYear}
+        filterStatus={filterStatus}
+        filterClient={filterClient}
+        clients={clients}
+        onSearchChange={handleSearch}
+        onFilterMonthChange={setFilterMonth}
+        onFilterYearChange={setFilterYear}
+        onFilterStatusChange={setFilterStatus}
+        onFilterClientChange={setFilterClient}
+        onClearFilters={() => { setFilterMonth(""); setFilterYear(""); setFilterStatus(""); setFilterClient(""); }}
+      />
 
-      <div className="relative mb-6">
-        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => handleSearch(e.target.value)}
-          placeholder="Buscar factura por número o cliente..."
-          className="w-full h-12 pl-12 pr-4 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-        />
-      </div>
+      <InvoiceTable
+        invoices={invoices.filter((inv: any) => {
+          if (filterMonth || filterYear) {
+            const d = new Date(inv.invoice_date);
+            if (filterMonth && String(d.getMonth() + 1).padStart(2, "0") !== filterMonth) return false;
+            if (filterYear && String(d.getFullYear()) !== filterYear) return false;
+          }
+          if (filterStatus && inv.status !== filterStatus) return false;
+          if (filterClient && inv.client_id !== filterClient) return false;
+          return true;
+        })}
+        loading={loading}
+        openPrintId={openPrintId}
+        onViewDetail={handleViewDetail}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onPrintPdf={handlePrintPdf}
+        onPrintJpg={handlePrintJpg}
+        onTogglePrint={(id) => setOpenPrintId(openPrintId === id ? null : id)}
+      />
 
-      <div className="flex gap-3 mb-6 flex-wrap">
-        <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}
-          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30">
-          <option value="">Todos los meses</option>
-          {["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].map((m, i) => (
-            <option key={i} value={String(i + 1).padStart(2, "0")}>{m}</option>
-          ))}
-        </select>
-        <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)}
-          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30">
-          <option value="">Todos los años</option>
-          {[2024, 2025, 2026, 2027].map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30">
-          <option value="">Todos los estados</option>
-          <option value="PENDING">Pendiente</option>
-          <option value="PAID">Pagada</option>
-          <option value="CANCELLED">Cancelada</option>
-        </select>
-        <select value={filterClient} onChange={(e) => setFilterClient(e.target.value)}
-          className="h-10 px-3 rounded-xl border border-[#E8E0D8] bg-white text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30">
-          <option value="">Todos los clientes</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>{c.full_name}</option>
-          ))}
-        </select>
-        {(filterMonth || filterYear || filterStatus || filterClient) && (
-          <button onClick={() => { setFilterMonth(""); setFilterYear(""); setFilterStatus(""); setFilterClient(""); }} className="text-xs text-[#9C8A82] hover:text-[#3D2B1F] px-3">Limpiar filtros</button>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : invoices.length === 0 ? (
-        <div className="text-center py-16 text-[#9C8A82]">
-          <FileText size={40} className="mx-auto mb-3 opacity-40" />
-          <p className="text-sm">No hay facturas registradas</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-y-2">
-            <thead>
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#9C8A82] uppercase">No. Factura</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#9C8A82] uppercase">Fecha</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#9C8A82] uppercase">Cliente</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-[#9C8A82] uppercase">Total</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase">Estado</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-[#9C8A82] uppercase">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoices
-                .filter((inv: any) => {
-                  if (filterMonth || filterYear) {
-                    const d = new Date(inv.invoice_date);
-                    if (filterMonth && String(d.getMonth() + 1).padStart(2, "0") !== filterMonth) return false;
-                    if (filterYear && String(d.getFullYear()) !== filterYear) return false;
-                  }
-                  if (filterStatus && inv.status !== filterStatus) return false;
-                  if (filterClient && inv.client_id !== filterClient) return false;
-                  return true;
-                })
-                .map((inv: any) => {
-                const s = statusMap[inv.status] || statusMap.PENDING;
-                return (
-                  <tr key={inv.id} className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] hover:shadow-md transition-shadow">
-                    <td className="px-4 py-3.5 text-sm font-medium text-[#3D2B1F]">{inv.invoice_number}</td>
-                    <td className="px-4 py-3.5 text-sm text-[#9C8A82]">{formatDate(inv.invoice_date)}</td>
-                    <td className="px-4 py-3.5 text-sm text-[#3D2B1F]">{inv.clients?.full_name || "—"}</td>
-                    <td className="px-4 py-3.5 text-sm text-[#3D2B1F] text-right font-medium">{formatCurrency(inv.total)}</td>
-                    <td className="px-4 py-3.5 text-center"><Badge variant={s.variant}>{s.label}</Badge></td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center justify-center gap-1 relative">
-                        <button onClick={() => handleViewDetail(inv)} className="p-2 text-[#9C8A82] hover:bg-[#FDF8F3] rounded-lg" title="Ver"><Eye size={15} /></button>
-                        <div className="relative">
-                          <button
-                            onClick={() => setOpenPrintId(openPrintId === inv.id ? null : inv.id)}
-                            className="p-2 text-[#9C8A82] hover:bg-[#FDF8F3] rounded-lg"
-                            title="Descargar"
-                          >
-                            <Download size={15} />
-                          </button>
-                          {openPrintId === inv.id && (
-                            <>
-                              <div className="fixed inset-0 z-10" onClick={() => setOpenPrintId(null)} />
-                              <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-xl shadow-lg border border-[#E8E0D8] py-1 min-w-[130px]">
-                                <button onClick={() => handlePrintPdf(inv)} className="w-full text-left px-4 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3] flex items-center gap-2">
-                                  <FileText size={14} /> PDF
-                                </button>
-                                <button onClick={() => handlePrintJpg(inv)} className="w-full text-left px-4 py-2 text-sm text-[#3D2B1F] hover:bg-[#FDF8F3] flex items-center gap-2">
-                                  <Download size={14} /> JPG
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <button onClick={() => handleEdit(inv)} className="p-2 text-[#9C8A82] hover:bg-[#FDF8F3] rounded-lg" title="Editar"><Edit2 size={15} /></button>
-                        <button onClick={() => handleDelete(inv.id)} className="p-2 text-[#E07A3A] hover:bg-[#E07A3A]/10 rounded-lg" title="Eliminar"><Trash2 size={15} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <Modal isOpen={showDetail} onClose={() => { setShowDetail(false); setSelectedInvoice(null); }} title={selectedInvoice?.invoice_number || "Detalle"} wide>
+      <Modal isOpen={showDetail} onClose={() => { setShowDetail(false); setSelectedInvoice(null); }} title={selectedInvoice?.invoice_number || "Detalle"} size="xl">
         {selectedInvoice && (
           <div className="space-y-5">
-            <div id="invoice-preview" className="bg-white p-8 rounded-xl" style={{ fontFamily: "system-ui, sans-serif" }}>
+            <div id="invoice-preview" className="bg-white p-8 rounded-xl" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
               {/* A. HEADER */}
               <div className="flex justify-between items-start mb-6">
-              <div className="flex items-start gap-2">
-                <div className="w-14 h-14 rounded-full bg-[#7C1D2E]/60 flex items-center justify-center mt-1">
-                  <CakeIcon size={28} className="text-white" />
-                </div>
-                <div>
-                    <h2 className="text-2xl font-bold text-[#3D2B1F]">{settings?.business_name || "Doña Nina"}</h2>
-                    <p className="text-xs tracking-widest text-[#7C1D2E] uppercase mt-0.5">Bienestar & Salud</p>
-                    <p className="text-sm font-bold text-[#3D2B1F] mt-2">Distribuidor Independiente Amway</p>
-                    <p className="text-xs text-[#9C8A82] mt-0.5">Suplementos, cosmética y bienestar para toda la familia</p>
-                    <p className="text-xs text-[#9C8A82]">República Dominicana</p>
+                <div className="flex items-start gap-2">
+                  <div className="w-14 h-14 rounded-full bg-[#7C1D2E]/10 flex items-center justify-center mt-1 text-3xl">
+                    🍰
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-extrabold text-[#3D2B1F]" style={{ letterSpacing: '-0.02em' }}>Donde Doña Nina</h2>
+                    <p className="text-xs tracking-widest text-[#7C1D2E] uppercase mt-0.5 font-semibold">Hechas con el amor de mamá</p>
+                    <p className="text-[10px] text-[#9C8A82] mt-0.5 font-medium">Sabor Dominicano</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="inline-block bg-[#F0EBE3] text-[#7C1D2E] text-xs font-bold px-4 py-2 rounded-full">FACTURA DE VENTA</span>
+                  <span className="inline-block bg-[#FDF8F3] text-[#7C1D2E] text-xs font-bold px-4 py-2 rounded-full">FACTURA DE VENTA</span>
                   <p className="text-lg font-bold text-[#3D2B1F] mt-3">{selectedInvoice.invoice_number}</p>
                   <p className="text-xs text-[#9C8A82] mt-0.5">Fecha: {formatDate(selectedInvoice.invoice_date)}</p>
                   <div className="mt-2">
-                    <Badge variant={(statusMap[selectedInvoice.status] || statusMap.PENDING).variant}>
-                      {(statusMap[selectedInvoice.status] || statusMap.PENDING).label}
-                    </Badge>
+                    <Badge status={selectedInvoice.status} />
                   </div>
                 </div>
               </div>
@@ -611,14 +468,14 @@ export default function FacturacionPage() {
               <div className="border-t border-[#E8E0D8] mb-5" />
 
               {/* B. CLIENTE / ADQUIRIENTE */}
-              <div className="border border-[#E8E0D8] bg-[#FCFAF7] rounded-xl p-4 mb-5">
+              <div className="border border-[#E8E0D8] bg-[#FDF8F3] rounded-xl p-4 mb-5">
                 <p className="text-xs font-bold text-[#7C1D2E] mb-3">CLIENTE / ADQUIRIENTE</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-                  <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Nombre:</span> {selectedInvoice.clients?.full_name}</p>
-                  <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Teléfono:</span> {selectedInvoice.clients?.phone || "—"}</p>
-                  <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Email:</span> {selectedInvoice.clients?.email || "N/D"}</p>
-                  {selectedInvoice.clients?.id_number && (
-                    <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Cédula:</span> {selectedInvoice.clients.id_number}</p>
+                  <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Nombre:</span> {selectedInvoice.client?.full_name}</p>
+                  <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Tel\u00e9fono:</span> {selectedInvoice.client?.phone || "\u2014"}</p>
+                  <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Email:</span> {selectedInvoice.client?.email || "N/D"}</p>
+                  {selectedInvoice.client?.address && (
+                    <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Direcci\u00f3n:</span> {selectedInvoice.client.address}</p>
                   )}
                 </div>
               </div>
@@ -626,20 +483,20 @@ export default function FacturacionPage() {
               {/* C. PRODUCTS TABLE */}
               <table className="w-full text-sm mb-5">
                 <thead>
-                  <tr className="bg-[#F0EBE3]">
-                    <th className="py-2.5 px-3 text-left text-xs text-[#3D2B1F] font-bold">Submarca</th>
-                    <th className="py-2.5 px-3 text-left text-xs text-[#3D2B1F] font-bold">Descripción / Producto</th>
+                  <tr className="bg-[#FDF8F3]">
+                    <th className="py-2.5 px-3 text-left text-xs text-[#3D2B1F] font-bold">Categor\u00eda</th>
+                    <th className="py-2.5 px-3 text-left text-xs text-[#3D2B1F] font-bold">Descripci\u00f3n / Producto</th>
                     <th className="py-2.5 px-3 text-right text-xs text-[#3D2B1F] font-bold">Cant.</th>
                     <th className="py-2.5 px-3 text-right text-xs text-[#3D2B1F] font-bold">Precio Unit.</th>
                     <th className="py-2.5 px-3 text-right text-xs text-[#3D2B1F] font-bold">Total</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(selectedInvoice.invoice_items || []).map((item: any, i: number) => {
+                  {(selectedInvoice.items || []).map((item: any, i: number) => {
                     return (
-                      <tr key={i} className="border-b border-[#F0EBE3]">
-                        <td className="py-2.5 px-3 text-xs text-[#9C8A82]">{item.products?.subbrands?.name || "—"}</td>
-                        <td className="py-2.5 px-3 text-sm text-[#3D2B1F]">{item.products?.name || item.custom_name || "Producto"}</td>
+                      <tr key={i} className="border-b border-[#E8E0D8]">
+                        <td className="py-2.5 px-3 text-xs text-[#9C8A82]">{item.menu_item?.category?.name || "\u2014"}</td>
+                        <td className="py-2.5 px-3 text-sm text-[#3D2B1F]">{item.menu_item?.name || item.custom_name || "Producto"}</td>
                         <td className="py-2.5 px-3 text-right text-sm text-[#3D2B1F]">{item.quantity}</td>
                         <td className="py-2.5 px-3 text-right text-sm text-[#3D2B1F]">{formatCurrency(Number(item.unit_price))}</td>
                         <td className="py-2.5 px-3 text-right text-sm font-medium text-[#3D2B1F]">{formatCurrency(Number(item.line_total))}</td>
@@ -651,11 +508,11 @@ export default function FacturacionPage() {
 
               {/* D. PAYMENT DATA */}
               {selectedInvoice.bank_accounts && (
-                <div className="border border-[#E8E0D8] bg-[#FCFAF7] rounded-xl p-4 mb-5">
-                  <p className="text-xs font-bold text-[#7C1D2E] mb-3">DATOS DE PAGO POR TRANSFERENCIA</p>
+                <div className="border border-[#E8E0D8] bg-[#FDF8F3] rounded-xl p-4 mb-5">
+                  <p className="text-xs font-bold text-[#7C1D2E] mb-3">DATOS DE TRANSFERENCIA</p>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
                     <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Beneficiario:</span> {selectedInvoice.bank_accounts.holder_name}</p>
-                    {selectedInvoice.bank_accounts.id_number && <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Cédula/RNC:</span> {selectedInvoice.bank_accounts.id_number}</p>}
+                    {selectedInvoice.bank_accounts.id_number && <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">C\u00e9dula/RNC:</span> {selectedInvoice.bank_accounts.id_number}</p>}
                     <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Banco:</span> {selectedInvoice.bank_accounts.bank_name}</p>
                     <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Tipo de Cuenta:</span> {selectedInvoice.bank_accounts.account_type}</p>
                     <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">No. de Cuenta:</span> {selectedInvoice.bank_accounts.account_number}</p>
@@ -687,7 +544,7 @@ export default function FacturacionPage() {
                   <span>{formatCurrency(Number(selectedInvoice.total))}</span>
                 </div>
                 {Number(selectedInvoice.amount_paid) > 0 && (
-                  <div className="flex justify-between text-sm text-[#5B9E6B] mb-1">
+                  <div className="flex justify-between text-sm text-green-600 mb-1">
                     <span>Monto Cobrado</span>
                     <span>{formatCurrency(Number(selectedInvoice.amount_paid))}</span>
                   </div>
@@ -702,7 +559,7 @@ export default function FacturacionPage() {
 
               {/* Notes */}
               {selectedInvoice.notes && (
-                <div className="bg-[#FFF8F0] border border-[#E8E0D8] rounded-xl p-3 mb-5">
+                <div className="bg-amber-50 border border-[#E8E0D8] rounded-xl p-3 mb-5">
                   <p className="text-xs text-[#9C8A82] mb-1">Notas:</p>
                   <p className="text-sm text-[#3D2B1F]">{selectedInvoice.notes}</p>
                 </div>
@@ -711,14 +568,14 @@ export default function FacturacionPage() {
               {/* F. FOOTER */}
               <div className="border-t border-[#E8E0D8] pt-4 flex justify-between items-end">
                 <div>
-                  <p className="text-xs italic text-[#7C1D2E]">¡Gracias por tu compra y por apoyar a {settings?.business_name || "Doña Nina"}, aliados a tu bienestar!</p>
-                  <p className="text-xs text-[#9C8A82] mt-1.5">Nutrilite · Artistry · Glister · G&H · Satinique · Amway Home</p>
+                  <p className="text-xs italic text-[#7C1D2E] whitespace-nowrap">¡Gracias por tu compra! Hecho con el amor de mamá.</p>
+                  <p className="text-[10px] text-[#9C8A82] mt-1.5 whitespace-nowrap">Donde Doña Nina · Hechas con el amor de mamá · Sabor Dominicano</p>
                 </div>
                 <div className="text-right">
                   {settings?.signature_url ? (
-                    <img src={settings.signature_url} alt="Firma" className="h-24 ml-auto" />
+                    <Image src={settings.signature_url} alt="Firma" width={96} height={96} className="h-24 w-auto ml-auto" unoptimized />
                   ) : (
-                    <p className="text-base italic text-[#3D2B1F] font-light" style={{ fontFamily: "Georgia, serif" }}>{settings?.business_name || "Doña Nina"}</p>
+                    <Image src="/firma-yrahisa-mateo.png" alt="Firma" width={96} height={96} className="h-24 w-auto ml-auto" />
                   )}
                   <p className="text-[9px] text-[#9C8A82] mt-0.5">FIRMA AUTORIZADA</p>
                 </div>
@@ -731,7 +588,7 @@ export default function FacturacionPage() {
               <button onClick={() => handlePrintJpg(selectedInvoice)} className="flex-1 min-w-[120px] h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all flex items-center justify-center gap-2">
                 <Download size={18} /> JPG
               </button>
-              {selectedInvoice.clients?.email && (
+              {selectedInvoice.client?.email && (
                 <button
                   onClick={() => setDraftModal({ type: "email" })}
                   className="flex-1 min-w-[120px] h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all flex items-center justify-center gap-2"
@@ -739,7 +596,7 @@ export default function FacturacionPage() {
                   <Mail size={18} /> Email
                 </button>
               )}
-              {selectedInvoice.clients?.phone && (
+              {selectedInvoice.client?.phone && (
                 <button
                   onClick={() => setDraftModal({ type: "whatsapp" })}
                   className="flex-1 min-w-[120px] h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all flex items-center justify-center gap-2"
@@ -748,7 +605,7 @@ export default function FacturacionPage() {
                 </button>
               )}
               {(selectedInvoice.status === "PENDING" || selectedInvoice.status === "PARTIAL") && (
-                <button onClick={() => { setShowDetail(false); setSelectedInvoice(null); router.push(`/recibos?nuevo=true&invoice_id=${selectedInvoice.id}`); }} className="flex-1 min-w-[120px] h-12 bg-[#5B9E6B] text-white rounded-xl text-sm font-medium hover:bg-[#6DB08A] transition-all flex items-center justify-center gap-2">
+                <button onClick={() => { setShowDetail(false); setSelectedInvoice(null); router.push(`/recibos?nuevo=true&invoice_id=${selectedInvoice.id}`); }} className="flex-1 min-w-[120px] h-12 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-all flex items-center justify-center gap-2">
                   <DollarSign size={18} /> Registrar Pago
                 </button>
               )}
@@ -764,9 +621,9 @@ export default function FacturacionPage() {
           type={draftModal.type}
           client={{
             id: selectedInvoice.client_id,
-            full_name: selectedInvoice.clients?.full_name || "",
-            email: selectedInvoice.clients?.email,
-            phone: selectedInvoice.clients?.phone,
+            full_name: selectedInvoice.client?.full_name || "",
+            email: selectedInvoice.client?.email,
+            phone: selectedInvoice.client?.phone,
           }}
           documentType="invoice"
           documentNumber={selectedInvoice.invoice_number}
@@ -777,348 +634,106 @@ export default function FacturacionPage() {
           senderName={settings?.sender_name || undefined}
           emailTemplate={(settings as any)?.email_template || undefined}
           whatsappTemplate={(settings as any)?.whatsapp_template || undefined}
-          smtp={(settings as any)?.smtp_host ? {
-            host: (settings as any).smtp_host,
-            port: (settings as any).smtp_port || 587,
-            user: (settings as any).smtp_user,
-            pass: (settings as any).smtp_pass,
-            secure: (settings as any).smtp_secure || false,
-            senderName: (settings as any).sender_name || undefined,
-          } : undefined}
           getAttachment={async () => {
             const { canvas, invoice_number } = await captureInvoice(selectedInvoice);
             const jspdfModule = await import("jspdf");
             const pdf = new jspdfModule.default({ unit: "px", format: [canvas.width, canvas.height] });
             pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, canvas.width, canvas.height);
             const base64 = pdf.output("datauristring").split(",")[1];
-            const clientName = selectedInvoice?.clients?.full_name?.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, '').replace(/\s+/g, '-') || 'cliente';
+            const clientName = selectedInvoice?.client?.full_name?.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, '').replace(/\s+/g, '-') || 'cliente';
             return { filename: `factura-${invoice_number}-${clientName}.pdf`, base64 };
           }}
         />
       )}
 
-      <Modal isOpen={showModal} onClose={() => { setShowModal(false); resetForm(); }} title={editingId ? "Editar Factura" : "Nueva Factura"} wide>
-        <div className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Cliente</label>
-              <div className="flex gap-2">
-                <select
-                  value={selectedClient}
-                  onChange={(e) => setSelectedClient(e.target.value)}
-                  className="flex-1 h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-                >
-                  <option value="">Seleccionar cliente...</option>
-                  {clients.map((c) => <option key={c.id} value={c.id}>{c.full_name}</option>)}
-                </select>
-                <button
-                  onClick={() => setShowNewClient(true)}
-                  className="h-12 px-4 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all flex items-center gap-1.5"
-                >
-                  <Plus size={16} /> Cliente
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Margen</label>
-              <select
-                value={margin}
-                onChange={(e) => setMargin(Number(e.target.value))}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-              >
-                <option value={30}>30%</option>
-                <option value={35}>35%</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Fecha de factura</label>
-            <input
-              type="date" value={invoiceDate}
-              onChange={(e) => setInvoiceDate(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-[#3D2B1F]">Productos</label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setShowProducts(!showProducts); setShowManualProduct(false); }}
-                  className="text-xs text-[#7C1D2E] hover:underline"
-                >
-                  {showProducts ? "Ocultar catálogo" : "Catálogo"}
-                </button>
-                <button
-                  onClick={() => { setShowManualProduct(!showManualProduct); setShowProducts(false); }}
-                  className="text-xs text-[#7C1D2E] hover:underline"
-                >
-                  {showManualProduct ? "Cancelar" : "Manual"}
-                </button>
-              </div>
-            </div>
-
-            {showProducts && (
-              <div className="mb-4 bg-[#FDF8F3] rounded-xl overflow-hidden">
-                <div className="p-2">
-                  <div className="relative">
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A82]" />
-                    <input
-                      type="text"
-                      placeholder="Buscar producto..."
-                      onChange={(e) => setProductSearch(e.target.value)}
-                      className="w-full h-10 pl-9 pr-3 rounded-lg border border-[#E8E0D8] bg-white text-sm text-[#3D2B1F] placeholder:text-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-                <div className="max-h-48 overflow-y-auto px-2 pb-2 space-y-0.5">
-                  {productFiltered.length === 0 ? (
-                    <p className="text-sm text-[#9C8A82] py-3 text-center">Sin resultados</p>
-                  ) : productFiltered.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => { addProduct(p); setShowProducts(false); setProductSearch(""); }}
-                      className="w-full text-left px-3 py-2 text-sm text-[#3D2B1F] hover:bg-white rounded-lg transition-colors flex justify-between"
-                    >
-                      <span>{p.name}</span>
-                      <span className="text-[#9C8A82] text-xs">
-                        <span className={margin === 30 ? "font-semibold text-[#3D2B1F]" : ""}>30%: {formatCurrency(p.price_30)}</span>
-                        {" | "}
-                        <span className={margin === 35 ? "font-semibold text-[#3D2B1F]" : ""}>35%: {formatCurrency(p.price_35)}</span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {showManualProduct && (
-              <div className="mb-4 bg-[#FDF8F3] rounded-xl p-4 space-y-3">
-                <div>
-                  <label className="block text-xs font-medium text-[#3D2B1F] mb-1">Nombre del producto / costo</label>
-                  <input
-                    type="text"
-                    value={manualProduct.name}
-                    onChange={(e) => setManualProduct({ ...manualProduct, name: e.target.value })}
-                    placeholder="Ej: Envío, flete, cargo adicional..."
-                    className="w-full h-10 px-3 rounded-lg border border-[#E8E0D8] bg-white text-sm text-[#3D2B1F] placeholder:text-[#9C8A82] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-                    autoFocus
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-[#3D2B1F] mb-1">Cantidad</label>
-                    <input
-                      type="number" min={1} value={manualProduct.quantity}
-                      onChange={(e) => setManualProduct({ ...manualProduct, quantity: Number(e.target.value) })}
-                      className="w-full h-10 px-3 rounded-lg border border-[#E8E0D8] bg-white text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-[#3D2B1F] mb-1">Precio Unit.</label>
-                    <input
-                      type="number" step="0.01" min={0} value={manualProduct.unit_price}
-                      onChange={(e) => setManualProduct({ ...manualProduct, unit_price: Number(e.target.value) })}
-                      placeholder="0.00"
-                      className="w-full h-10 px-3 rounded-lg border border-[#E8E0D8] bg-white text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-                    />
-                  </div>
-                  <div className="flex items-end pb-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <span className="text-xs font-medium text-[#3D2B1F]">ITBIS</span>
-                      <button
-                        type="button"
-                        onClick={() => setManualProduct({ ...manualProduct, itbis: !manualProduct.itbis })}
-                        className={`relative w-10 h-5 rounded-full transition-colors ${manualProduct.itbis ? "bg-[#7C1D2E]" : "bg-gray-300"}`}
-                      >
-                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${manualProduct.itbis ? "translate-x-5" : "translate-x-0.5"}`} />
-                      </button>
-                    </label>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setShowManualProduct(false); setManualProduct({ name: "", quantity: 1, unit_price: 0, itbis: false }); }}
-                    className="flex-1 h-9 border border-[#E8E0D8] text-[#3D2B1F] rounded-lg text-xs font-medium hover:bg-white transition-all"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={addManualProduct}
-                    className="flex-1 h-9 bg-[#7C1D2E] text-white rounded-lg text-xs font-medium hover:bg-[#5C1420] transition-all"
-                  >
-                    Agregar a factura
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {items.length === 0 ? (
-              <p className="text-sm text-[#9C8A82] py-3">No hay productos agregados</p>
-            ) : (
-              <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-                {items.map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-[#FDF8F3] rounded-xl p-3 flex-wrap sm:flex-nowrap">
-                    <div className="flex-1 text-sm text-[#3D2B1F] min-w-[120px] sm:min-w-0">{item.name}</div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number" min={1} value={item.quantity}
-                        onChange={(e) => {
-                          const newItems = [...items];
-                          newItems[i].quantity = Number(e.target.value);
-                          setItems(newItems);
-                        }}
-                        className="w-14 sm:w-16 h-9 px-2 rounded-lg border border-[#E8E0D8] text-center text-sm"
-                      />
-                      <input
-                        type="number" step="0.01" value={effectivePrice(item)}
-                        onChange={(e) => {
-                          const newItems = [...items];
-                          newItems[i].unit_price = Number(e.target.value);
-                          delete newItems[i].price_30;
-                          delete newItems[i].price_35;
-                          setItems(newItems);
-                        }}
-                        className="w-20 sm:w-24 h-9 px-2 rounded-lg border border-[#E8E0D8] text-center text-sm"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newItems = [...items];
-                          newItems[i].itbis = !newItems[i].itbis;
-                          setItems(newItems);
-                        }}
-                        className={`relative w-10 sm:w-12 h-5 sm:h-6 rounded-full transition-colors flex-shrink-0 ${item.itbis ? "bg-[#7C1D2E]" : "bg-gray-300"}`}
-                      >
-                        <div className={`absolute top-0.5 w-4 sm:w-5 h-4 sm:h-5 bg-white rounded-full shadow-sm transition-transform ${item.itbis ? "translate-x-[18px] sm:translate-x-6" : "translate-x-0.5"}`} />
-                      </button>
-                      <span className={`text-sm font-medium w-16 sm:w-20 text-right ${item.itbis ? "text-[#3D2B1F]" : "text-[#9C8A82]"}`}>
-                        {formatCurrency(item.quantity * effectivePrice(item))}
-                      </span>
-                      <button onClick={() => removeItem(i)} className="p-1 text-[#E07A3A] hover:bg-white rounded-lg">
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Descuento %</label>
-              <input
-                type="number" value={discountPercent}
-                onChange={(e) => { setDiscountPercent(Number(e.target.value)); setDiscountAmount(0); }}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Descuento RD$</label>
-              <input
-                type="number" value={discountAmount}
-                onChange={(e) => { setDiscountAmount(Number(e.target.value)); setDiscountPercent(0); }}
-                className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Notas (opcional)</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              placeholder="Notas adicionales para la factura..."
-              className="w-full px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm placeholder:text-[#BFB0A8] focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Banco para transferencia</label>
-            <select
-              value={bankAccountId}
-              onChange={(e) => setBankAccountId(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all"
-            >
-              <option value="">Seleccionar banco...</option>
-              {bankAccounts.map((b) => (
-                <option key={b.id} value={b.id}>{b.bank_name} — {b.account_type} — No. {b.account_number}</option>
-              ))}
-            </select>
-            {(() => {
-              const selected = bankAccounts.find(b => b.id === bankAccountId);
-              if (!selected) return null;
-              return (
-                <div className="mt-2 bg-[#FDF8F3] rounded-lg p-3 text-sm space-y-1">
-                  <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Beneficiario:</span> {selected.holder_name}</p>
-                  {selected.id_number && <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Cédula/RNC:</span> {selected.id_number}</p>}
-                  <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Banco:</span> {selected.bank_name}</p>
-                  <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Tipo:</span> {selected.account_type}</p>
-                  <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">No. Cuenta:</span> {selected.account_number}</p>
-                  {selected.email && <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Correo:</span> {selected.email}</p>}
-                </div>
-              );
-            })()}
-          </div>
-
-          <div className="bg-[#FDF8F3] rounded-xl p-4 space-y-1 text-sm">
-            <div className="flex justify-between"><span className="text-[#9C8A82]">Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
-            {itbisTotal > 0 && (
-              <div className="flex justify-between"><span className="text-[#9C8A82]">ITBIS (18%)</span><span>{formatCurrency(itbisTotal)}</span></div>
-            )}
-            <div className="flex justify-between"><span className="text-[#9C8A82]">Descuento</span><span className="text-[#E07A3A]">-{formatCurrency(discountValue)}</span></div>
-            <div className="flex justify-between text-base font-bold pt-1 border-t border-[#E8E0D8]"><span>Total</span><span>{formatCurrency(total)}</span></div>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => { setShowModal(false); resetForm(); }}
-              className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <Save size={18} />
-              {saving ? "Guardando..." : (editingId ? "Actualizar Factura" : "Guardar Factura")}
-            </button>
-          </div>
-        </div>
-      </Modal>
+      <InvoiceForm
+        isOpen={showModal}
+        editingId={editingId}
+        selectedClient={selectedClient}
+        clients={clients}
+        invoiceDate={invoiceDate}
+        items={items}
+        discountPercent={discountPercent}
+        discountAmount={discountAmount}
+        notes={notes}
+        bankAccountId={bankAccountId}
+        bankAccounts={bankAccounts}
+        menuItems={menuItems}
+        saving={saving}
+        subtotal={subtotal}
+        itbisTotal={itbisTotal}
+        discountValue={discountValue}
+        total={total}
+        onClientChange={setSelectedClient}
+        onInvoiceDateChange={setInvoiceDate}
+        onDiscountPercentChange={setDiscountPercent}
+        onDiscountAmountChange={setDiscountAmount}
+        onNotesChange={setNotes}
+        onBankAccountChange={setBankAccountId}
+        onItemsChange={setItems}
+        onSave={handleSave}
+        onClose={() => { setShowModal(false); resetForm(); }}
+        onNewClient={() => setShowNewClient(true)}
+      />
 
       {/* Quick-create client modal */}
-      <Modal isOpen={showNewClient} onClose={() => { setShowNewClient(false); setNewClientForm({ full_name: "", phone: "", email: "", ibo_number: "", notes: "" }); }} title="Nuevo Cliente" subtitle="Registra un cliente rápido">
+      <Modal isOpen={showNewClient} onClose={() => { setShowNewClient(false); setNewClientForm({ full_name: "", phone: "", email: "", address: "", notes: "", birthday: "", stage: "Prospecto", lead_source: "", interest: "", first_contact_date: getLocalDateString(), next_followup_date: "" }); }} title="Nuevo Cliente" subtitle="Registra un nuevo cliente" size="lg">
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Nombre completo *</label>
-            <input type="text" value={newClientForm.full_name} onChange={(e) => setNewClientForm({ ...newClientForm, full_name: e.target.value })} placeholder="Nombre y apellidos" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
-          </div>
           <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Nombre completo *</label>
+              <input type="text" value={newClientForm.full_name} onChange={(e) => setNewClientForm({ ...newClientForm, full_name: e.target.value })} placeholder="Nombre y apellidos" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 focus:border-[#7C1D2E]/20 transition-all" />
+            </div>
             <div>
               <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Teléfono</label>
-              <input type="text" value={newClientForm.phone} onChange={(e) => setNewClientForm({ ...newClientForm, phone: e.target.value })} placeholder="809-000-0000" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
+              <input type="text" value={newClientForm.phone} onChange={(e) => setNewClientForm({ ...newClientForm, phone: e.target.value })} placeholder="809-000-0000" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 focus:border-[#7C1D2E]/20 transition-all" />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Correo electrónico</label>
-              <input type="email" value={newClientForm.email} onChange={(e) => setNewClientForm({ ...newClientForm, email: e.target.value })} placeholder="correo@ejemplo.com" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
+              <input type="email" value={newClientForm.email} onChange={(e) => setNewClientForm({ ...newClientForm, email: e.target.value })} placeholder="correo@ejemplo.com" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 focus:border-[#7C1D2E]/20 transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Dirección</label>
+              <input type="text" value={newClientForm.address} onChange={(e) => setNewClientForm({ ...newClientForm, address: e.target.value })} placeholder="Dirección" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 focus:border-[#7C1D2E]/20 transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Notas</label>
+              <input type="text" value={newClientForm.notes} onChange={(e) => setNewClientForm({ ...newClientForm, notes: e.target.value })} placeholder="Notas" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 focus:border-[#7C1D2E]/20 transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Cumpleaños</label>
+              <input type="date" value={newClientForm.birthday} onChange={(e) => setNewClientForm({ ...newClientForm, birthday: e.target.value })} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 focus:border-[#7C1D2E]/20 transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Etapa</label>
+              <select value={newClientForm.stage} onChange={(e) => setNewClientForm({ ...newClientForm, stage: e.target.value })} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 focus:border-[#7C1D2E]/20 transition-all">
+                <option value="Prospecto">Prospecto</option>
+                <option value="Calificacion">Calificación</option>
+                <option value="Contacto Inicial">Contacto Inicial</option>
+                <option value="Propuesta">Propuesta</option>
+                <option value="Negociacion">Negociación</option>
+                <option value="Cierre">Cierre</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Fuente</label>
+              <input type="text" value={newClientForm.lead_source} onChange={(e) => setNewClientForm({ ...newClientForm, lead_source: e.target.value })} placeholder="Ej: Referido, Redes, Whatsapp" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 focus:border-[#7C1D2E]/20 transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Interés</label>
+              <input type="text" value={newClientForm.interest} onChange={(e) => setNewClientForm({ ...newClientForm, interest: e.target.value })} placeholder="Ej: Pasteles, Postres, Salados" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 focus:border-[#7C1D2E]/20 transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Fecha 1er Contacto</label>
+              <input type="date" value={newClientForm.first_contact_date} onChange={(e) => setNewClientForm({ ...newClientForm, first_contact_date: e.target.value })} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 focus:border-[#7C1D2E]/20 transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Próximo Seguimiento</label>
+              <input type="date" value={newClientForm.next_followup_date} onChange={(e) => setNewClientForm({ ...newClientForm, next_followup_date: e.target.value })} className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FDF8F3] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30/30 focus:border-[#7C1D2E]/20 transition-all" />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-[#3D2B1F] mb-1.5">Número IBO (opcional)</label>
-            <input type="text" value={newClientForm.ibo_number} onChange={(e) => setNewClientForm({ ...newClientForm, ibo_number: e.target.value })} placeholder="IBO" className="w-full h-12 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-[#7C1D2E] transition-all" />
-          </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={() => { setShowNewClient(false); setNewClientForm({ full_name: "", phone: "", email: "", ibo_number: "", notes: "" }); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
+            <button onClick={() => { setShowNewClient(false); setNewClientForm({ full_name: "", phone: "", email: "", address: "", notes: "", birthday: "", stage: "Prospecto", lead_source: "", interest: "", first_contact_date: getLocalDateString(), next_followup_date: "" }); }} className="flex-1 h-12 border border-[#E8E0D8] text-[#3D2B1F] rounded-xl text-sm font-medium hover:bg-[#FDF8F3] transition-all">Cancelar</button>
             <button onClick={handleSaveNewClient} disabled={saving} className="flex-1 h-12 bg-[#7C1D2E] text-white rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2">
               <Save size={18} /> {saving ? "Guardando..." : "Agregar Cliente"}
             </button>
@@ -1129,50 +744,48 @@ export default function FacturacionPage() {
       {/* Hidden preview for JPG capture */}
        <div ref={jpgRef} style={{ display: jpgData ? "block" : "none", position: "fixed", top: 0, left: 0, zIndex: 9999, background: "#ffffff", width: "800px" }}>
         {jpgData && (
-          <div id="invoice-preview" className="bg-white p-8" style={{ fontFamily: "system-ui, sans-serif" }}>
+          <div id="invoice-preview" className="bg-white p-8" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-start gap-2">
-                <div className="w-14 h-14 rounded-full bg-[#7C1D2E]/60 flex items-center justify-center mt-1">
-                  <CakeIcon size={28} className="text-white" />
+                <div className="w-14 h-14 rounded-full bg-[#7C1D2E]/10 flex items-center justify-center mt-1 text-3xl">
+                  🍰
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-[#3D2B1F]">{settings?.business_name || "Doña Nina"}</h2>
-                  <p className="text-xs tracking-widest text-[#7C1D2E] uppercase mt-0.5">Bienestar & Salud</p>
-                  <p className="text-sm font-bold text-[#3D2B1F] mt-2">Distribuidor Independiente Amway</p>
-                  <p className="text-xs text-[#9C8A82] mt-0.5">Suplementos, cosmética y bienestar para toda la familia</p>
-                  <p className="text-xs text-[#9C8A82]">República Dominicana</p>
+                  <h2 className="text-xl font-extrabold text-[#3D2B1F]" style={{ letterSpacing: '-0.02em' }}>Donde Doña Nina</h2>
+                  <p className="text-xs tracking-widest text-[#7C1D2E] uppercase mt-0.5 font-semibold">Hechas con el amor de mamá</p>
+                  <p className="text-[10px] text-[#9C8A82] mt-0.5 font-medium">Sabor Dominicano</p>
                 </div>
               </div>
               <div className="text-right">
-                <span className="inline-block bg-[#F0EBE3] text-[#7C1D2E] text-xs font-bold px-4 py-2 rounded-full">FACTURA DE VENTA</span>
+                <span className="inline-block bg-[#FDF8F3] text-[#7C1D2E] text-xs font-bold px-4 py-2 rounded-full">FACTURA DE VENTA</span>
                 <p className="text-lg font-bold text-[#3D2B1F] mt-3">{jpgData.invoice_number}</p>
                 <p className="text-xs text-[#9C8A82] mt-0.5">Fecha: {formatDate(jpgData.invoice_date)}</p>
               </div>
             </div>
             <div className="border-t border-[#E8E0D8] mb-5" />
-            <div className="border border-[#E8E0D8] bg-[#FCFAF7] rounded-xl p-4 mb-5">
+            <div className="border border-[#E8E0D8] bg-[#FDF8F3] rounded-xl p-4 mb-5">
               <p className="text-xs font-bold text-[#7C1D2E] mb-3">CLIENTE / ADQUIRIENTE</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-                <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Nombre:</span> {jpgData.clients?.full_name}</p>
-                <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Teléfono:</span> {jpgData.clients?.phone || "—"}</p>
-                <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Email:</span> {jpgData.clients?.email || "N/D"}</p>
+                <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Nombre:</span> {jpgData.client?.full_name}</p>
+                <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Tel\u00e9fono:</span> {jpgData.client?.phone || "\u2014"}</p>
+                <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Email:</span> {jpgData.client?.email || "N/D"}</p>
               </div>
             </div>
             <table className="w-full text-sm mb-5">
               <thead>
-                <tr className="bg-[#F0EBE3]">
-                  <th className="py-2.5 px-3 text-left text-xs text-[#3D2B1F] font-bold">Submarca</th>
-                  <th className="py-2.5 px-3 text-left text-xs text-[#3D2B1F] font-bold">Descripción / Producto</th>
+                <tr className="bg-[#FDF8F3]">
+                  <th className="py-2.5 px-3 text-left text-xs text-[#3D2B1F] font-bold">Categor\u00eda</th>
+                  <th className="py-2.5 px-3 text-left text-xs text-[#3D2B1F] font-bold">Descripci\u00f3n / Producto</th>
                   <th className="py-2.5 px-3 text-right text-xs text-[#3D2B1F] font-bold">Cant.</th>
                   <th className="py-2.5 px-3 text-right text-xs text-[#3D2B1F] font-bold">Precio Unit.</th>
                   <th className="py-2.5 px-3 text-right text-xs text-[#3D2B1F] font-bold">Total</th>
                 </tr>
               </thead>
               <tbody>
-                  {(jpgData.invoice_items || []).map((item: any, i: number) => (
-                    <tr key={i} className="border-b border-[#F0EBE3]">
-                      <td className="py-2.5 px-3 text-xs text-[#9C8A82]">{item.products?.subbrands?.name || "—"}</td>
-                      <td className="py-2.5 px-3 text-sm text-[#3D2B1F]">{item.products?.name || item.custom_name || "Producto"}</td>
+                  {(jpgData.items || []).map((item: any, i: number) => (
+                    <tr key={i} className="border-b border-[#E8E0D8]">
+                      <td className="py-2.5 px-3 text-xs text-[#9C8A82]">{item.menu_item?.category?.name || "\u2014"}</td>
+                      <td className="py-2.5 px-3 text-sm text-[#3D2B1F]">{item.menu_item?.name || item.custom_name || "Producto"}</td>
                       <td className="py-2.5 px-3 text-right text-sm text-[#3D2B1F]">{item.quantity}</td>
                       <td className="py-2.5 px-3 text-right text-sm text-[#3D2B1F]">{formatCurrency(Number(item.unit_price))}</td>
                       <td className="py-2.5 px-3 text-right text-sm font-medium text-[#3D2B1F]">{formatCurrency(Number(item.line_total))}</td>
@@ -1181,11 +794,11 @@ export default function FacturacionPage() {
               </tbody>
             </table>
             {jpgData.bank_accounts && (
-              <div className="border border-[#E8E0D8] bg-[#FCFAF7] rounded-xl p-4 mb-5">
-                <p className="text-xs font-bold text-[#7C1D2E] mb-3">DATOS DE PAGO POR TRANSFERENCIA</p>
+              <div className="border border-[#E8E0D8] bg-[#FDF8F3] rounded-xl p-4 mb-5">
+                <p className="text-xs font-bold text-[#7C1D2E] mb-3">DATOS DE TRANSFERENCIA</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
                   <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Beneficiario:</span> {jpgData.bank_accounts.holder_name}</p>
-                  {jpgData.bank_accounts.id_number && <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Cédula/RNC:</span> {jpgData.bank_accounts.id_number}</p>}
+                  {jpgData.bank_accounts.id_number && <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">C\u00e9dula/RNC:</span> {jpgData.bank_accounts.id_number}</p>}
                   <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Banco:</span> {jpgData.bank_accounts.bank_name}</p>
                   <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">Tipo de Cuenta:</span> {jpgData.bank_accounts.account_type}</p>
                   <p className="text-[#3D2B1F]"><span className="text-[#9C8A82]">No. de Cuenta:</span> {jpgData.bank_accounts.account_number}</p>
@@ -1215,7 +828,7 @@ export default function FacturacionPage() {
                 <span>{formatCurrency(Number(jpgData.total))}</span>
               </div>
               {Number(jpgData.amount_paid) > 0 && (
-                <div className="flex justify-between text-sm text-[#5B9E6B] mb-1">
+                <div className="flex justify-between text-sm text-green-600 mb-1">
                   <span>Monto Cobrado</span>
                   <span>{formatCurrency(Number(jpgData.amount_paid))}</span>
                 </div>
@@ -1229,14 +842,14 @@ export default function FacturacionPage() {
             </div>
             <div className="border-t border-[#E8E0D8] pt-4 flex justify-between items-end">
               <div>
-                <p className="text-xs italic text-[#7C1D2E]">¡Gracias por tu compra y por apoyar a {settings?.business_name || "Doña Nina"}, aliados a tu bienestar!</p>
-                <p className="text-xs text-[#9C8A82] mt-1.5">Nutrilite · Artistry · Glister · G&H · Satinique · Amway Home</p>
+                <p className="text-xs italic text-[#7C1D2E] whitespace-nowrap">¡Gracias por tu compra! Hecho con el amor de mamá.</p>
+                <p className="text-[10px] text-[#9C8A82] mt-1.5 whitespace-nowrap">Donde Doña Nina · Hechas con el amor de mamá · Sabor Dominicano</p>
               </div>
               <div className="text-right">
                 {settings?.signature_url ? (
-                  <img src={settings.signature_url} alt="Firma" className="h-24 ml-auto" />
+                  <Image src={settings.signature_url} alt="Firma" width={96} height={96} className="h-24 w-auto ml-auto" unoptimized />
                 ) : (
-                  <p className="text-base italic text-[#3D2B1F] font-light" style={{ fontFamily: "Georgia, serif" }}>{settings?.business_name || "Doña Nina"}</p>
+                  <Image src="/firma-yrahisa-mateo.png" alt="Firma" width={96} height={96} className="h-24 w-auto ml-auto" />
                 )}
                 <p className="text-[9px] text-[#9C8A82] mt-0.5">FIRMA AUTORIZADA</p>
               </div>

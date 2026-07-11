@@ -1,666 +1,493 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import PageContainer from "@/components/layout/PageContainer";
-import { getSettings, updateSettings, getBankAccounts, createBankAccount, updateBankAccount, deleteBankAccount } from "@/services/settings";
-import type { Settings, BankAccount } from "@/types/database";
-import { Save, Plus, Trash2, Building2, Upload, Download, Database, Edit2 } from "lucide-react";
-import toast from "react-hot-toast";
-import { supabase } from "@/lib/supabase";
+import { useState, useEffect, useCallback } from 'react'
+import { Plus, Pencil, Trash2, Star, Download, Upload, Database, Users as UsersIcon } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import toast from 'react-hot-toast'
+import { PageContainer } from '@/components/layout/PageContainer'
+import { Modal } from '@/components/ui/Modal'
+import { cn } from '@/lib/utils'
+import {
+  getSettings,
+  updateSettings,
+  getBankAccounts,
+  createBankAccount,
+  updateBankAccount,
+  deleteBankAccount,
+} from '@/services/settings'
+import { getUsers, createUser, updateUser, deleteUser } from '@/services/users'
+import type { BankAccount, UserProfile } from '@/types/database'
+import { MODULES } from '@/types/database'
 
+const settingsSchema = z.object({
+  business_name: z.string().optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  address: z.string().optional().or(z.literal('')),
+  invoice_prefix: z.string().optional().or(z.literal('')),
+  receipt_prefix: z.string().optional().or(z.literal('')),
+  default_margin: z.number().optional(),
+  ai_client_prompt: z.string().optional().or(z.literal('')),
+  ai_learning_prompt: z.string().optional().or(z.literal('')),
+})
 
-type Tab = "general" | "ai" | "banks" | "backup";
+type SettingsFormData = z.infer<typeof settingsSchema>
 
-export default function ConfiguracionPage() {
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [banks, setBanks] = useState<BankAccount[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("general");
+const bankSchema = z.object({
+  bank_name: z.string().min(1, 'El nombre del banco es requerido'),
+  account_type: z.enum(['Ahorros', 'Corriente']),
+  account_number: z.string().min(1, 'El número de cuenta es requerido'),
+  holder_name: z.string().min(1, 'El titular es requerido'),
+  id_number: z.string().optional().or(z.literal('')),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  is_default: z.boolean().optional(),
+})
 
-  const [form, setForm] = useState({
-    business_name: "Doña Nina",
-    logo_url: "",
-    signature_url: "",
-    email: "",
-    phone: "",
-    sender_name: "",
-    default_margin: 30,
-    invoice_prefix: "FAC-",
-    receipt_prefix: "REC-",
-    purchase_prefix: "COM-",
-    email_template: `Hola, {{clientName}}.
+type BankFormData = z.infer<typeof bankSchema>
 
-Espero que te encuentres muy bien.
+export default function ConfigPage() {
+  const [activeTab, setActiveTab] = useState<'general' | 'bancos' | 'ai' | 'backup' | 'usuarios'>('general')
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
+  const [users, setUsers] = useState<UserProfile[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [bankModalOpen, setBankModalOpen] = useState(false)
+  const [editingBank, setEditingBank] = useState<BankAccount | null>(null)
+  const [userModalOpen, setUserModalOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null)
+  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'seller', permissions: [] as string[] })
+  const [userSaving, setUserSaving] = useState(false)
+  const [backingUp, setBackingUp] = useState(false)
 
-Te comparto adjunta {{label}} correspondiente a tu transacción realizada en {{businessName}}.
+  const settingsForm = useForm<SettingsFormData>({
+    resolver: zodResolver(settingsSchema),
+    defaultValues: {
+      business_name: '',
+      phone: '',
+      email: '',
+      address: '',
+      invoice_prefix: '',
+      receipt_prefix: '',
+      default_margin: undefined,
+      ai_client_prompt: '',
+      ai_learning_prompt: '',
+    },
+  })
 
-Si tienes alguna duda o necesitas asistencia, estaré encantada de ayudarte.
+  const bankForm = useForm<BankFormData>({
+    resolver: zodResolver(bankSchema),
+    defaultValues: {
+      bank_name: '',
+      account_type: 'Ahorros',
+      account_number: '',
+      holder_name: '',
+      id_number: '',
+      email: '',
+      is_default: false,
+    },
+  })
 
-Muchas gracias por tu confianza.
-
-Saludos,
-{{senderName}}`,
-    whatsapp_template: `Hola {{clientName}} 👋
-
-Te envío {{label}} {{documentNumber}} por un total de {{total}}.
-
-Gracias por tu confianza.
-
-{{businessName}}`,
-    smtp_host: "",
-    smtp_port: 587,
-    smtp_user: "",
-    smtp_pass: "",
-    smtp_secure: false,
-    ai_client_prompt: `Eres un asesor de ventas de Amway. Genera un análisis breve en español para el vendedor sobre este cliente:
-
-Cliente: {{clientName}}
-Etapa: {{stage}}
-Total facturado: RD\${{totalSpent}}
-Deuda pendiente: RD\${{pendingBalance}}
-Compras realizadas: {{numPurchases}}
-Productos favoritos: {{topProducts}}
-
-Responde SOLO en este formato (máximo 4 líneas):
-RESUMEN: [2 oraciones sobre el cliente]
-ABORDAJE: [1 sugerencia de cómo contactarlo y qué ofrecerle]`,
-    ai_learning_prompt: `Eres un coach de negocios. Basado en esta nota de aprendizaje, genera una reflexión útil y un consejo práctico:
-
-Título: {{title}}
-Contenido: {{content}}
-Etiquetas: {{tags}}
-
-Responde en español en máximo 3 oraciones:`,
-  });
-
-  const [newBank, setNewBank] = useState({
-    bank_name: "",
-    account_type: "",
-    account_number: "",
-    holder_name: "",
-    id_number: "",
-    email: "",
-    is_default: false,
-  });
-
-  const [editingBank, setEditingBank] = useState<string | null>(null);
-
-  useEffect(() => { loadData(); }, []);
-
-  async function loadData() {
+  const fetchSettings = useCallback(async () => {
     try {
-      const settingsData = await getSettings();
-      const banksData = await getBankAccounts();
-
-      if (settingsData) {
-        setSettings(settingsData);
-        setForm({
-          business_name: settingsData.business_name || "Doña Nina",
-          logo_url: settingsData.logo_url || "",
-          signature_url: settingsData.signature_url || "",
-          email: (settingsData as any).email || "",
-          phone: (settingsData as any).phone || "",
-          sender_name: (settingsData as any).sender_name || "",
-          email_template: (settingsData as any).email_template || `Hola, {{clientName}}.\n\nEspero que te encuentres muy bien.\n\nTe comparto adjunta {{label}} correspondiente a tu transacción realizada en {{businessName}}.\n\nSi tienes alguna duda o necesitas asistencia, estaré encantada de ayudarte.\n\nMuchas gracias por tu confianza.\n\nSaludos,\n{{senderName}}`,
-          whatsapp_template: (settingsData as any).whatsapp_template || `Hola {{clientName}} 👋\n\nTe envío {{label}} {{documentNumber}} por un total de {{total}}.\n\nGracias por tu confianza.\n\n{{businessName}}`,
-          smtp_host: (settingsData as any).smtp_host || "",
-          smtp_port: (settingsData as any).smtp_port || 587,
-          smtp_user: (settingsData as any).smtp_user || "",
-          smtp_pass: (settingsData as any).smtp_pass || "",
-          smtp_secure: (settingsData as any).smtp_secure || false,
-          ai_client_prompt: (settingsData as any).ai_client_prompt || `Eres un asesor de ventas de Amway. Genera un análisis breve en español para el vendedor sobre este cliente:
-
-Cliente: {{clientName}}
-Etapa: {{stage}}
-Total facturado: RD\${{totalSpent}}
-Deuda pendiente: RD\${{pendingBalance}}
-Compras realizadas: {{numPurchases}}
-Productos favoritos: {{topProducts}}
-
-Responde SOLO en este formato (máximo 4 líneas):
-RESUMEN: [2 oraciones sobre el cliente]
-ABORDAJE: [1 sugerencia de cómo contactarlo y qué ofrecerle]`,
-          ai_learning_prompt: (settingsData as any).ai_learning_prompt || `Eres un coach de negocios. Basado en esta nota de aprendizaje, genera una reflexión útil y un consejo práctico:
-
-Título: {{title}}
-Contenido: {{content}}
-Etiquetas: {{tags}}
-
-Responde en español en máximo 3 oraciones:`,
-          default_margin: settingsData.default_margin || 30,
-          invoice_prefix: settingsData.invoice_prefix || "FAC-",
-          receipt_prefix: settingsData.receipt_prefix || "REC-",
-          purchase_prefix: settingsData.purchase_prefix || "COM-",
-        });
+      const data = await getSettings()
+      if (data) {
+        settingsForm.reset({
+          business_name: data.business_name ?? '',
+          phone: data.phone ?? '',
+          email: data.email ?? '',
+          address: data.address ?? '',
+          invoice_prefix: data.invoice_prefix ?? '',
+          receipt_prefix: data.receipt_prefix ?? '',
+          default_margin: data.default_margin ?? undefined,
+          ai_client_prompt: data.ai_client_prompt ?? '',
+          ai_learning_prompt: data.ai_learning_prompt ?? '',
+        })
       }
-      setBanks(banksData as BankAccount[]);
-    } catch (err) {
-      console.error("loadData error:", err);
-    } finally {
-      setLoading(false);
+    } catch (err) { console.error('[ConfigPage] Error:', err); toast.error('Error al cargar la configuración') }
+  }, [settingsForm])
+
+  const fetchBankAccounts = useCallback(async () => {
+    try {
+      const data = await getBankAccounts()
+      setBankAccounts(data)
+    } catch (err) { console.error('[ConfigPage] Error:', err); toast.error('Error al cargar las cuentas bancarias') }
+  }, [])
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const data = await getUsers()
+      setUsers(data)
+    } catch (err) { console.error('[ConfigPage] Error:', err); toast.error('Error al cargar los usuarios') }
+  }, [])
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      await Promise.all([fetchSettings(), fetchBankAccounts(), fetchUsers()])
+      setLoading(false)
+    }
+    load()
+  }, [fetchSettings, fetchBankAccounts, fetchUsers])
+
+  async function handleSettingsSubmit(data: SettingsFormData) {
+    setSaving(true)
+    try {
+      await updateSettings(data)
+      toast.success('Configuración guardada correctamente')
+      await fetchSettings()
+    } catch (err) { console.error('[ConfigPage] Error:', err); toast.error('Error al guardar la configuración') }
+    finally {
+      setSaving(false)
     }
   }
 
-  async function handleSaveSettings() {
-    if (!settings) {
-      toast.error("No hay configuración cargada. Recarga la página.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const payload = {
-        id: settings.id,
-        business_name: form.business_name,
-        logo_url: form.logo_url,
-        signature_url: form.signature_url,
-        email: form.email,
-        phone: form.phone,
-        sender_name: form.sender_name,
-        email_template: form.email_template,
-        whatsapp_template: form.whatsapp_template,
-        smtp_host: form.smtp_host,
-        smtp_port: form.smtp_port,
-        smtp_user: form.smtp_user,
-        smtp_pass: form.smtp_pass,
-        smtp_secure: form.smtp_secure,
-        ai_client_prompt: form.ai_client_prompt,
-        ai_learning_prompt: form.ai_learning_prompt,
-        default_margin: form.default_margin,
-        invoice_prefix: form.invoice_prefix,
-        receipt_prefix: form.receipt_prefix,
-        purchase_prefix: form.purchase_prefix,
-      };
-      const result = await updateSettings(payload);
-      setSettings(result);
-      toast.success("Configuración guardada");
-    } catch (err: any) {
-      console.error("Save error:", err);
-      toast.error(err?.message || "Error al guardar configuración");
-    } finally { setSaving(false); }
+  function handleOpenBankCreate() {
+    setEditingBank(null)
+    bankForm.reset({
+      bank_name: '',
+      account_type: 'Ahorros',
+      account_number: '',
+      holder_name: '',
+      id_number: '',
+      email: '',
+      is_default: false,
+    })
+    setBankModalOpen(true)
   }
 
-  async function handleAddBank() {
-    if (!newBank.bank_name || !newBank.account_number) {
-      toast.error("Banco y número de cuenta son requeridos"); return;
-    }
+  function handleOpenBankEdit(account: BankAccount) {
+    setEditingBank(account)
+    bankForm.reset({
+      bank_name: account.bank_name,
+      account_type: account.account_type as 'Ahorros' | 'Corriente',
+      account_number: account.account_number,
+      holder_name: account.holder_name,
+      id_number: account.id_number ?? '',
+      email: account.email ?? '',
+      is_default: account.is_default,
+    })
+    setBankModalOpen(true)
+  }
+
+  async function handleBankSubmit(raw: BankFormData) {
     try {
+      const data = { ...raw, email: raw.email || '', id_number: raw.id_number || '', is_default: raw.is_default ?? false }
       if (editingBank) {
-        await updateBankAccount(editingBank, {
-          bank_name: newBank.bank_name,
-          account_type: newBank.account_type,
-          account_number: newBank.account_number,
-          holder_name: newBank.holder_name,
-          id_number: newBank.id_number,
-          email: newBank.email,
-        });
-        setBanks(banks.map((b) => b.id === editingBank ? { ...b, ...newBank } : b));
-        toast.success("Cuenta bancaria actualizada");
-        setEditingBank(null);
+        await updateBankAccount(editingBank.id, data)
+        toast.success('Cuenta bancaria actualizada correctamente')
       } else {
-        const created = await createBankAccount(newBank);
-        setBanks([...banks, created as BankAccount]);
-        toast.success("Cuenta bancaria agregada");
+        await createBankAccount(data)
+        toast.success('Cuenta bancaria creada correctamente')
       }
-      setNewBank({ bank_name: "", account_type: "", account_number: "", holder_name: "", id_number: "", email: "", is_default: false });
-    } catch {
-      toast.error(editingBank ? "Error al actualizar cuenta" : "Error al agregar cuenta bancaria");
-    }
+      setBankModalOpen(false)
+      await fetchBankAccounts()
+    } catch (err) { console.error('[ConfigPage] Error:', err); toast.error('Error al guardar la cuenta bancaria') }
   }
 
-  function openEditBank(bank: BankAccount) {
-    setEditingBank(bank.id);
-    setNewBank({
-      bank_name: bank.bank_name,
-      account_type: bank.account_type,
-      account_number: bank.account_number,
-      holder_name: bank.holder_name,
-      id_number: (bank as any).id_number || "",
-      email: (bank as any).email || "",
-      is_default: bank.is_default || false,
-    });
-  }
-
-  function cancelEditBank() {
-    setEditingBank(null);
-    setNewBank({ bank_name: "", account_type: "", account_number: "", holder_name: "", id_number: "", email: "", is_default: false });
-  }
-
-  async function handleDeleteBank(id: string) {
+  async function handleBankDelete(account: BankAccount) {
+    if (!window.confirm(`¿Estás seguro de eliminar la cuenta de ${account.bank_name}?`)) return
     try {
-      await deleteBankAccount(id);
-      setBanks(banks.filter((b) => b.id !== id));
-      toast.success("Cuenta bancaria eliminada");
-    } catch {
-      toast.error("Error al eliminar cuenta bancaria");
-    }
-  }
-
-  async function handleSetDefault(id: string) {
-    try {
-      await updateBankAccount(id, { is_default: true });
-      setBanks(banks.map((b) => ({ ...b, is_default: b.id === id })));
-      toast.success("Cuenta predeterminada actualizada");
-    } catch {
-      toast.error("Error al actualizar cuenta");
-    }
+      await deleteBankAccount(account.id)
+      toast.success('Cuenta bancaria eliminada correctamente')
+      await fetchBankAccounts()
+    } catch (err) { console.error('[ConfigPage] Error:', err); toast.error('Error al eliminar la cuenta bancaria') }
   }
 
   async function handleExportBackup() {
+    setBackingUp(true)
     try {
-      const [clients, products, invoices, receipts, purchases, expenses, bonuses, followups] = await Promise.all([
-        supabase.from("clients").select("*"),
-        supabase.from("products").select("*"),
-        supabase.from("invoices").select("*"),
-        supabase.from("receipts").select("*"),
-        supabase.from("purchases").select("*"),
-        supabase.from("expenses").select("*"),
-        supabase.from("bonuses").select("*"),
-        supabase.from("followups").select("*"),
-      ]);
-      const backup = {
-        version: "1.0",
-        date: new Date().toISOString(),
-        data: {
-          clients: clients.data || [],
-          products: products.data || [],
-          invoices: invoices.data || [],
-          receipts: receipts.data || [],
-          purchases: purchases.data || [],
-          expenses: expenses.data || [],
-          bonuses: bonuses.data || [],
-          followups: followups.data || [],
-        },
-      };
-      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `almaia-backup-${new Date().toISOString().split("T")[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("Backup exportado exitosamente");
-    } catch {
-      toast.error("Error al exportar backup");
+      const res = await fetch('/api/backup', { method: 'POST' })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Error al exportar backup')
+      }
+      const backup = await res.json()
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `donde-dona-nina-backup-${new Date().toISOString().split('T')[0]}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Backup exportado exitosamente')
+    } catch (err: any) {
+      toast.error(err.message || 'Error al exportar backup')
+    } finally {
+      setBackingUp(false)
+    }
+  }
+
+  function maskAccountNumber(number: string): string {
+    if (number.length <= 4) return number
+    return '****' + number.slice(-4)
+  }
+
+  function openUserCreate() {
+    setEditingUser(null)
+    setUserForm({ name: '', email: '', password: '', role: 'seller', permissions: [] })
+    setUserModalOpen(true)
+  }
+
+  function openUserEdit(user: UserProfile) {
+    setEditingUser(user)
+    setUserForm({ name: user.name, email: user.email, password: '', role: user.role, permissions: user.permissions || [] })
+    setUserModalOpen(true)
+  }
+
+  async function handleUserSubmit() {
+    if (!userForm.name || !userForm.email) { toast.error('Nombre y email requeridos'); return }
+    if (!editingUser && !userForm.password) { toast.error('Contraseña requerida'); return }
+    setUserSaving(true)
+    try {
+      if (editingUser) {
+        await updateUser(editingUser.id, {
+          name: userForm.name,
+          email: userForm.email,
+          role: userForm.role,
+          permissions: userForm.permissions,
+          ...(userForm.password ? { password: userForm.password } : {}),
+        })
+        toast.success('Usuario actualizado')
+      } else {
+        await createUser({ ...userForm, permissions: userForm.permissions })
+        toast.success('Usuario creado')
+      }
+      setUserModalOpen(false)
+      await fetchUsers()
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al guardar usuario')
+    } finally {
+      setUserSaving(false)
+    }
+  }
+
+  async function handleUserDelete(user: UserProfile) {
+    if (!window.confirm(`¿Estás seguro de eliminar a ${user.name}?`)) return
+    try {
+      await deleteUser(user.id)
+      toast.success('Usuario eliminado')
+      await fetchUsers()
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al eliminar usuario')
     }
   }
 
   if (loading) {
     return (
-      <PageContainer>
-        <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-2 border-[#7C1D2E] border-t-transparent rounded-full animate-spin" />
+      <PageContainer title="Configuración" subtitle="Ajustes del sistema">
+        <div className="flex items-center justify-center py-20">
+          <div className="h-8 w-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
         </div>
       </PageContainer>
-    );
+    )
   }
 
   return (
-    <PageContainer>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-[#3D2B1F]">Configuración</h1>
-        <p className="text-sm text-[#9C8A82] mt-1">Personaliza tu sistema</p>
+    <PageContainer title="Configuración" subtitle="Ajustes del sistema">
+      <div className="inline-flex gap-2 p-1 bg-[#FDF8F3] rounded-lg">
+        <button
+          onClick={() => setActiveTab('general')}
+          className={cn(
+            'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+            activeTab === 'general'
+              ? 'bg-[#7C1D2E] text-white'
+              : 'bg-[#FDF8F3] text-[#3D2B1F] hover:bg-gray-200'
+          )}
+        >
+          General
+        </button>
+        <button
+          onClick={() => setActiveTab('bancos')}
+          className={cn(
+            'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+            activeTab === 'bancos'
+              ? 'bg-[#7C1D2E] text-white'
+              : 'bg-[#FDF8F3] text-[#3D2B1F] hover:bg-gray-200'
+          )}
+        >
+          Bancos
+        </button>
+        <button
+          onClick={() => setActiveTab('ai')}
+          className={cn(
+            'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+            activeTab === 'ai'
+              ? 'bg-[#7C1D2E] text-white'
+              : 'bg-[#FDF8F3] text-[#3D2B1F] hover:bg-gray-200'
+          )}
+        >
+          Prompts IA
+        </button>
+        <button
+          onClick={() => setActiveTab('backup')}
+          className={cn(
+            'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+            activeTab === 'backup'
+              ? 'bg-[#7C1D2E] text-white'
+              : 'bg-[#FDF8F3] text-[#3D2B1F] hover:bg-gray-200'
+          )}
+        >
+          Backup
+        </button>
+        <button
+          onClick={() => setActiveTab('usuarios')}
+          className={cn(
+            'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+            activeTab === 'usuarios'
+              ? 'bg-[#7C1D2E] text-white'
+              : 'bg-[#FDF8F3] text-[#3D2B1F] hover:bg-gray-200'
+          )}
+        >
+          Usuarios
+        </button>
       </div>
 
-      <div className="border-b border-[#E8E0D8] mb-6">
-        <div className="flex gap-6">
-          {([["general", "Datos del Negocio"], ["ai", "Prompts IA"], ["banks", "Cuentas Bancarias"], ["backup", "Backup"]] as [Tab, string][]).map(([key, label]) => (
-            <button key={key} onClick={() => setActiveTab(key)}
-              className={`pb-3 text-sm font-medium transition-colors ${
-                activeTab === key ? "text-[#7C1D2E] border-b-2 border-[#7C1D2E]" : "text-[#9C8A82] hover:text-[#3D2B1F]"
-              }`}>{label}</button>
-          ))}
-        </div>
-      </div>
-
-      {activeTab === "general" && (
-        <div className="max-w-2xl space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0D8] space-y-5">
-            <h3 className="text-sm font-semibold text-[#3D2B1F]">Información del Negocio</h3>
-            <div className="grid grid-cols-2 gap-4">
+      {activeTab === 'general' && (
+        <div className="rounded-xl bg-white p-6 shadow-sm border border-[#E8E0D8]">
+          <form id="settings-form" onSubmit={settingsForm.handleSubmit(handleSettingsSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Nombre del Negocio</label>
-                <input type="text" value={form.business_name}
-                  onChange={(e) => setForm({ ...form, business_name: e.target.value })}
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Nombre del Negocio</label>
+                <input
+                  {...settingsForm.register('business_name')}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Margen Predeterminado</label>
-                <select value={form.default_margin}
-                  onChange={(e) => setForm({ ...form, default_margin: Number(e.target.value) })}
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30">
-                  <option value={30}>30%</option>
-                  <option value={35}>35%</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Email de envío</label>
-                <input type="email" value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="info@almaia-rd.com"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Nombre del remitente</label>
-                <input type="text" value={form.sender_name}
-                  onChange={(e) => setForm({ ...form, sender_name: e.target.value })}
-                  placeholder="Yrahisa Mateo"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Teléfono</label>
+                <input
+                  {...settingsForm.register('phone')}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                />
               </div>
             </div>
 
-            <div className="border-t border-[#E8E0D8] pt-5">
-              <h4 className="text-sm font-semibold text-[#3D2B1F] mb-3">Plantillas de Mensajes</h4>
-              <p className="text-xs text-[#9C8A82] mb-4">Usa <code className="text-[#7C1D2E]">{"{{clientName}}"}</code>, <code className="text-[#7C1D2E]">{"{{documentNumber}}"}</code>, <code className="text-[#7C1D2E]">{"{{businessName}}"}</code>, <code className="text-[#7C1D2E]">{"{{senderName}}"}</code>, <code className="text-[#7C1D2E]">{"{{total}}"}</code>, <code className="text-[#7C1D2E]">{"{{label}}"}</code></p>
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-[#9C8A82] mb-1">Plantilla Email</label>
-                  <textarea value={form.email_template} rows={8}
-                    onChange={(e) => setForm({ ...form, email_template: e.target.value })}
-                    placeholder="Hola, {{clientName}}..."
-                    className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#9C8A82] mb-1">Plantilla WhatsApp</label>
-                  <textarea value={form.whatsapp_template} rows={5}
-                    onChange={(e) => setForm({ ...form, whatsapp_template: e.target.value })}
-                    placeholder="Hola {{clientName}}..."
-                    className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-[#E8E0D8] pt-5">
-              <h4 className="text-sm font-semibold text-[#3D2B1F] mb-3">Servidor SMTP (Gmail)</h4>
-              <p className="text-xs text-[#9C8A82] mb-4">Configuración para enviar correos realmente. Para Gmail usa <strong>smtp.gmail.com</strong>, puerto <strong>587</strong>, y una <a href="https://support.google.com/accounts/answer/185833" target="_blank" className="text-[#7C1D2E] underline">Contraseña de Aplicación</a> de Google.</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-[#9C8A82] mb-1">Servidor SMTP</label>
-                  <input type="text" value={form.smtp_host}
-                    onChange={(e) => setForm({ ...form, smtp_host: e.target.value })}
-                    placeholder="smtp.gmail.com"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#9C8A82] mb-1">Puerto</label>
-                  <input type="number" value={form.smtp_port}
-                    onChange={(e) => setForm({ ...form, smtp_port: Number(e.target.value) })}
-                    placeholder="587"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#9C8A82] mb-1">Usuario (correo)</label>
-                  <input type="text" value={form.smtp_user}
-                    onChange={(e) => setForm({ ...form, smtp_user: e.target.value })}
-                    placeholder="tucorreo@gmail.com"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#9C8A82] mb-1">Contraseña / App Password</label>
-                  <input type="password" value={form.smtp_pass}
-                    onChange={(e) => setForm({ ...form, smtp_pass: e.target.value })}
-                    placeholder="••••••••"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-                </div>
-                <div className="flex items-center gap-3 h-11">
-                  <input type="checkbox" id="smtp_secure" checked={form.smtp_secure}
-                    onChange={(e) => setForm({ ...form, smtp_secure: e.target.checked })}
-                    className="w-4 h-4 rounded border-[#E8E0D8] text-[#7C1D2E] focus:ring-[#7C1D2E]/30" />
-                  <label htmlFor="smtp_secure" className="text-xs text-[#3D2B1F]">Usar SSL (puerto 465)</label>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Logo del Negocio</label>
-                <div className="flex items-center gap-3">
-                  {form.logo_url && (
-                    <img src={form.logo_url} alt="Logo" className="w-14 h-14 rounded-xl object-cover border border-[#E8E0D8]" />
-                  )}
-                  <label className="flex-1 flex items-center justify-center gap-2 h-11 px-4 rounded-xl border border-dashed border-[#E8E0D8] bg-[#FCFAF7] text-[#9C8A82] text-sm cursor-pointer hover:bg-[#FDF8F3] hover:border-[#7C1D2E]/30 transition-all">
-                    <Upload size={16} />
-                    {form.logo_url ? "Cambiar logo" : "Subir logo"}
-                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (ev) => setForm({ ...form, logo_url: ev.target?.result as string });
-                      reader.readAsDataURL(file);
-                    }} />
-                  </label>
-                </div>
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Email</label>
+                <input
+                  type="email"
+                  {...settingsForm.register('email')}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                />
+                {settingsForm.formState.errors.email && (
+                  <p className="text-[#E07A3A] text-xs mt-1">{settingsForm.formState.errors.email.message}</p>
+                )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Firma Digital</label>
-                <div className="flex items-center gap-3">
-                  {form.signature_url && (
-                    <img src={form.signature_url} alt="Firma" className="w-14 h-14 rounded-xl object-cover border border-[#E8E0D8]" />
-                  )}
-                  <label className="flex-1 flex items-center justify-center gap-2 h-11 px-4 rounded-xl border border-dashed border-[#E8E0D8] bg-[#FCFAF7] text-[#9C8A82] text-sm cursor-pointer hover:bg-[#FDF8F3] hover:border-[#7C1D2E]/30 transition-all">
-                    <Upload size={16} />
-                    {form.signature_url ? "Cambiar firma" : "Subir firma"}
-                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (ev) => setForm({ ...form, signature_url: ev.target?.result as string });
-                      reader.readAsDataURL(file);
-                    }} />
-                  </label>
-                </div>
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Margen por Defecto (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  {...settingsForm.register('default_margin', { valueAsNumber: true })}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                />
               </div>
             </div>
 
-            <div className="border-t border-[#E8E0D8] pt-5">
-              <h4 className="text-sm font-semibold text-[#3D2B1F] mb-3">Prefijos de Documentos</h4>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-[#9C8A82] mb-1">Facturas</label>
-                  <input type="text" value={form.invoice_prefix}
-                    onChange={(e) => setForm({ ...form, invoice_prefix: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#9C8A82] mb-1">Recibos</label>
-                  <input type="text" value={form.receipt_prefix}
-                    onChange={(e) => setForm({ ...form, receipt_prefix: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#9C8A82] mb-1">Compras</label>
-                  <input type="text" value={form.purchase_prefix}
-                    onChange={(e) => setForm({ ...form, purchase_prefix: e.target.value })}
-                    className="w-full h-10 px-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Dirección</label>
+              <textarea
+                {...settingsForm.register('address')}
+                rows={3}
+                className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Prefijo de Factura</label>
+                <input
+                  {...settingsForm.register('invoice_prefix')}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Prefijo de Recibo</label>
+                <input
+                  {...settingsForm.register('receipt_prefix')}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                />
               </div>
             </div>
-          </div>
 
-          <button onClick={handleSaveSettings} disabled={saving}
-            className="flex items-center gap-2 bg-[#7C1D2E] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50">
-            <Save size={18} /> {saving ? "Guardando..." : "Guardar Configuración"}
-          </button>
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-6 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors disabled:opacity-50"
+              >
+                {saving ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
-      {activeTab === "ai" && (
+      {activeTab === 'ai' && (
         <div className="max-w-2xl space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0D8] space-y-6">
+          <div className="rounded-xl bg-white p-6 shadow-sm border border-[#E8E0D8] space-y-6">
             <h3 className="text-sm font-semibold text-[#3D2B1F]">Prompts de Inteligencia Artificial</h3>
-            <p className="text-xs text-xs text-[#9C8A82]">
+            <p className="text-xs text-[#9C8A82]">
               Personaliza los prompts que usa la IA para generar resúmenes de clientes y analizar notas de aprendizaje.
-              Usa variables entre llaves dobles: <code className="text-[#7C1D2E] bg-[#FDF8F3] px-1.5 py-0.5 rounded text-[10px]">{"{{clientName}}"}</code>, <code className="text-[#7C1D2E] bg-[#FDF8F3] px-1.5 py-0.5 rounded text-[10px]">{"{{totalSpent}}"}</code>, etc.
+              Usa variables entre llaves dobles: <code className="text-[#7C1D2E] bg-[#7C1D2E]/10 px-1.5 py-0.5 rounded text-[10px]">{'{{clientName}}'}</code>, <code className="text-[#7C1D2E] bg-[#7C1D2E]/10 px-1.5 py-0.5 rounded text-[10px]">{'{{totalSpent}}'}</code>, etc.
             </p>
 
             <div>
-              <label className="block text-xs font-medium text-[#9C8A82] mb-2">Prompt para Resumen de Cliente</label>
+              <label className="block text-xs font-medium text-[#3D2B1F] mb-2">Prompt para Resumen de Cliente</label>
               <p className="text-[10px] text-[#9C8A82] mb-2">Se usa al generar resúmenes en Pipeline y reportes.</p>
               <textarea
-                value={form.ai_client_prompt}
-                onChange={(e) => setForm({ ...form, ai_client_prompt: e.target.value })}
+                {...settingsForm.register('ai_client_prompt')}
                 rows={10}
-                placeholder="Eres un asesor de ventas de Amway. Genera un resumen profesional en español (2-3 oraciones) sobre este cliente:
-
-Nombre: {{clientName}}
-Etapa: {{stage}}
-Total facturado: RD${{totalSpent}}
-Total pagado: RD${{totalPaid}}
-Facturas pendientes: {{pendingCount}}
-Ticket promedio: RD${{avgTicket}}
-Compras realizadas: {{numPurchases}}
-Productos favoritos: {{topProducts}}
-
-Destaca el valor del cliente, su comportamiento de pago, y sugiere oportunidades de venta."
-                className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 font-mono text-[11px]"
+                className="w-full resize-y px-4 py-3 rounded-lg border border-[#E8E0D8] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent font-mono text-[11px]"
               />
             </div>
 
             <div className="border-t border-[#E8E0D8] pt-6">
-              <label className="block text-xs font-medium text-[#9C8A82] mb-2">Prompt para Notas de Aprendizaje</label>
+              <label className="block text-xs font-medium text-[#3D2B1F] mb-2">Prompt para Notas de Aprendizaje</label>
               <p className="text-[10px] text-[#9C8A82] mb-2">Se usa al analizar notas en el módulo de Aprendizaje.</p>
               <textarea
-                value={form.ai_learning_prompt}
-                onChange={(e) => setForm({ ...form, ai_learning_prompt: e.target.value })}
+                {...settingsForm.register('ai_learning_prompt')}
                 rows={8}
-                placeholder="Eres un mentor de ventas. Analiza esta nota de aprendizaje y extrae la lección clave, el error cometido, y una acción correctiva concreta en español (máx. 3 oraciones):
-
-Título: {{title}}
-Contenido: {{content}}
-Etiquetas: {{tags}}
-
-Responde en formato:
-LECCIÓN: ...
-ERROR: ...
-ACCIÓN: ..."
-                className="w-full resize-y px-4 py-3 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 font-mono text-[11px]"
+                className="w-full resize-y px-4 py-3 rounded-lg border border-[#E8E0D8] text-[#3D2B1F] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent font-mono text-[11px]"
               />
             </div>
 
-            <div className="bg-[#FDF8F3] rounded-xl p-4 border border-[#E8E0D8]">
+            <div className="bg-[#FDF8F3] rounded-lg p-4 border border-[#E8E0D8]">
               <h4 className="text-xs font-semibold text-[#3D2B1F] mb-2">Variables disponibles</h4>
               <div className="grid grid-cols-2 gap-1 text-[10px] text-[#9C8A82] font-mono">
-                <span>{"{{clientName}}"}</span><span>{"{{stage}}"}</span>
-                <span>{"{{totalSpent}}"}</span><span>{"{{totalPaid}}"}</span>
-                <span>{"{{pendingCount}}"}</span><span>{"{{avgTicket}}"}</span>
-                <span>{"{{numPurchases}}"}</span><span>{"{{topProducts}}"}</span>
-                <span>{"{{title}}"}</span><span>{"{{content}}"}</span>
-                <span>{"{{tags}}"}</span><span>{"{{senderName}}"}</span>
-                <span>{"{{businessName}}"}</span><span>{"{{documentNumber}}"}</span>
-                <span>{"{{total}}"}</span><span>{"{{label}}"}</span>
+                <span>{'{{clientName}}'}</span><span>{'{{stage}}'}</span>
+                <span>{'{{totalSpent}}'}</span><span>{'{{totalPaid}}'}</span>
+                <span>{'{{pendingCount}}'}</span><span>{'{{avgTicket}}'}</span>
+                <span>{'{{numPurchases}}'}</span><span>{'{{topProducts}}'}</span>
+                <span>{'{{title}}'}</span><span>{'{{content}}'}</span>
+                <span>{'{{tags}}'}</span><span>{'{{senderName}}'}</span>
+                <span>{'{{businessName}}'}</span><span>{'{{documentNumber}}'}</span>
+                <span>{'{{total}}'}</span><span>{'{{label}}'}</span>
               </div>
             </div>
           </div>
 
-          <button onClick={handleSaveSettings} disabled={saving}
-            className="flex items-center gap-2 bg-[#7C1D2E] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm disabled:opacity-50">
-            <Save size={18} /> {saving ? "Guardando..." : "Guardar Configuración"}
-          </button>
-        </div>
-      )}
-
-      {activeTab === "banks" && (
-        <div className="max-w-2xl space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0D8]">
-            <h3 className="text-sm font-semibold text-[#3D2B1F] mb-4">{editingBank ? "Editar Cuenta Bancaria" : "Agregar Cuenta Bancaria"}</h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Banco</label>
-                <input type="text" value={newBank.bank_name}
-                  onChange={(e) => setNewBank({ ...newBank, bank_name: e.target.value })}
-                  placeholder="Ej: Banco Popular Dominicano"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Tipo de Cuenta</label>
-                <input type="text" value={newBank.account_type}
-                  onChange={(e) => setNewBank({ ...newBank, account_type: e.target.value })}
-                  placeholder="Ej: Cuenta Corriente DOP"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Número de Cuenta</label>
-                <input type="text" value={newBank.account_number}
-                  onChange={(e) => setNewBank({ ...newBank, account_number: e.target.value })}
-                  placeholder="Ej: 772922126"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Titular</label>
-                <input type="text" value={newBank.holder_name}
-                  onChange={(e) => setNewBank({ ...newBank, holder_name: e.target.value })}
-                  placeholder="Ej: Yrahisa Mateo"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Cédula / RNC</label>
-                <input type="text" value={newBank.id_number}
-                  onChange={(e) => setNewBank({ ...newBank, id_number: e.target.value })}
-                  placeholder="Ej: 001-1234567-8"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#9C8A82] mb-1">Correo Electrónico</label>
-                <input type="email" value={newBank.email}
-                  onChange={(e) => setNewBank({ ...newBank, email: e.target.value })}
-                  placeholder="Ej: correo@ejemplo.com"
-                  className="w-full h-11 px-4 rounded-xl border border-[#E8E0D8] bg-[#FCFAF7] text-[#3D2B1F] placeholder-[#9C8A82] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30" />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={handleAddBank}
-                className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm">
-                <Save size={18} /> {editingBank ? "Actualizar Cuenta" : "Agregar Cuenta"}
-              </button>
-              {editingBank && (
-                <button onClick={cancelEditBank}
-                  className="px-5 py-2.5 rounded-xl border border-[#E8E0D8] text-[#3D2B1F] text-sm font-medium hover:bg-[#FDF8F3] transition-all">
-                  Cancelar
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {banks.length === 0 ? (
-              <div className="text-center py-12 text-[#9C8A82] bg-white rounded-2xl border border-[#E8E0D8]">
-                <Building2 size={40} className="mx-auto mb-3 opacity-40" />
-                <p className="text-sm">No hay cuentas bancarias registradas</p>
-              </div>
-            ) : (
-              banks.map((bank) => (
-                <div key={bank.id} className="bg-white rounded-2xl p-5 shadow-sm border border-[#E8E0D8] flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-[#3D2B1F]">{bank.bank_name}</p>
-                    <p className="text-sm text-[#9C8A82]">{bank.account_type} — {bank.account_number}</p>
-                    <p className="text-xs text-[#9C8A82]">{bank.holder_name}</p>
-                    {(bank as any).id_number && <p className="text-xs text-[#9C8A82]">Cédula: {(bank as any).id_number}</p>}
-                    {(bank as any).email && <p className="text-xs text-[#9C8A82]">{(bank as any).email}</p>}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {bank.is_default ? (
-                      <span className="text-xs bg-[#5B9E6B]/10 text-[#5B9E6B] px-3 py-1 rounded-full font-medium">Predeterminada</span>
-                    ) : (
-                      <button onClick={() => handleSetDefault(bank.id)}
-                        className="text-xs text-[#9C8A82] hover:text-[#7C1D2E] transition-colors">Establecer como predeterminada</button>
-                    )}
-                    <button onClick={() => openEditBank(bank)}
-                      className="p-2 text-[#9C8A82] hover:text-[#3D2B1F] hover:bg-[#FDF8F3] rounded-lg transition-colors"><Edit2 size={16} /></button>
-                    <button onClick={() => handleDeleteBank(bank.id)}
-                      className="p-2 text-[#E07A3A] hover:bg-[#E07A3A]/10 rounded-lg transition-colors"><Trash2 size={16} /></button>
-                  </div>
-                </div>
-              ))
-            )}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              form="settings-form"
+              disabled={saving}
+              className="px-6 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors disabled:opacity-50"
+            >
+              {saving ? 'Guardando...' : 'Guardar Configuración'}
+            </button>
           </div>
         </div>
       )}
 
-      {activeTab === "backup" && (
+      {activeTab === 'backup' && (
         <div className="max-w-2xl space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0D8]">
+          <div className="rounded-xl bg-white p-6 shadow-sm border border-[#E8E0D8]">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-[#2C4A6E]/10 flex items-center justify-center">
                 <Database size={20} className="text-blue-600" />
               </div>
               <div>
@@ -668,15 +495,20 @@ ACCIÓN: ..."
                 <p className="text-xs text-[#9C8A82]">Descarga todos los datos del sistema en formato JSON</p>
               </div>
             </div>
-            <button onClick={handleExportBackup}
-              className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5C1420] transition-all shadow-sm">
-              <Download size={18} /> Descargar Backup
+            <button onClick={handleExportBackup} disabled={backingUp}
+              className="flex items-center gap-2 bg-[#7C1D2E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors shadow-sm disabled:opacity-50">
+              {backingUp ? (
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Download size={18} />
+              )}
+              {backingUp ? 'Exportando...' : 'Descargar Backup'}
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0D8]">
+          <div className="rounded-xl bg-white p-6 shadow-sm border border-[#E8E0D8]">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-[#5B9E6B]/10 flex items-center justify-center">
                 <Upload size={20} className="text-green-600" />
               </div>
               <div>
@@ -685,21 +517,376 @@ ACCIÓN: ..."
               </div>
             </div>
             <input type="file" accept=".json" onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
+              const file = e.target.files?.[0]
+              if (!file) return
               try {
-                const text = await file.text();
-                const backup = JSON.parse(text);
-                if (!backup.data) { toast.error("Archivo de backup inválido"); return; }
-                toast.success("Backup importado (funcionalidad en desarrollo)");
+                const text = await file.text()
+                const backup = JSON.parse(text)
+                if (!backup.data) { toast.error('Archivo de backup inválido'); return }
+                toast.success('Backup importado (funcionalidad en desarrollo)')
               } catch {
-                toast.error("Error al leer el archivo");
+                toast.error('Error al leer el archivo')
               }
             }}
-              className="block w-full text-sm text-[#9C8A82] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-[#FDF8F3] file:text-[#3D2B1F] hover:file:bg-[#F0EBE3]" />
+              className="block w-full text-sm text-[#9C8A82] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#FDF8F3] file:text-[#3D2B1F] hover:file:bg-gray-200" />
           </div>
         </div>
       )}
+
+      {activeTab === 'bancos' && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button
+              onClick={handleOpenBankCreate}
+              className="flex items-center gap-2 px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Agregar Cuenta
+            </button>
+          </div>
+
+          <div className="rounded-xl bg-white shadow-sm border border-[#E8E0D8] overflow-hidden">
+            {bankAccounts.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-sm text-[#9C8A82]">No hay cuentas bancarias configuradas</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#E8E0D8] bg-[#FDF8F3]">
+                      <th className="text-left py-3 px-4 font-medium text-[#9C8A82]">Banco</th>
+                      <th className="text-left py-3 px-4 font-medium text-[#9C8A82]">Tipo</th>
+                      <th className="text-left py-3 px-4 font-medium text-[#9C8A82]">Número</th>
+                      <th className="text-left py-3 px-4 font-medium text-[#9C8A82]">Titular</th>
+                      <th className="text-left py-3 px-4 font-medium text-[#9C8A82]"></th>
+                      <th className="text-right py-3 px-4 font-medium text-[#9C8A82]">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bankAccounts.map((account) => (
+                      <tr key={account.id} className="border-b border-gray-50 hover:bg-[#FDF8F3]">
+                        <td className="py-3 px-4 text-[#3D2B1F] font-medium">
+                          {account.bank_name}
+                          {account.is_default && (
+                            <Star className="inline-block h-3.5 w-3.5 text-yellow-500 ml-1.5 -mt-0.5" />
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-[#3D2B1F]">{account.account_type}</td>
+                        <td className="py-3 px-4 text-[#9C8A82] font-mono">{maskAccountNumber(account.account_number)}</td>
+                        <td className="py-3 px-4 text-[#3D2B1F]">{account.holder_name}</td>
+                        <td className="py-3 px-4">
+                          {account.is_default && (
+                            <span className="inline-flex items-center rounded-full bg-yellow-100 text-yellow-800 px-2.5 py-0.5 text-xs font-medium">
+                              Default
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleOpenBankEdit(account)}
+                              className="p-1.5 rounded-lg text-[#9C8A82] hover:bg-[#FDF8F3] hover:text-gray-600 transition-colors"
+                              aria-label="Editar"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleBankDelete(account)}
+                              className="p-1.5 rounded-lg text-[#9C8A82] hover:bg-[#7C1D2E]/10 hover:text-[#7C1D2E] transition-colors"
+                              aria-label="Eliminar"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <Modal
+            isOpen={bankModalOpen}
+            onClose={() => setBankModalOpen(false)}
+            title={editingBank ? 'Editar Cuenta Bancaria' : 'Agregar Cuenta Bancaria'}
+            size="md"
+          >
+            <form onSubmit={bankForm.handleSubmit(handleBankSubmit)} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                  Banco <span className="text-[#E07A3A]">*</span>
+                </label>
+                <input
+                  {...bankForm.register('bank_name')}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                />
+                {bankForm.formState.errors.bank_name && (
+                  <p className="text-[#E07A3A] text-xs mt-1">{bankForm.formState.errors.bank_name.message}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                    Tipo <span className="text-[#E07A3A]">*</span>
+                  </label>
+                  <select
+                    {...bankForm.register('account_type')}
+                    className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                  >
+                    <option value="Ahorros">Ahorros</option>
+                    <option value="Corriente">Corriente</option>
+                  </select>
+                  {bankForm.formState.errors.account_type && (
+                    <p className="text-[#E07A3A] text-xs mt-1">{bankForm.formState.errors.account_type.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                    Número de Cuenta <span className="text-[#E07A3A]">*</span>
+                  </label>
+                  <input
+                    {...bankForm.register('account_number')}
+                    className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                  />
+                  {bankForm.formState.errors.account_number && (
+                    <p className="text-[#E07A3A] text-xs mt-1">{bankForm.formState.errors.account_number.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                    Titular <span className="text-[#E07A3A]">*</span>
+                  </label>
+                  <input
+                    {...bankForm.register('holder_name')}
+                    className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                  />
+                  {bankForm.formState.errors.holder_name && (
+                    <p className="text-[#E07A3A] text-xs mt-1">{bankForm.formState.errors.holder_name.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Cédula / RNC</label>
+                  <input
+                    {...bankForm.register('id_number')}
+                    className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Email</label>
+                <input
+                  type="email"
+                  {...bankForm.register('email')}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                />
+                {bankForm.formState.errors.email && (
+                  <p className="text-[#E07A3A] text-xs mt-1">{bankForm.formState.errors.email.message}</p>
+                )}
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...bankForm.register('is_default')}
+                  className="rounded border-gray-300 text-[#7C1D2E] focus:ring-[#7C1D2E]/30"
+                />
+                <span className="text-sm text-[#3D2B1F]">Cuenta predeterminada</span>
+              </label>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setBankModalOpen(false)}
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-[#3D2B1F] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors"
+                >
+                  {editingBank ? 'Guardar Cambios' : 'Agregar Cuenta'}
+                </button>
+              </div>
+            </form>
+          </Modal>
+        </div>
+      )}
+
+      {activeTab === 'usuarios' && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button
+              onClick={openUserCreate}
+              className="flex items-center gap-2 px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors"
+            >
+              <UsersIcon className="h-4 w-4" />
+              Nuevo Usuario
+            </button>
+          </div>
+
+          <div className="rounded-xl bg-white shadow-sm border border-[#E8E0D8] overflow-hidden">
+            {users.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-sm text-[#9C8A82]">No hay usuarios registrados</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#E8E0D8] bg-[#FDF8F3]">
+                      <th className="text-left py-3 px-4 font-medium text-[#9C8A82]">Nombre</th>
+                      <th className="text-left py-3 px-4 font-medium text-[#9C8A82]">Email</th>
+                      <th className="text-left py-3 px-4 font-medium text-[#9C8A82]">Rol</th>
+                      <th className="text-right py-3 px-4 font-medium text-[#9C8A82]">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <tr key={user.id} className="border-b border-gray-50 hover:bg-[#FDF8F3]">
+                        <td className="py-3 px-4 text-[#3D2B1F] font-medium">{user.name}</td>
+                        <td className="py-3 px-4 text-[#3D2B1F]">{user.email}</td>
+                        <td className="py-3 px-4">
+                          <span className={cn(
+                            'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+                            user.role === 'admin' ? 'bg-red-100 text-red-800' :
+                            user.role === 'seller' ? 'bg-blue-100 text-blue-800' :
+                            'bg-[#FDF8F3] text-[#3D2B1F]'
+                          )}>
+                            {user.role === 'admin' ? 'Admin' : user.role === 'seller' ? 'Vendedor' : 'Asistente'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openUserEdit(user)}
+                              className="p-1.5 rounded-lg text-[#9C8A82] hover:bg-[#FDF8F3] hover:text-gray-600 transition-colors"
+                              aria-label="Editar"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleUserDelete(user)}
+                              className="p-1.5 rounded-lg text-[#9C8A82] hover:bg-[#7C1D2E]/10 hover:text-[#7C1D2E] transition-colors"
+                              aria-label="Eliminar"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <Modal
+            isOpen={userModalOpen}
+            onClose={() => setUserModalOpen(false)}
+            title={editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
+            size="md"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                  Nombre <span className="text-[#E07A3A]">*</span>
+                </label>
+                <input
+                  value={userForm.name}
+                  onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                  Email <span className="text-[#E07A3A]">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={userForm.email}
+                  onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                  Contraseña {!editingUser && <span className="text-[#E07A3A]">*</span>}
+                  {editingUser && <span className="text-[#9C8A82] text-xs ml-1">(dejar vacío para mantener)</span>}
+                </label>
+                <input
+                  type="password"
+                  value={userForm.password}
+                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Rol</label>
+                <select
+                  value={userForm.role}
+                  onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7C1D2E]/30 focus:border-transparent"
+                >
+                  <option value="seller">Vendedor</option>
+                  <option value="assistant">Asistente</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              {userForm.role !== 'admin' && (
+                <div>
+                  <label className="block text-sm font-medium text-[#3D2B1F] mb-2">Acceso a Módulos</label>
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border border-[#E8E0D8] rounded-lg p-3">
+                    {MODULES.map((mod) => (
+                      <label key={mod.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input
+                          type="checkbox"
+                          checked={userForm.permissions.includes(mod.key)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setUserForm({ ...userForm, permissions: [...userForm.permissions, mod.key] })
+                            } else {
+                              setUserForm({ ...userForm, permissions: userForm.permissions.filter(p => p !== mod.key) })
+                            }
+                          }}
+                          className="rounded border-gray-300 text-[#7C1D2E] focus:ring-[#7C1D2E]/30"
+                        />
+                        {mod.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setUserModalOpen(false)}
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-[#3D2B1F] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleUserSubmit}
+                  disabled={userSaving}
+                  className="px-4 py-2 bg-[#7C1D2E] text-white rounded-lg text-sm font-medium hover:bg-[#5C1420] transition-colors disabled:opacity-50"
+                >
+                  {userSaving ? 'Guardando...' : editingUser ? 'Guardar Cambios' : 'Crear Usuario'}
+                </button>
+              </div>
+            </div>
+          </Modal>
+        </div>
+      )}
     </PageContainer>
-  );
+  )
 }
