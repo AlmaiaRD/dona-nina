@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
-import CakeIcon from '@/components/ui/CakeIcon'
+import LogoDonaNina from '@/components/ui/LogoDonaNina'
 import toast from 'react-hot-toast'
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -139,9 +139,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-[#E8E0D8]">
           <div className="text-center mb-8">
-            <div className="inline-flex h-16 w-16 rounded-full bg-[#7C1D2E]/60 items-center justify-center mb-4">
-              <CakeIcon size={32} className="text-white" />
-            </div>
+            <LogoDonaNina size={64} className="mb-4" />
             <h1 className="text-2xl font-bold text-[#3D2B1F]">Donde Doña Nina</h1>
             <p className="text-[#9C8A82] text-sm mt-1">Sistema de Gestión</p>
           </div>

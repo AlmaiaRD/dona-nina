@@ -1,9 +1,11 @@
 import Link from 'next/link'
+import LogoDonaNina from '@/components/ui/LogoDonaNina'
 
 export default function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FCFAF7]">
       <div className="text-center space-y-4">
+        <LogoDonaNina size={80} className="mb-4" />
         <div className="text-8xl font-bold text-[#7C1D2E]">404</div>
         <h1 className="text-2xl font-bold text-[#3D2B1F]">Página no encontrada</h1>
         <p className="text-[#9C8A82]">La página que buscas no existe.</p>

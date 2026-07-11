@@ -2,7 +2,7 @@
 
 import { ArrowRight, FileText, Receipt, Users, Package, BarChart3, Truck, UtensilsCrossed } from 'lucide-react'
 import Link from 'next/link'
-import CakeIcon from '@/components/ui/CakeIcon'
+import LogoDonaNina from '@/components/ui/LogoDonaNina'
 
 const features = [
   { icon: UtensilsCrossed, label: 'Menú', desc: 'Gestiona tu menú de arepas, empanadas y bebidas' },
@@ -20,9 +20,7 @@ export default function LandingPage() {
       <header className="px-6 py-4 border-b border-[#E8E0D8] bg-white">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#7C1D2E]/60 flex items-center justify-center">
-              <CakeIcon size={20} className="text-white" />
-            </div>
+            <LogoDonaNina size={40} />
             <div>
               <h1 className="text-lg font-semibold text-[#3D2B1F] leading-tight">Donde Doña Nina</h1>
               <p className="text-[10px] text-[#9C8A82] tracking-widest uppercase leading-tight">Sabor Dominicano</p>

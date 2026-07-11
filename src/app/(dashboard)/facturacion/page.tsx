@@ -17,6 +17,7 @@ import type { Client, BankAccount, Setting } from "@/types/database";
 import { formatCurrency, formatDate, getLocalDateString, sanitizeHtml } from "@/lib/utils";
 import { FileText, Plus, Save, DollarSign, Download, Mail, MessageCircle } from "lucide-react";
 import Image from "next/image";
+import LogoDonaNina from "@/components/ui/LogoDonaNina";
 import toast from "react-hot-toast";
 
 
@@ -150,8 +151,41 @@ export default function FacturacionPage() {
     el.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
         <div style="display:flex;align-items:flex-start;gap:8px;flex-shrink:0;">
-          <div style="width:56px;height:56px;border-radius:50%;background:rgba(220,38,38,0.1);display:flex;align-items:center;justify-content:center;margin-top:4px;font-size:28px;flex-shrink:0;">
-            🍰
+          <div style="width:56px;height:56px;flex-shrink:0;">
+            <svg width="56" height="56" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="60" cy="60" r="58" fill="#F8F7F4"/>
+              <circle cx="60" cy="60" r="58" stroke="#7C1D2E" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <circle cx="60" cy="60" r="55" stroke="#7C1D2E" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+              <g stroke="#7C1D2E" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <g transform="translate(60,60) rotate(-24) translate(-60,-60)">
+                  <path d="M57 65 C52 78 45 92 40 99" stroke-width="3.2"/>
+                  <path d="M63 65 C68 78 75 92 80 99" stroke-width="3.2"/>
+                  <path d="M40 99 C45 102 52 102 60 102 C68 102 75 102 80 99" stroke-width="2.8"/>
+                  <path d="M46 58 C41 47 36 38 32 30" stroke-width="2.5"/>
+                  <path d="M51 57 C47 47 43 38 40 29" stroke-width="2.5"/>
+                  <path d="M56 56 C53 46 50 37 48 28" stroke-width="2.5"/>
+                  <path d="M60 56 C58 46 56 37 55 28" stroke-width="2.5"/>
+                  <path d="M46 58 C51 62 55 63 57 65" stroke-width="2.5"/>
+                  <path d="M60 56 C62 60 63 62 63 65" stroke-width="2.5"/>
+                </g>
+                <g transform="translate(60,60) rotate(24) translate(-60,-60)">
+                  <path d="M57 65 C52 78 47 92 44 99" stroke-width="3.2"/>
+                  <path d="M63 65 C63 78 63 92 63 99" stroke-width="2.2"/>
+                  <path d="M44 99 C48 102 55 102 60 102 C65 102 72 102 63 99" stroke-width="2.8"/>
+                  <path d="M52 58 C47 48 44 38 46 30" stroke-width="2.2"/>
+                  <path d="M64 58 C68 48 72 38 74 30" stroke-width="2.8"/>
+                  <path d="M46 30 C52 27 64 27 74 30" stroke-width="2.2"/>
+                  <path d="M52 58 C56 60 60 60 64 58" stroke-width="2.5"/>
+                </g>
+              </g>
+              <path d="M60 47 C57 43 54 40 52 42 C48 46 52 50 60 56 C68 50 72 46 68 42 C66 40 63 43 60 47 Z" fill="#7C1D2E"/>
+              <g stroke="#7C1D2E" stroke-width="1.8" stroke-linecap="round" fill="none">
+                <line x1="30" y1="54" x2="30" y2="59"/>
+                <line x1="30" y1="62" x2="30" y2="67"/>
+                <line x1="90" y1="54" x2="90" y2="59"/>
+                <line x1="90" y1="62" x2="90" y2="67"/>
+              </g>
+            </svg>
           </div>
           <div style="white-space:nowrap;">
             <h2 style="font-size:26px;font-weight:800;color:#111827;margin:0;line-height:1.1;letter-spacing:-0.02em;">Donde Doña Nina</h2>
@@ -446,9 +480,7 @@ export default function FacturacionPage() {
               {/* A. HEADER */}
               <div className="flex justify-between items-start mb-6">
                 <div className="flex items-start gap-2">
-                  <div className="w-14 h-14 rounded-full bg-[#7C1D2E]/10 flex items-center justify-center mt-1 text-3xl">
-                    🍰
-                  </div>
+                  <LogoDonaNina size={56} className="mt-1" />
                   <div>
                     <h2 className="text-xl font-extrabold text-[#3D2B1F]" style={{ letterSpacing: '-0.02em' }}>Donde Doña Nina</h2>
                     <p className="text-xs tracking-widest text-[#7C1D2E] uppercase mt-0.5 font-semibold">Hechas con el amor de mamá</p>
@@ -747,10 +779,8 @@ export default function FacturacionPage() {
           <div id="invoice-preview" className="bg-white p-8" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-start gap-2">
-                <div className="w-14 h-14 rounded-full bg-[#7C1D2E]/10 flex items-center justify-center mt-1 text-3xl">
-                  🍰
-                </div>
-                <div>
+                  <LogoDonaNina size={56} className="mt-1" />
+                  <div>
                   <h2 className="text-xl font-extrabold text-[#3D2B1F]" style={{ letterSpacing: '-0.02em' }}>Donde Doña Nina</h2>
                   <p className="text-xs tracking-widest text-[#7C1D2E] uppercase mt-0.5 font-semibold">Hechas con el amor de mamá</p>
                   <p className="text-[10px] text-[#9C8A82] mt-0.5 font-medium">Sabor Dominicano</p>

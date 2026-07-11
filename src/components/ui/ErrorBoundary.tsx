@@ -1,7 +1,8 @@
 'use client'
 
 import { Component, type ReactNode } from 'react'
-import { CakeSlice, RefreshCw } from 'lucide-react'
+import LogoDonaNina from '@/components/ui/LogoDonaNina'
+import { RefreshCw } from 'lucide-react'
 
 interface Props {
   children: ReactNode
@@ -31,9 +32,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen bg-[#FCFAF7] flex items-center justify-center p-4">
           <div className="text-center max-w-md">
-            <div className="inline-flex h-16 w-16 rounded-2xl bg-[#7C1D2E] items-center justify-center mb-4">
-              <CakeSlice className="h-9 w-9 text-yellow-400" />
-            </div>
+            <LogoDonaNina size={64} className="mb-4" />
             <h1 className="text-xl font-bold text-[#3D2B1F] mb-2">Algo salió mal</h1>
             <p className="text-[#9C8A82] text-sm mb-6">Ocurrió un error inesperado. Intenta recargar la página.</p>
             <button

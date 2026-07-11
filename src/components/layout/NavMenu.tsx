@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import CakeIcon from '@/components/ui/CakeIcon'
+import LogoDonaNina from '@/components/ui/LogoDonaNina'
 import {
   LayoutDashboard, Utensils, Users, FileText, Receipt, Truck,
   Package, Wallet, CreditCard, DollarSign, UserCheck, MessageSquare,
@@ -56,9 +56,7 @@ export function NavMenu({ isOpen, onClose }: NavMenuProps) {
       )}>
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-[#7C1D2E]/60 flex items-center justify-center">
-              <CakeIcon size={18} className="text-white" />
-            </div>
+            <LogoDonaNina size={32} />
             <div>
               <h2 className="text-sm font-bold text-white">Doña Nina</h2>
               <p className="text-[10px] text-[#9C8A82]">Sistema de Gestión</p>
