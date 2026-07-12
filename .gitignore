@@ -45,3 +45,4 @@ next-env.d.ts
 debug-*
 docs/CREDENCIALES.md
 Sistema de Facturacion/
+*.svg
