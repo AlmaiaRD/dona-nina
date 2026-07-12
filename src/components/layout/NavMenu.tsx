@@ -56,7 +56,7 @@ export function NavMenu({ isOpen, onClose }: NavMenuProps) {
       )}>
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
           <div className="flex items-center gap-2">
-            <LogoDonaNina size={32} />
+            <LogoDonaNina size={42} variant="white" />
             <div>
               <h2 className="text-sm font-bold text-white">Doña Nina</h2>
               <p className="text-[10px] text-[#9C8A82]">Sistema de Gestión</p>

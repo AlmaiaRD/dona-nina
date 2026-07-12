@@ -480,7 +480,7 @@ export default function FacturacionPage() {
               {/* A. HEADER */}
               <div className="flex justify-between items-start mb-6">
                 <div className="flex items-start gap-2">
-                  <LogoDonaNina size={56} className="mt-1" />
+                  <LogoDonaNina size={73} className="mt-1" />
                   <div>
                     <h2 className="text-xl font-extrabold text-[#3D2B1F]" style={{ letterSpacing: '-0.02em' }}>Donde Doña Nina</h2>
                     <p className="text-xs tracking-widest text-[#7C1D2E] uppercase mt-0.5 font-semibold">Hechas con el amor de mamá</p>
@@ -779,7 +779,7 @@ export default function FacturacionPage() {
           <div id="invoice-preview" className="bg-white p-8" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-start gap-2">
-                  <LogoDonaNina size={56} className="mt-1" />
+                  <LogoDonaNina size={73} className="mt-1" />
                   <div>
                   <h2 className="text-xl font-extrabold text-[#3D2B1F]" style={{ letterSpacing: '-0.02em' }}>Donde Doña Nina</h2>
                   <p className="text-xs tracking-widest text-[#7C1D2E] uppercase mt-0.5 font-semibold">Hechas con el amor de mamá</p>

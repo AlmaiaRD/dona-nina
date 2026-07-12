@@ -20,7 +20,7 @@ export default function LandingPage() {
       <header className="px-6 py-4 border-b border-[#E8E0D8] bg-white">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <LogoDonaNina size={40} />
+            <LogoDonaNina size={52} />
             <div>
               <h1 className="text-lg font-semibold text-[#3D2B1F] leading-tight">Donde Doña Nina</h1>
               <p className="text-[10px] text-[#9C8A82] tracking-widest uppercase leading-tight">Sabor Dominicano</p>
