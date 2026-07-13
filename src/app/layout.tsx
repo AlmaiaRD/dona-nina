@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#800020',
+  themeColor: '#7C1D2E',
 }
 
 export default function RootLayout({
@@ -39,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable}`}>
       <head>
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/icon-192x192.png?v=2" />
         <script
           src="/register-sw.js"
           defer
