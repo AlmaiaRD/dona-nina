@@ -14,7 +14,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Donde Doña Nina - Sistema de Gestión',
   description: 'Sistema de gestión comercial para Donde Doña Nina',
-  manifest: '/manifest.json',
+  manifest: '/manifest.json?v=2',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -39,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable}`}>
       <head>
-        <link rel="apple-touch-icon" href="/icon-192x192.png?v=2" />
+        <link rel="apple-touch-icon" href="/icon-192x192-v2.png" />
         <script
           src="/register-sw.js"
           defer
