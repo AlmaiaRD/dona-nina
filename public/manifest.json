@@ -1,18 +1,18 @@
 {
-  "name": "SISTEMA DE FACTURACION ALMAIA RD",
-  "short_name": "Almaia RD",
-  "description": "Sistema integral de gestión comercial para distribución Amway en República Dominicana",
+  "name": "Donde Doña Nina - Sistema de Gestión",
+  "short_name": "Doña Nina",
+  "description": "Sistema de gestión comercial para Donde Doña Nina",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FCFAF7",
-  "theme_color": "#B8837E",
+  "theme_color": "#7C1D2E",
   "orientation": "portrait-primary",
   "categories": ["business", "finance"],
   "shortcuts": [
     {
-      "name": "SISTEMA DE FACTURACION ALMAIA RD",
-      "short_name": "Facturación",
-      "description": "Acceso directo al sistema de facturación",
+      "name": "Donde Doña Nina - Sistema de Gestión",
+      "short_name": "Doña Nina",
+      "description": "Acceso directo al sistema",
       "url": "/",
       "icons": [
         {
